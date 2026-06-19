@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Faturamento</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f4; color: #1c1c1a; font-size: 14px; }
+.topbar { background: #fff; border-bottom: 0.5px solid #e0dfd8; padding: 0 2rem; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.logo { font-size: 14px; font-weight: 600; color: #185FA5; display: flex; align-items: center; gap: 8px; }
+.logo-icon { width: 28px; height: 28px; background: #E6F1FB; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.user-info { font-size: 13px; color: #6b6b68; }
+.role-badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
+.role-admin { background: #E6F1FB; color: #0C447C; }
+.role-viewer { background: #F1EFE8; color: #5F5E5A; }
+.btn-logout { font-size: 12px; padding: 5px 12px; border: 0.5px solid #d0cfc8; border-radius: 7px; background: transparent; color: #6b6b68; cursor: pointer; }
+.btn-logout:hover { background: #f5f5f4; }
+.main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.5rem; }
+.tabs { display: flex; gap: 0; border-bottom: 0.5px solid #e0dfd8; margin-bottom: 1.5rem; }
+.tab { font-size: 13px; padding: 8px 18px; cursor: pointer; color: #6b6b68; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; }
+.tab.active { color: #185FA5; border-bottom-color: #378ADD; font-weight: 500; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.page-title { font-size: 18px; font-weight: 600; }
+.page-sub { font-size: 13px; color: #6b6b68; margin-top: 2px; }
+select.ctrl { font-size: 13px; padding: 6px 10px; border: 0.5px solid #d0cfc8; border-radius: 7px; background: #fff; color: #1c1c1a; cursor: pointer; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
+.metric { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; padding: 14px 16px; }
+.metric-label { font-size: 12px; color: #6b6b68; margin-bottom: 4px; }
+.metric-value { font-size: 22px; font-weight: 600; }
+.metric-delta { font-size: 12px; margin-top: 3px; }
+.d-up { color: #0F6E56; } .d-dn { color: #A32D2D; }
+.month-btns { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.mbtn { font-size: 12px; padding: 5px 12px; border: 0.5px solid #d0cfc8; border-radius: 7px; background: transparent; color: #6b6b68; cursor: pointer; font-family: inherit; }
+.mbtn.active { background: #E6F1FB; color: #0C447C; border-color: #B5D4F4; font-weight: 500; }
+.card { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+.card-title { font-size: 14px; font-weight: 500; margin-bottom: 1rem; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #6b6b68; }
+.legend span { display: flex; align-items: center; gap: 5px; }
+.ldot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+.svc-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.svc-table th { text-align: left; padding: 8px 8px; color: #6b6b68; font-weight: 500; border-bottom: 0.5px solid #e0dfd8; font-size: 11px; }
+.svc-table td { padding: 9px 8px; border-bottom: 0.5px solid #e0dfd8; vertical-align: middle; }
+.svc-table tr:last-child td { border-bottom: none; }
+.badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 6px; font-weight: 500; }
+.b-up { background: #E1F5EE; color: #0F6E56; } .b-dn { background: #FCEBEB; color: #A32D2D; } .b-ne { background: #F1EFE8; color: #5F5E5A; }
+.bar-wrap { width: 60px; height: 5px; background: #e0dfd8; border-radius: 99px; display: inline-block; vertical-align: middle; }
+.bar-fill { height: 100%; border-radius: 99px; background: #378ADD; }
+.form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1rem; }
+.form-label { font-size: 12px; color: #6b6b68; font-weight: 500; }
+input[type=number], input[type=text], input[type=email], input[type=password] { padding: 8px 11px; border: 0.5px solid #d0cfc8; border-radius: 7px; font-size: 13px; background: #fff; color: #1c1c1a; font-family: inherit; outline: none; }
+input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1); }
+.svc-row { display: grid; grid-template-columns: 1fr 110px 140px; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 0.5px solid #e0dfd8; }
+.svc-row:last-child { border-bottom: none; }
+.svc-name { font-size: 13px; font-weight: 500; color: #1c1c1a; line-height: 1.4; }
+.save-btn { padding: 9px 22px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
+.save-btn:hover { background: #0C447C; }
+.save-btn:disabled { background: #b5d4f4; cursor: not-allowed; }
+.toast { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; display: none; }
+.toast-ok { background: #E1F5EE; color: #0F6E56; border: 0.5px solid #9FE1CB; }
+.toast-err { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
+.summary-box { background: #f5f5f4; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
+.summary-item { text-align: center; }
+.summary-label { font-size: 11px; color: #6b6b68; margin-bottom: 2px; }
+.summary-val { font-size: 16px; font-weight: 600; }
+.hist-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid #e0dfd8; }
+.hist-row:last-child { border-bottom: none; }
+.empty-state { text-align: center; padding: 2.5rem 1rem; color: #6b6b68; font-size: 13px; }
+.no-access { background: #FAEEDA; border: 0.5px solid #FAC775; border-radius: 10px; padding: 14px 18px; font-size: 13px; color: #633806; margin-bottom: 1rem; }
+.loading { text-align: center; padding: 3rem; color: #6b6b68; font-size: 13px; }
+@media (max-width: 600px) {
+  .metric-grid { grid-template-columns: 1fr 1fr; }
+  .two-col { grid-template-columns: 1fr; }
+  .main { padding: 1rem; }
+  .topbar { padding: 0 1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    </div>
+    Painel de Faturamento
+  </div>
+  <div class="topbar-right">
+    <span class="user-info" id="userEmail"></span>
+    <span class="role-badge" id="roleBadge"></span>
+    <button class="btn-logout" onclick="logout()">Sair</button>
+  </div>
+</div>
+
+<div class="main">
+  <div id="appLoading" class="loading">Carregando…</div>
+  <div id="appContent" style="display:none">
+
+    <div class="section-header">
+      <div>
+        <p class="page-title">Faturamento mensal</p>
+        <p class="page-sub">Acompanhamento e variação por serviço</p>
+      </div>
+      <select class="ctrl" id="yearSel" onchange="render()">
+        <option value="2024">2024</option>
+        <option value="2025" selected>2025</option>
+        <option value="2026">2026</option>
+      </select>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('painel',this)">Painel</button>
+      <button class="tab" id="tabEntradaBtn" onclick="switchTab('entrada',this)">Entrada de dados</button>
+    </div>
+
+    <!-- PAINEL -->
+    <div id="tabPainel">
+      <div class="metric-grid" id="metricGrid"></div>
+      <div class="month-btns" id="monthBtns"></div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <span class="card-title" style="margin-bottom:0">Faturamento mensal vs meta</span>
+          <div class="legend">
+            <span><span class="ldot" style="background:#378ADD"></span>Faturamento</span>
+            <span><span class="ldot" style="background:#1D9E75"></span>Meta</span>
+          </div>
+        </div>
+        <div style="position:relative;width:100%;height:210px"><canvas id="chartFat" role="img" aria-label="Faturamento mensal vs meta"></canvas></div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Distribuição por serviço</div>
+          <div style="position:relative;width:100%;height:190px"><canvas id="chartPie" role="img" aria-label="Distribuição por serviço"></canvas></div>
+          <div class="legend" id="pieLeg" style="margin-top:10px;justify-content:center"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Evolução de serviços</div>
+          <div style="position:relative;width:100%;height:190px"><canvas id="chartLine" role="img" aria-label="Evolução de serviços"></canvas></div>
+          <div class="legend" id="lineLeg" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <span class="card-title" style="margin-bottom:0">Variação por serviço</span>
+          <span style="font-size:12px;color:#6b6b68" id="selLabel"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="svc-table">
+            <thead><tr>
+              <th style="width:28%">Serviço</th>
+              <th style="width:10%">Exec.</th>
+              <th style="width:14%">Valor unit.</th>
+              <th style="width:14%">Faturado</th>
+              <th style="width:10%">Var. exec.</th>
+              <th style="width:10%">Var. valor</th>
+              <th style="width:14%">Participação</th>
+            </tr></thead>
+            <tbody id="svcBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENTRADA -->
+    <div id="tabEntrada" style="display:none">
+      <div class="no-access" id="noAccessMsg" style="display:none">
+        Apenas administradores podem lançar dados. Entre em contato com o administrador da equipe.
+      </div>
+      <div id="adminForm">
+        <div id="toast" class="toast"></div>
+
+        <div class="card">
+          <div class="card-title">Período e meta</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Mês</label>
+              <select class="ctrl" id="fMonth" style="width:100%">
+                <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
+                <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
+                <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
+                <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Ano</label>
+              <select class="ctrl" id="fYear" style="width:100%">
+                <option value="2024">2024</option><option value="2025" selected>2025</option><option value="2026">2026</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Meta do mês (R$)</label>
+              <input type="number" id="fMeta" placeholder="Ex: 100000" min="0" style="width:100%">
+            </div>
+          </div>
+          <button style="margin-top:12px;padding:7px 14px;border:0.5px dashed #d0cfc8;border-radius:7px;background:transparent;color:#6b6b68;cursor:pointer;font-size:12px;font-family:inherit" onclick="loadExisting()">Carregar dados existentes do período</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Execuções por serviço</div>
+          <div style="display:grid;grid-template-columns:1fr 110px 140px;gap:10px;margin-bottom:6px">
+            <span style="font-size:11px;color:#6b6b68;font-weight:500">Serviço</span>
+            <span style="font-size:11px;color:#6b6b68;font-weight:500">Execuções</span>
+            <span style="font-size:11px;color:#6b6b68;font-weight:500">Valor unitário (R$)</span>
+          </div>
+          <div id="svcRows"></div>
+          <div class="summary-box">
+            <div class="summary-item"><div class="summary-label">Total execuções</div><div class="summary-val" id="totExec">0</div></div>
+            <div class="summary-item"><div class="summary-label">Total faturado</div><div class="summary-val" id="totFat">R$ 0</div></div>
+            <div class="summary-item"><div class="summary-label">% da meta</div><div class="summary-val" id="totMeta">—</div></div>
+            <button class="save-btn" id="btnSave" onclick="saveData()">Salvar período</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Períodos registrados</div>
+          <div id="histList"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = '
+https://wcefqhivhaejueenburz.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOj';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MNAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const COLORS = ['#378ADD','#1D9E75','#D85A30','#D4537E','#BA7517','#7F77DD','#639922','#888780','#D85A30'];
+const SERVICES = [
+  'FATURAMENTO SIMULTÂNEO (LEITURA RURAL FI)',
+  'SERV FATURAMENTO IMEDIATO (LEITURA URBANA FI)',
+  'LEITURA RURAL FS',
+  'LEITURA URBANA FI',
+  'NOTAS DE SERVIÇO GEGC',
+  'NOTAS DE SERVIÇO GEGC (AT)',
+  'SERV FATURAMENTO NAO IMEDIATO RURAL (ENTREGA FATURA RURAL)',
+  'SERV FATURAMENTO NAO IMEDIATO URBANO (ENTREGA FATURA URBANA)',
+  'ENTREGA ESPECIAL'
+];
+
+let userRole = 'viewer';
+let selMonth = new Date().getMonth();
+let chartFat, chartPie, chartLine;
+let allData = {};
+
+function fmt(n) { return 'R$\u00a0' + (Math.round(n) || 0).toLocaleString('pt-BR'); }
+function pct(a, b) { if (!b) return 0; return Math.round((a - b) / b * 100); }
+function key(y, m) { return y + '-' + String(m).padStart(2, '0'); }
+
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+
+  const user = session.user;
+  document.getElementById('userEmail').textContent = user.email;
+
+  const meta = user.user_metadata || {};
+  userRole = meta.role || 'viewer';
+
+  const badge = document.getElementById('roleBadge');
+  badge.textContent = userRole === 'admin' ? 'Administrador' : 'Visualizador';
+  badge.className = 'role-badge ' + (userRole === 'admin' ? 'role-admin' : 'role-viewer');
+
+  if (userRole !== 'admin') {
+    document.getElementById('tabEntradaBtn').style.display = 'none';
+  }
+
+  await loadAllData();
+  buildServiceRows();
+  renderHistory();
+  render();
+
+  document.getElementById('appLoading').style.display = 'none';
+  document.getElementById('appContent').style.display = 'block';
+
+  document.getElementById('fMonth').value = new Date().getMonth();
+  document.getElementById('fYear').value = new Date().getFullYear();
+}
+
+async function loadAllData() {
+  const { data, error } = await sb.from('faturamento').select('*').order('ano').order('mes');
+  if (error) { console.error(error); return; }
+  allData = {};
+  (data || []).forEach(row => {
+    allData[key(row.ano, row.mes)] = { meta: row.meta, services: row.services || [] };
+  });
+}
+
+function buildServiceRows() {
+  const container = document.getElementById('svcRows');
+  container.innerHTML = SERVICES.map((svc, i) => `
+    <div class="svc-row">
+      <span class="svc-name">${svc}</span>
+      <input type="number" id="exec_${i}" placeholder="0" min="0" oninput="calcSummary()" style="width:100%">
+      <input type="number" id="val_${i}" placeholder="0,00" min="0" step="0.01" oninput="calcSummary()" style="width:100%">
+    </div>
+  `).join('');
+}
+
+function calcSummary() {
+  let te = 0, tf = 0;
+  SERVICES.forEach((_, i) => {
+    const e = parseInt(document.getElementById('exec_' + i).value) || 0;
+    const v = parseFloat(document.getElementById('val_' + i).value) || 0;
+    te += e; tf += e * v;
+  });
+  const meta = parseFloat(document.getElementById('fMeta').value) || 0;
+  document.getElementById('totExec').textContent = te.toLocaleString('pt-BR');
+  document.getElementById('totFat').textContent = fmt(tf);
+  document.getElementById('totMeta').textContent = meta ? Math.round(tf / meta * 100) + '%' : '—';
+}
+
+async function loadExisting() {
+  const m = parseInt(document.getElementById('fMonth').value);
+  const y = parseInt(document.getElementById('fYear').value);
+  const entry = allData[key(y, m)];
+  SERVICES.forEach((_, i) => {
+    document.getElementById('exec_' + i).value = '';
+    document.getElementById('val_' + i).value = '';
+  });
+  if (entry) {
+    document.getElementById('fMeta').value = entry.meta || '';
+    entry.services.forEach(s => {
+      const idx = SERVICES.indexOf(s.name);
+      if (idx >= 0) {
+        document.getElementById('exec_' + idx).value = s.execs;
+        document.getElementById('val_' + idx).value = s.val;
+      }
+    });
+    showToast('Dados de ' + MNAMES[m] + '/' + y + ' carregados.', 'ok');
+  } else {
+    showToast('Nenhum dado encontrado para ' + MNAMES[m] + '/' + y + '.', 'err');
+  }
+  calcSummary();
+}
+
+async function saveData() {
+  if (userRole !== 'admin') return;
+  const m = parseInt(document.getElementById('fMonth').value);
+  const y = parseInt(document.getElementById('fYear').value);
+  const meta = parseFloat(document.getElementById('fMeta').value) || 0;
+  const services = SERVICES.map((name, i) => ({
+    name,
+    execs: parseInt(document.getElementById('exec_' + i).value) || 0,
+    val: parseFloat(document.getElementById('val_' + i).value) || 0
+  })).filter(s => s.execs > 0 || s.val > 0);
+
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true; btn.textContent = 'Salvando…';
+
+  const { error } = await sb.from('faturamento').upsert(
+    { mes: m, ano: y, meta, services },
+    { onConflict: 'mes,ano' }
+  );
+
+  btn.disabled = false; btn.textContent = 'Salvar período';
+
+  if (error) { showToast('Erro ao salvar. Tente novamente.', 'err'); return; }
+  showToast('Dados de ' + MNAMES[m] + '/' + y + ' salvos com sucesso!', 'ok');
+  await loadAllData();
+  renderHistory();
+  render();
+}
+
+async function deleteEntry(m, y) {
+  if (!confirm('Excluir dados de ' + MNAMES[m] + '/' + y + '?')) return;
+  await sb.from('faturamento').delete().eq('mes', m).eq('ano', y);
+  await loadAllData();
+  renderHistory();
+  render();
+}
+
+function renderHistory() {
+  const keys = Object.keys(allData).sort().reverse();
+  const el = document.getElementById('histList');
+  if (!keys.length) { el.innerHTML = '<div class="empty-state">Nenhum período registrado ainda.</div>'; return; }
+  el.innerHTML = keys.map(k => {
+    const [y, mm] = k.split('-');
+    const e = allData[k];
+    const fat = e.services.reduce((a, s) => a + s.execs * s.val, 0);
+    const ating = e.meta ? Math.round(fat / e.meta * 100) : '—';
+    return `<div class="hist-row">
+      <div>
+        <span style="font-weight:500">${MNAMES[parseInt(mm)]} ${y}</span>
+        <span style="color:#6b6b68;margin-left:10px">${e.services.length} serviço(s) · ${fmt(fat)} · Meta: ${ating}%</span>
+      </div>
+      ${userRole === 'admin' ? `<div style="display:flex;gap:6px">
+        <button style="font-size:12px;padding:4px 12px;border:0.5px solid #d0cfc8;border-radius:6px;background:transparent;color:#6b6b68;cursor:pointer;font-family:inherit" onclick="loadEntryForEdit(${parseInt(mm)},${y})">Editar</button>
+        <button style="font-size:12px;padding:4px 10px;border:0.5px solid #F7C1C1;border-radius:6px;background:transparent;color:#A32D2D;cursor:pointer;font-family:inherit" onclick="deleteEntry(${parseInt(mm)},${y})">Excluir</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function loadEntryForEdit(m, y) {
+  document.getElementById('fMonth').value = m;
+  document.getElementById('fYear').value = y;
+  switchTab('entrada', document.querySelector('.tab:nth-child(2)'));
+  loadExisting();
+  window.scrollTo(0, 0);
+}
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tabPainel').style.display = tab === 'painel' ? 'block' : 'none';
+  document.getElementById('tabEntrada').style.display = tab === 'entrada' ? 'block' : 'none';
+  if (tab === 'entrada' && userRole !== 'admin') {
+    document.getElementById('noAccessMsg').style.display = 'block';
+    document.getElementById('adminForm').style.display = 'none';
+  }
+}
+
+function render() {
+  const year = parseInt(document.getElementById('yearSel').value);
+  const cur = allData[key(year, selMonth)] || { services: [], meta: 0 };
+  const prevM = selMonth === 0 ? 11 : selMonth - 1;
+  const prevY = selMonth === 0 ? year - 1 : year;
+  const prev = allData[key(prevY, prevM)] || { services: [], meta: 0 };
+
+  const totalFat = cur.services.reduce((a, s) => a + s.execs * s.val, 0);
+  const totalFatPrev = prev.services.reduce((a, s) => a + s.execs * s.val, 0);
+  const totalExecs = cur.services.reduce((a, s) => a + s.execs, 0);
+  const totalExecsPrev = prev.services.reduce((a, s) => a + s.execs, 0);
+  const ticket = totalExecs ? Math.round(totalFat / totalExecs) : 0;
+  const ticketPrev = totalExecsPrev ? Math.round(totalFatPrev / totalExecsPrev) : 0;
+  const ating = cur.meta ? Math.round(totalFat / cur.meta * 100) : 0;
+  const atingPrev = prev.meta ? Math.round(totalFatPrev / prev.meta * 100) : 0;
+
+  const metrics = [
+    { label: 'Faturamento', value: fmt(totalFat), delta: pct(totalFat, totalFatPrev) },
+    { label: 'Execuções', value: totalExecs.toLocaleString('pt-BR'), delta: pct(totalExecs, totalExecsPrev) },
+    { label: 'Ticket médio', value: fmt(ticket), delta: pct(ticket, ticketPrev) },
+    { label: 'Meta atingida', value: ating + '%', delta: ating - atingPrev },
+  ];
+  document.getElementById('metricGrid').innerHTML = metrics.map(m => {
+    const sign = m.delta >= 0 ? '+' : '';
+    const cls = m.delta > 0 ? 'd-up' : m.delta < 0 ? 'd-dn' : '';
+    return `<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-value">${m.value}</div><div class="metric-delta ${cls}">${sign}${m.delta}% vs mês anterior</div></div>`;
+  }).join('');
+
+  document.getElementById('monthBtns').innerHTML = MONTHS.map((mn, i) =>
+    `<button class="mbtn${i === selMonth ? ' active' : ''}" onclick="selMonth=${i};render()">${mn}</button>`
+  ).join('');
+  document.getElementById('selLabel').textContent = MONTHS[selMonth] + ' ' + year;
+
+  const fats = [], metas = [];
+  for (let m = 0; m < 12; m++) {
+    const e = allData[key(year, m)] || { services: [], meta: 0 };
+    fats.push(e.services.reduce((a, s) => a + s.execs * s.val, 0));
+    metas.push(e.meta || 0);
+  }
+  if (chartFat) chartFat.destroy();
+  chartFat = new Chart(document.getElementById('chartFat'), {
+    type: 'bar',
+    data: { labels: MONTHS, datasets: [
+      { label: 'Faturamento', data: fats, backgroundColor: MONTHS.map((_, i) => i === selMonth ? '#378ADD' : 'rgba(55,138,221,0.28)'), borderRadius: 4, order: 2 },
+      { label: 'Meta', data: metas, type: 'line', borderColor: '#1D9E75', backgroundColor: 'transparent', borderDash: [4, 3], pointRadius: 3, pointBackgroundColor: '#1D9E75', tension: 0.3, order: 1 }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmt(ctx.parsed.y) } } },
+      scales: { x: { grid: { display: false }, ticks: { font: { size: 11 } } }, y: { grid: { color: 'rgba(128,128,128,0.08)' }, ticks: { font: { size: 11 }, callback: v => 'R$' + Math.round(v / 1000) + 'k' } } }
+    }
+  });
+
+  const pieFats = cur.services.map(s => s.execs * s.val);
+  const pieLabels = cur.services.map(s => s.name);
+  const pieColors = cur.services.map(s => COLORS[SERVICES.indexOf(s.name) % COLORS.length]);
+  if (chartPie) chartPie.destroy();
+  chartPie = new Chart(document.getElementById('chartPie'), {
+    type: 'doughnut',
+    data: { labels: pieLabels, datasets: [{ data: pieFats, backgroundColor: pieColors, borderWidth: 1, borderColor: 'transparent', hoverOffset: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmt(ctx.parsed) + (totalFat ? ' (' + Math.round(ctx.parsed / totalFat * 100) + '%)' : '') } } }
+    }
+  });
+  document.getElementById('pieLeg').innerHTML = pieLabels.map((s, i) =>
+    `<span><span class="ldot" style="background:${pieColors[i]}"></span>${s.length > 20 ? s.substring(0, 20) + '…' : s}</span>`
+  ).join('');
+
+  const lineDs = SERVICES.map((svc, si) => ({
+    label: svc,
+    data: Array.from({ length: 12 }, (_, m) => {
+      const e = allData[key(year, m)]; if (!e) return 0;
+      const f = e.services.find(s => s.name === svc); return f ? f.execs * f.val : 0;
+    }),
+    borderColor: COLORS[si % COLORS.length], backgroundColor: 'transparent',
+    pointRadius: 2, tension: 0.35, borderWidth: 1.5
+  })).filter(ds => ds.data.some(v => v > 0));
+  if (chartLine) chartLine.destroy();
+  chartLine = new Chart(document.getElementById('chartLine'), {
+    type: 'line',
+    data: { labels: MONTHS, datasets: lineDs },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataset.label.substring(0, 25) + ': ' + fmt(ctx.parsed.y) } } },
+      scales: { x: { grid: { display: false }, ticks: { font: { size: 11 } } }, y: { grid: { color: 'rgba(128,128,128,0.08)' }, ticks: { font: { size: 11 }, callback: v => 'R$' + Math.round(v / 1000) + 'k' } } }
+    }
+  });
+  document.getElementById('lineLeg').innerHTML = lineDs.map(ds =>
+    `<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#6b6b68"><span style="width:14px;height:2px;background:${ds.borderColor};display:inline-block;border-radius:2px"></span>${ds.label.length > 22 ? ds.label.substring(0, 22) + '…' : ds.label}</span>`
+  ).join('');
+
+  const tbody = document.getElementById('svcBody');
+  if (!cur.services.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#6b6b68">Nenhum dado lançado para este período.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = cur.services.map(s => {
+    const fat = s.execs * s.val;
+    const prevSvc = prev.services.find(p => p.name === s.name) || { execs: 0, val: 0 };
+    const vExec = pct(s.execs, prevSvc.execs);
+    const vVal = pct(s.val, prevSvc.val);
+    const part = totalFat ? Math.round(fat / totalFat * 100) : 0;
+    return `<tr>
+      <td style="font-weight:500;font-size:12px">${s.name}</td>
+      <td>${s.execs.toLocaleString('pt-BR')}</td>
+      <td>${fmt(s.val)}</td>
+      <td>${fmt(fat)}</td>
+      <td><span class="badge ${vExec > 0 ? 'b-up' : vExec < 0 ? 'b-dn' : 'b-ne'}">${vExec > 0 ? '+' : ''}${vExec}%</span></td>
+      <td><span class="badge ${vVal > 0 ? 'b-up' : vVal < 0 ? 'b-dn' : 'b-ne'}">${vVal > 0 ? '+' : ''}${vVal}%</span></td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div class="bar-wrap"><div class="bar-fill" style="width:${part}%"></div></div><span style="font-size:12px;color:#6b6b68">${part}%</span></div></td>
+    </tr>`;
+  }).join('');
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (type === 'ok' ? 'toast-ok' : 'toast-err');
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+init();
+</script>
+</body>
+</html>

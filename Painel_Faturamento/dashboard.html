@@ -27,6 +27,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .page-title { font-size: 18px; font-weight: 600; }
 .page-sub { font-size: 13px; color: #6b6b68; margin-top: 2px; }
 select.ctrl { font-size: 13px; padding: 6px 10px; border: 0.5px solid #d0cfc8; border-radius: 7px; background: #fff; color: #1c1c1a; cursor: pointer; }
+.filters { display: flex; gap: 8px; align-items: center; }
+.estado-btns { display: flex; gap: 6px; }
+.ebtn { font-size: 12px; padding: 5px 14px; border: 0.5px solid #d0cfc8; border-radius: 7px; background: transparent; color: #6b6b68; cursor: pointer; font-family: inherit; font-weight: 500; }
+.ebtn.active { background: #E6F1FB; color: #0C447C; border-color: #B5D4F4; }
+.ebtn.ma.active { background: #E6F1FB; color: #0C447C; border-color: #B5D4F4; }
+.ebtn.pi.active { background: #EEF4E6; color: #3A6B0F; border-color: #B5D99F; }
+.ebtn.todos.active { background: #F5EFF8; color: #6B2D9E; border-color: #D4B5F4; }
+.estado-tag { font-size: 11px; padding: 2px 8px; border-radius: 5px; font-weight: 600; display: inline-block; }
+.tag-ma { background: #E6F1FB; color: #0C447C; }
+.tag-pi { background: #EEF4E6; color: #3A6B0F; }
+.tag-todos { background: #F5EFF8; color: #6B2D9E; }
 .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
 .metric { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; padding: 14px 16px; }
 .metric-label { font-size: 12px; color: #6b6b68; margin-bottom: 4px; }
@@ -72,11 +83,13 @@ input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1);
 .empty-state { text-align: center; padding: 2.5rem 1rem; color: #6b6b68; font-size: 13px; }
 .no-access { background: #FAEEDA; border: 0.5px solid #FAC775; border-radius: 10px; padding: 14px 18px; font-size: 13px; color: #633806; margin-bottom: 1rem; }
 .loading { text-align: center; padding: 3rem; color: #6b6b68; font-size: 13px; }
+.estado-section { background: #f5f5f4; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: #6b6b68; font-weight: 500; }
 @media (max-width: 600px) {
   .metric-grid { grid-template-columns: 1fr 1fr; }
   .two-col { grid-template-columns: 1fr; }
   .main { padding: 1rem; }
   .topbar { padding: 0 1rem; }
+  .filters { flex-wrap: wrap; }
 }
 </style>
 </head>
@@ -105,11 +118,18 @@ input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1);
         <p class="page-title">Faturamento mensal</p>
         <p class="page-sub">Acompanhamento e variação por serviço</p>
       </div>
-      <select class="ctrl" id="yearSel" onchange="render()">
-        <option value="2024">2024</option>
-        <option value="2025" selected>2025</option>
-        <option value="2026">2026</option>
-      </select>
+      <div class="filters">
+        <div class="estado-btns">
+          <button class="ebtn todos active" onclick="setEstado('todos',this)">Consolidado</button>
+          <button class="ebtn ma" onclick="setEstado('MA',this)">Maranhão</button>
+          <button class="ebtn pi" onclick="setEstado('PI',this)">Piauí</button>
+        </div>
+        <select class="ctrl" id="yearSel" onchange="render()">
+          <option value="2024">2024</option>
+          <option value="2025" selected>2025</option>
+          <option value="2026">2026</option>
+        </select>
+      </div>
     </div>
 
     <div class="tabs">
@@ -124,24 +144,24 @@ input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1);
 
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-          <span class="card-title" style="margin-bottom:0">Faturamento mensal vs meta</span>
+          <span class="card-title" style="margin-bottom:0">Faturamento mensal vs meta <span id="chartEstadoTag"></span></span>
           <div class="legend">
             <span><span class="ldot" style="background:#378ADD"></span>Faturamento</span>
             <span><span class="ldot" style="background:#1D9E75"></span>Meta</span>
           </div>
         </div>
-        <div style="position:relative;width:100%;height:210px"><canvas id="chartFat" role="img" aria-label="Faturamento mensal vs meta"></canvas></div>
+        <div style="position:relative;width:100%;height:210px"><canvas id="chartFat"></canvas></div>
       </div>
 
       <div class="two-col">
         <div class="card">
           <div class="card-title">Distribuição por serviço</div>
-          <div style="position:relative;width:100%;height:190px"><canvas id="chartPie" role="img" aria-label="Distribuição por serviço"></canvas></div>
+          <div style="position:relative;width:100%;height:190px"><canvas id="chartPie"></canvas></div>
           <div class="legend" id="pieLeg" style="margin-top:10px;justify-content:center"></div>
         </div>
         <div class="card">
           <div class="card-title">Evolução de serviços</div>
-          <div style="position:relative;width:100%;height:190px"><canvas id="chartLine" role="img" aria-label="Evolução de serviços"></canvas></div>
+          <div style="position:relative;width:100%;height:190px"><canvas id="chartLine"></canvas></div>
           <div class="legend" id="lineLeg" style="margin-top:10px"></div>
         </div>
       </div>
@@ -171,14 +191,21 @@ input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1);
     <!-- ENTRADA -->
     <div id="tabEntrada" style="display:none">
       <div class="no-access" id="noAccessMsg" style="display:none">
-        Apenas administradores podem lançar dados. Entre em contato com o administrador da equipe.
+        Apenas administradores podem lançar dados.
       </div>
       <div id="adminForm">
         <div id="toast" class="toast"></div>
 
         <div class="card">
-          <div class="card-title">Período e meta</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div class="card-title">Período, estado e meta</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Estado</label>
+              <select class="ctrl" id="fEstado" style="width:100%" onchange="calcSummary()">
+                <option value="MA">Maranhão</option>
+                <option value="PI">Piauí</option>
+              </select>
+            </div>
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Mês</label>
               <select class="ctrl" id="fMonth" style="width:100%">
@@ -196,7 +223,7 @@ input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1);
             </div>
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Meta do mês (R$)</label>
-              <input type="number" id="fMeta" placeholder="Ex: 100000" min="0" style="width:100%">
+              <input type="number" id="fMeta" placeholder="Ex: 100000" min="0" style="width:100%" oninput="calcSummary()">
             </div>
           </div>
           <button style="margin-top:12px;padding:7px 14px;border:0.5px dashed #d0cfc8;border-radius:7px;background:transparent;color:#6b6b68;cursor:pointer;font-size:12px;font-family:inherit" onclick="loadExisting()">Carregar dados existentes do período</button>
@@ -220,6 +247,11 @@ input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1);
 
         <div class="card">
           <div class="card-title">Períodos registrados</div>
+          <div style="display:flex;gap:8px;margin-bottom:1rem">
+            <button class="ebtn todos active" id="histFiltTodos" onclick="setHistFilt('todos',this)">Todos</button>
+            <button class="ebtn ma" id="histFiltMA" onclick="setHistFilt('MA',this)">Maranhão</button>
+            <button class="ebtn pi" id="histFiltPI" onclick="setHistFilt('PI',this)">Piauí</button>
+          </div>
           <div id="histList"></div>
         </div>
       </div>
@@ -230,12 +262,14 @@ input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1);
 
 <script>
 const SUPABASE_URL = 'https://wcefqhivhaejueenburz.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOj';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const MNAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const COLORS = ['#378ADD','#1D9E75','#D85A30','#D4537E','#BA7517','#7F77DD','#639922','#888780','#D85A30'];
+const ESTADOS = ['MA','PI'];
+const ESTADO_NAMES = { MA:'Maranhão', PI:'Piauí' };
+const COLORS = ['#378ADD','#1D9E75','#D85A30','#D4537E','#BA7517','#7F77DD','#639922','#888780','#C05A9E'];
 const SERVICES = [
   'FATURAMENTO SIMULTÂNEO (LEITURA RURAL FI)',
   'SERV FATURAMENTO IMEDIATO (LEITURA URBANA FI)',
@@ -250,39 +284,38 @@ const SERVICES = [
 
 let userRole = 'viewer';
 let selMonth = new Date().getMonth();
+let selEstado = 'todos';
+let histFilt = 'todos';
 let chartFat, chartPie, chartLine;
 let allData = {};
 
 function fmt(n) { return 'R$\u00a0' + (Math.round(n) || 0).toLocaleString('pt-BR'); }
 function pct(a, b) { if (!b) return 0; return Math.round((a - b) / b * 100); }
-function key(y, m) { return y + '-' + String(m).padStart(2, '0'); }
+function key(estado, y, m) { return estado + '-' + y + '-' + String(m).padStart(2, '0'); }
+
+function getEstadoTag(estado) {
+  if (estado === 'MA') return '<span class="estado-tag tag-ma">MA</span>';
+  if (estado === 'PI') return '<span class="estado-tag tag-pi">PI</span>';
+  return '<span class="estado-tag tag-todos">Consolidado</span>';
+}
 
 async function init() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = 'index.html'; return; }
-
   const user = session.user;
   document.getElementById('userEmail').textContent = user.email;
-
   const meta = user.user_metadata || {};
   userRole = meta.role || 'viewer';
-
   const badge = document.getElementById('roleBadge');
   badge.textContent = userRole === 'admin' ? 'Administrador' : 'Visualizador';
   badge.className = 'role-badge ' + (userRole === 'admin' ? 'role-admin' : 'role-viewer');
-
-  if (userRole !== 'admin') {
-    document.getElementById('tabEntradaBtn').style.display = 'none';
-  }
-
+  if (userRole !== 'admin') document.getElementById('tabEntradaBtn').style.display = 'none';
   await loadAllData();
   buildServiceRows();
   renderHistory();
   render();
-
   document.getElementById('appLoading').style.display = 'none';
   document.getElementById('appContent').style.display = 'block';
-
   document.getElementById('fMonth').value = new Date().getMonth();
   document.getElementById('fYear').value = new Date().getFullYear();
 }
@@ -292,8 +325,39 @@ async function loadAllData() {
   if (error) { console.error(error); return; }
   allData = {};
   (data || []).forEach(row => {
-    allData[key(row.ano, row.mes)] = { meta: row.meta, services: row.services || [] };
+    const estado = row.estado || 'MA';
+    allData[key(estado, row.ano, row.mes)] = { meta: row.meta, services: row.services || [], estado };
   });
+}
+
+function getEntry(estado, year, month) {
+  if (estado === 'todos') {
+    const ma = allData[key('MA', year, month)] || { services: [], meta: 0 };
+    const pi = allData[key('PI', year, month)] || { services: [], meta: 0 };
+    const merged = SERVICES.map(name => {
+      const s1 = ma.services.find(s => s.name === name) || { execs: 0, val: 0 };
+      const s2 = pi.services.find(s => s.name === name) || { execs: 0, val: 0 };
+      const totalExecs = s1.execs + s2.execs;
+      const avgVal = totalExecs > 0 ? (s1.execs * s1.val + s2.execs * s2.val) / totalExecs : 0;
+      return { name, execs: totalExecs, val: Math.round(avgVal) };
+    }).filter(s => s.execs > 0 || s.val > 0);
+    return { services: merged, meta: (ma.meta || 0) + (pi.meta || 0) };
+  }
+  return allData[key(estado, year, month)] || { services: [], meta: 0 };
+}
+
+function setEstado(estado, btn) {
+  selEstado = estado;
+  document.querySelectorAll('.estado-btns .ebtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function setHistFilt(filt, btn) {
+  histFilt = filt;
+  document.querySelectorAll('#adminForm .ebtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHistory();
 }
 
 function buildServiceRows() {
@@ -323,7 +387,8 @@ function calcSummary() {
 async function loadExisting() {
   const m = parseInt(document.getElementById('fMonth').value);
   const y = parseInt(document.getElementById('fYear').value);
-  const entry = allData[key(y, m)];
+  const estado = document.getElementById('fEstado').value;
+  const entry = allData[key(estado, y, m)];
   SERVICES.forEach((_, i) => {
     document.getElementById('exec_' + i).value = '';
     document.getElementById('val_' + i).value = '';
@@ -337,9 +402,9 @@ async function loadExisting() {
         document.getElementById('val_' + idx).value = s.val;
       }
     });
-    showToast('Dados de ' + MNAMES[m] + '/' + y + ' carregados.', 'ok');
+    showToast('Dados de ' + ESTADO_NAMES[estado] + ' — ' + MNAMES[m] + '/' + y + ' carregados.', 'ok');
   } else {
-    showToast('Nenhum dado encontrado para ' + MNAMES[m] + '/' + y + '.', 'err');
+    showToast('Nenhum dado encontrado para ' + ESTADO_NAMES[estado] + ' — ' + MNAMES[m] + '/' + y + '.', 'err');
   }
   calcSummary();
 }
@@ -348,6 +413,7 @@ async function saveData() {
   if (userRole !== 'admin') return;
   const m = parseInt(document.getElementById('fMonth').value);
   const y = parseInt(document.getElementById('fYear').value);
+  const estado = document.getElementById('fEstado').value;
   const meta = parseFloat(document.getElementById('fMeta').value) || 0;
   const services = SERVICES.map((name, i) => ({
     name,
@@ -359,50 +425,54 @@ async function saveData() {
   btn.disabled = true; btn.textContent = 'Salvando…';
 
   const { error } = await sb.from('faturamento').upsert(
-    { mes: m, ano: y, meta, services },
-    { onConflict: 'mes,ano' }
+    { mes: m, ano: y, estado, meta, services },
+    { onConflict: 'mes,ano,estado' }
   );
 
   btn.disabled = false; btn.textContent = 'Salvar período';
-
-  if (error) { showToast('Erro ao salvar. Tente novamente.', 'err'); return; }
-  showToast('Dados de ' + MNAMES[m] + '/' + y + ' salvos com sucesso!', 'ok');
+  if (error) { showToast('Erro ao salvar: ' + error.message, 'err'); return; }
+  showToast('Dados de ' + ESTADO_NAMES[estado] + ' — ' + MNAMES[m] + '/' + y + ' salvos!', 'ok');
   await loadAllData();
   renderHistory();
   render();
 }
 
-async function deleteEntry(m, y) {
-  if (!confirm('Excluir dados de ' + MNAMES[m] + '/' + y + '?')) return;
-  await sb.from('faturamento').delete().eq('mes', m).eq('ano', y);
+async function deleteEntry(estado, m, y) {
+  if (!confirm('Excluir dados de ' + ESTADO_NAMES[estado] + ' — ' + MNAMES[m] + '/' + y + '?')) return;
+  await sb.from('faturamento').delete().eq('mes', m).eq('ano', y).eq('estado', estado);
   await loadAllData();
   renderHistory();
   render();
 }
 
 function renderHistory() {
-  const keys = Object.keys(allData).sort().reverse();
+  const keys = Object.keys(allData).filter(k => histFilt === 'todos' || k.startsWith(histFilt + '-')).sort().reverse();
   const el = document.getElementById('histList');
   if (!keys.length) { el.innerHTML = '<div class="empty-state">Nenhum período registrado ainda.</div>'; return; }
   el.innerHTML = keys.map(k => {
-    const [y, mm] = k.split('-');
+    const parts = k.split('-');
+    const estado = parts[0];
+    const y = parts[1];
+    const mm = parseInt(parts[2]);
     const e = allData[k];
     const fat = e.services.reduce((a, s) => a + s.execs * s.val, 0);
     const ating = e.meta ? Math.round(fat / e.meta * 100) : '—';
     return `<div class="hist-row">
-      <div>
-        <span style="font-weight:500">${MNAMES[parseInt(mm)]} ${y}</span>
-        <span style="color:#6b6b68;margin-left:10px">${e.services.length} serviço(s) · ${fmt(fat)} · Meta: ${ating}%</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        ${getEstadoTag(estado)}
+        <span style="font-weight:500">${MNAMES[mm]} ${y}</span>
+        <span style="color:#6b6b68;margin-left:4px">${e.services.length} serviço(s) · ${fmt(fat)} · Meta: ${ating}%</span>
       </div>
       ${userRole === 'admin' ? `<div style="display:flex;gap:6px">
-        <button style="font-size:12px;padding:4px 12px;border:0.5px solid #d0cfc8;border-radius:6px;background:transparent;color:#6b6b68;cursor:pointer;font-family:inherit" onclick="loadEntryForEdit(${parseInt(mm)},${y})">Editar</button>
-        <button style="font-size:12px;padding:4px 10px;border:0.5px solid #F7C1C1;border-radius:6px;background:transparent;color:#A32D2D;cursor:pointer;font-family:inherit" onclick="deleteEntry(${parseInt(mm)},${y})">Excluir</button>
+        <button style="font-size:12px;padding:4px 12px;border:0.5px solid #d0cfc8;border-radius:6px;background:transparent;color:#6b6b68;cursor:pointer;font-family:inherit" onclick="loadEntryForEdit('${estado}',${mm},${y})">Editar</button>
+        <button style="font-size:12px;padding:4px 10px;border:0.5px solid #F7C1C1;border-radius:6px;background:transparent;color:#A32D2D;cursor:pointer;font-family:inherit" onclick="deleteEntry('${estado}',${mm},${y})">Excluir</button>
       </div>` : ''}
     </div>`;
   }).join('');
 }
 
-function loadEntryForEdit(m, y) {
+function loadEntryForEdit(estado, m, y) {
+  document.getElementById('fEstado').value = estado;
   document.getElementById('fMonth').value = m;
   document.getElementById('fYear').value = y;
   switchTab('entrada', document.querySelector('.tab:nth-child(2)'));
@@ -423,10 +493,10 @@ function switchTab(tab, btn) {
 
 function render() {
   const year = parseInt(document.getElementById('yearSel').value);
-  const cur = allData[key(year, selMonth)] || { services: [], meta: 0 };
+  const cur = getEntry(selEstado, year, selMonth);
   const prevM = selMonth === 0 ? 11 : selMonth - 1;
   const prevY = selMonth === 0 ? year - 1 : year;
-  const prev = allData[key(prevY, prevM)] || { services: [], meta: 0 };
+  const prev = getEntry(selEstado, prevY, prevM);
 
   const totalFat = cur.services.reduce((a, s) => a + s.execs * s.val, 0);
   const totalFatPrev = prev.services.reduce((a, s) => a + s.execs * s.val, 0);
@@ -437,8 +507,11 @@ function render() {
   const ating = cur.meta ? Math.round(totalFat / cur.meta * 100) : 0;
   const atingPrev = prev.meta ? Math.round(totalFatPrev / prev.meta * 100) : 0;
 
+  const estadoLabel = selEstado === 'todos' ? 'Consolidado' : ESTADO_NAMES[selEstado];
+  document.getElementById('chartEstadoTag').innerHTML = getEstadoTag(selEstado);
+
   const metrics = [
-    { label: 'Faturamento', value: fmt(totalFat), delta: pct(totalFat, totalFatPrev) },
+    { label: 'Faturamento — ' + estadoLabel, value: fmt(totalFat), delta: pct(totalFat, totalFatPrev) },
     { label: 'Execuções', value: totalExecs.toLocaleString('pt-BR'), delta: pct(totalExecs, totalExecsPrev) },
     { label: 'Ticket médio', value: fmt(ticket), delta: pct(ticket, ticketPrev) },
     { label: 'Meta atingida', value: ating + '%', delta: ating - atingPrev },
@@ -452,11 +525,11 @@ function render() {
   document.getElementById('monthBtns').innerHTML = MONTHS.map((mn, i) =>
     `<button class="mbtn${i === selMonth ? ' active' : ''}" onclick="selMonth=${i};render()">${mn}</button>`
   ).join('');
-  document.getElementById('selLabel').textContent = MONTHS[selMonth] + ' ' + year;
+  document.getElementById('selLabel').textContent = MONTHS[selMonth] + ' ' + year + ' · ' + estadoLabel;
 
   const fats = [], metas = [];
   for (let m = 0; m < 12; m++) {
-    const e = allData[key(year, m)] || { services: [], meta: 0 };
+    const e = getEntry(selEstado, year, m);
     fats.push(e.services.reduce((a, s) => a + s.execs * s.val, 0));
     metas.push(e.meta || 0);
   }
@@ -491,7 +564,7 @@ function render() {
   const lineDs = SERVICES.map((svc, si) => ({
     label: svc,
     data: Array.from({ length: 12 }, (_, m) => {
-      const e = allData[key(year, m)]; if (!e) return 0;
+      const e = getEntry(selEstado, year, m);
       const f = e.services.find(s => s.name === svc); return f ? f.execs * f.val : 0;
     }),
     borderColor: COLORS[si % COLORS.length], backgroundColor: 'transparent',

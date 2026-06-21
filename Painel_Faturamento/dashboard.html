@@ -8,29 +8,19 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-:root {
-  --vm: #BE2F3B; --vm-cl: #f9eaea; --pt: #2C2C2A; --bg: #f5f4f1;
-  --bd: #e0deda; --tx2: #7B7B7B; --br: #ffffff;
-  --vd: #1D9E75; --vd-cl: #eaf3de; --az: #378ADD; --az-cl: #e6f1fb;
-  --am: #BA7517; --am-cl: #faeeda; --r: 10px; --r2: 6px;
-  --sh: 0 1px 3px rgba(0,0,0,.08);
-}
+:root{--vm:#BE2F3B;--vm-cl:#f9eaea;--pt:#2C2C2A;--bg:#f5f4f1;--bd:#e0deda;--tx2:#7B7B7B;--br:#ffffff;--vd:#1D9E75;--vd-cl:#eaf3de;--az:#378ADD;--az-cl:#e6f1fb;--am:#BA7517;--am-cl:#faeeda;--r:10px;--r2:6px;--sh:0 1px 3px rgba(0,0,0,.08)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size:14px}
-
-/* LOGIN */
-#tela-login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+#tela-login{min-height:100vh;display:flex;align-items:center;justify-content:center}
 .lbox{background:var(--br);border-radius:var(--r);padding:2.5rem 2rem;width:360px;box-shadow:var(--sh);border:1px solid var(--bd)}
 .llogo{display:flex;align-items:center;gap:10px;margin-bottom:2rem;justify-content:center}
-.llogo .ico{width:40px;height:40px;background:var(--vm);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700}
+.lico{width:40px;height:40px;background:var(--vm);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700}
 .lbox label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;margin-top:14px}
 .lbox input{width:100%;padding:9px 12px;border:1px solid var(--bd);border-radius:var(--r2);font-size:14px}
 .lbox input:focus{outline:none;border-color:var(--vm)}
 .btn-login{width:100%;margin-top:20px;padding:10px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;cursor:pointer}
 .btn-login:hover{background:#a02632}
 #login-erro{color:var(--vm);font-size:12px;margin-top:8px;text-align:center}
-
-/* LAYOUT */
 #app{display:none;min-height:100vh}
 .topbar{background:var(--br);border-bottom:1px solid var(--bd);padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .tl{display:flex;align-items:center;gap:10px}
@@ -39,41 +29,28 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 .tr{display:flex;align-items:center;gap:12px}
 .badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;background:var(--vm-cl);color:var(--vm)}
 .btn-out{font-size:12px;padding:5px 12px;border:1px solid var(--bd);border-radius:var(--r2);background:var(--br);cursor:pointer;color:var(--tx2)}
-
-/* ABAS */
 .tabbar{background:var(--br);border-bottom:1px solid var(--bd);padding:0 1.5rem;display:flex;overflow-x:auto}
 .tabbar button{font-size:13px;padding:14px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--tx2);cursor:pointer;white-space:nowrap;font-weight:500}
 .tabbar button.active{color:var(--vm);border-bottom-color:var(--vm)}
 .tabbar button:hover:not(.active){color:var(--pt);background:var(--bg)}
 .tab-admin{display:none}
-
-/* CONTEÚDO */
 .con{padding:1.5rem;max-width:1400px;margin:0 auto}
-
-/* FILTROS */
 .fil{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
 .fil label{font-size:12px;color:var(--tx2)}
 .fil select,.fil input{font-size:13px;padding:7px 12px;border:1px solid var(--bd);border-radius:var(--r2);background:var(--br);color:var(--pt);cursor:pointer}
-.fil select:focus,.fil input:focus{outline:none;border-color:var(--vm)}
-
-/* ALERTAS */
+.fil select:focus{outline:none;border-color:var(--vm)}
 .alerta{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:var(--r2);margin-bottom:1.25rem;font-size:13px}
 .al-warn{background:var(--am-cl);color:var(--am);border:1px solid #f0c070}
 .al-info{background:var(--az-cl);color:#185FA5;border:1px solid #b5d4f4}
 .al-ok{background:var(--vd-cl);color:#0F6E56;border:1px solid #9fe1cb}
-.al-erro{background:var(--vm-cl);color:var(--vm);border:1px solid #f7c1c1}
-
-/* CARDS */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:1.25rem}
 .card{background:var(--br);border-radius:var(--r);padding:1.1rem 1.25rem;border:1px solid var(--bd)}
 .card .cl{font-size:11px;color:var(--tx2);margin-bottom:6px;font-weight:500}
 .card .cv{font-size:22px;font-weight:700}
 .card .cs{font-size:11px;margin-top:5px}
 .cn{color:var(--vm)}.cp{color:var(--vd)}.cw{color:var(--am)}.cm{color:var(--tx2)}
-
-/* BOXES */
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.25rem}
-.gbox{background:var(--br);border-radius:var(--r);padding:1.1rem 1.25rem;border:1px solid var(--bd)}
+.gbox{background:var(--br);border-radius:var(--r);padding:1.1rem 1.25rem;border:1px solid var(--bd);margin-bottom:1.25rem}
 .gbox h3{font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
 .gbox-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .gbox-h h3{margin:0}
@@ -81,58 +58,38 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 .leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
 .leg span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2)}
 .leg i{width:10px;height:10px;border-radius:2px;display:inline-block}
-
-/* TABELAS */
 .stit{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
 .stit-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .stit-row .stit{margin:0}
-.tbox{background:var(--br);border-radius:var(--r);border:1px solid var(--bd);overflow:hidden;margin-bottom:1.25rem}
-.tbox table{width:100%;border-collapse:collapse;font-size:13px}
+.tbox{background:var(--br);border-radius:var(--r);border:1px solid var(--bd);overflow:hidden;margin-bottom:1.25rem;overflow-x:auto}
+.tbox table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
 .tbox thead tr{background:var(--bg)}
-.tbox th{padding:10px 14px;text-align:left;font-weight:700;color:var(--tx2);font-size:11px;text-transform:uppercase;letter-spacing:.03em}
-.tbox td{padding:10px 14px;border-top:1px solid var(--bd)}
+.tbox th{padding:10px 12px;text-align:left;font-weight:700;color:var(--tx2);font-size:11px;text-transform:uppercase;white-space:nowrap}
+.tbox td{padding:9px 12px;border-top:1px solid var(--bd);white-space:nowrap}
 .tbox tr:hover td{background:#fafaf8}
-
-/* PILLS */
 .pill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700}
 .p-ok{background:var(--vd-cl);color:#0F6E56}
 .p-warn{background:var(--am-cl);color:var(--am)}
 .p-danger{background:var(--vm-cl);color:var(--vm)}
-.p-info{background:var(--az-cl);color:#185FA5}
 .p-cinza{background:var(--bg);color:var(--tx2)}
-
-/* PROGRESSO */
 .prog{display:flex;align-items:center;gap:8px}
-.prog-t{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.prog-t{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;min-width:60px}
 .prog-f{height:100%;border-radius:3px}
-
-/* UPLOAD */
 .uarea{border:2px dashed var(--bd);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;transition:.2s}
 .uarea:hover,.uarea.drag{border-color:var(--vm);background:var(--vm-cl)}
 .uarea input[type=file]{display:none}
 .uarea p{font-size:13px;color:var(--tx2);margin-top:8px}
-
-/* FORMULÁRIO */
 .fg{margin-bottom:1rem}
 .fg label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;font-weight:700}
 .fg input,.fg select{width:100%;padding:8px 12px;border:1px solid var(--bd);border-radius:var(--r2);font-size:13px;background:var(--br)}
-.fg input:focus,.fg select:focus{outline:none;border-color:var(--vm)}
-
-/* BOTÕES */
 .btn{font-size:13px;padding:8px 18px;border-radius:var(--r2);cursor:pointer;font-weight:700;transition:.15s}
-.btn-p{background:var(--vm);color:#fff;border:none}
-.btn-p:hover{background:#a02632}
-.btn-s{background:var(--br);color:var(--pt);border:1px solid var(--bd)}
-.btn-s:hover{background:var(--bg)}
-.btn-v{background:var(--vd);color:#fff;border:none}
-.btn-v:hover{background:#0F6E56}
+.btn-p{background:var(--vm);color:#fff;border:none}.btn-p:hover{background:#a02632}
+.btn-s{background:var(--br);color:var(--pt);border:1px solid var(--bd)}.btn-s:hover{background:var(--bg)}
 .btn-sm{font-size:11px;padding:4px 10px}
 .btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem}
-
-/* CADERNO CARD */
 .ccard{background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1.1rem 1.25rem;margin-bottom:10px}
 .ccard.ativo{border-color:var(--vm);border-width:2px}
-.ccard-h{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.ccard-h{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:10px;flex-wrap:wrap}
 .ccard-t{font-size:14px;font-weight:700}
 .ccard-m{font-size:12px;color:var(--tx2);margin-top:3px}
 .ccard-st{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
@@ -142,58 +99,45 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 .ccard-vig{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;padding:10px;background:var(--az-cl);border-radius:var(--r2);border:1px solid #b5d4f4;margin-top:8px}
 .ccard-vig label{font-size:11px;color:#185FA5;font-weight:700;display:block;margin-bottom:3px}
 .ccard-vig input{font-size:12px;padding:5px 8px;border:1px solid #b5d4f4;border-radius:var(--r2);background:var(--br);width:100%}
-.ccard-vig .ckbox{display:flex;align-items:center;gap:6px;font-size:12px;color:#185FA5;font-weight:700;padding-bottom:4px}
-
-/* REVISÃO */
+.ckbox{display:flex;align-items:center;gap:6px;font-size:12px;color:#185FA5;font-weight:700;padding-bottom:4px}
+.tar-box{background:var(--bg);border-radius:var(--r2);padding:1rem;margin-top:10px;display:none;overflow-x:auto}
+.tar-box table{width:100%;border-collapse:collapse;font-size:12px}
+.tar-box th{padding:6px 10px;text-align:left;font-size:11px;color:var(--tx2);font-weight:700;background:var(--br);border-bottom:1px solid var(--bd)}
+.tar-box td{padding:6px 10px;border-bottom:1px solid var(--bd)}
 .revbox{background:var(--br);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:1rem;max-height:380px;overflow-y:auto}
 .revbox table{width:100%;border-collapse:collapse;font-size:12px}
 .revbox thead{position:sticky;top:0;background:var(--bg)}
 .revbox th{padding:8px 12px;text-align:left;font-size:11px;color:var(--tx2);font-weight:700}
 .revbox td{padding:7px 12px;border-top:1px solid var(--bd)}
-
-/* TARIFAS DROPDOWN */
-.tar-box{background:var(--bg);border-radius:var(--r2);padding:1rem;margin-top:10px;display:none}
-.tar-box table{width:100%;border-collapse:collapse;font-size:12px}
-.tar-box th{padding:6px 10px;text-align:left;font-size:11px;color:var(--tx2);font-weight:700;background:var(--br);border-bottom:1px solid var(--bd)}
-.tar-box td{padding:6px 10px;border-bottom:1px solid var(--bd)}
-
 .loader{text-align:center;padding:3rem;color:var(--tx2);font-size:13px}
-@media(max-width:768px){.row2{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.ccard-st{grid-template-columns:1fr 1fr}.con{padding:1rem}}
+@media(max-width:768px){.row2{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.ccard-st{grid-template-columns:1fr 1fr}.con{padding:1rem}.ccard-vig{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div id="tela-login">
   <div class="lbox">
-    <div class="llogo"><div class="ico">C</div><span style="font-size:18px;font-weight:700">CENEGED</span></div>
+    <div class="llogo"><div class="lico">C</div><span style="font-size:18px;font-weight:700">CENEGED</span></div>
     <div style="text-align:center;margin-bottom:1.5rem">
       <p style="font-size:15px;font-weight:700">Painel de Faturamento</p>
       <p style="font-size:12px;color:var(--tx2);margin-top:3px">Acesse com seu e-mail e senha</p>
     </div>
-    <label>E-mail</label>
-    <input type="email" id="li-email" placeholder="seu@ceneged.com.br" autocomplete="email">
-    <label>Senha</label>
-    <input type="password" id="li-senha" placeholder="••••••••" autocomplete="current-password">
+    <label>E-mail</label><input type="email" id="li-email" placeholder="seu@ceneged.com.br" autocomplete="email">
+    <label>Senha</label><input type="password" id="li-senha" placeholder="••••••••" autocomplete="current-password">
     <button class="btn-login" onclick="fazerLogin()">Entrar</button>
     <p id="login-erro"></p>
   </div>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="topbar">
-    <div class="tl">
-      <div class="tlogo">C</div>
-      <h1>Painel de Faturamento — CENEGED</h1>
-    </div>
+    <div class="tl"><div class="tlogo">C</div><h1>Painel de Faturamento — CENEGED</h1></div>
     <div class="tr">
       <span id="tb-user" style="font-size:12px;color:var(--tx2)"></span>
       <span id="tb-role" class="badge"></span>
       <button class="btn-out" onclick="fazerLogout()">Sair</button>
     </div>
   </div>
-
   <div class="tabbar">
     <button class="active" onclick="setTab('geral',this)">Visão Geral</button>
     <button onclick="setTab('servico',this)">Por Serviço</button>
@@ -208,7 +152,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
   <div id="tab-geral" class="con">
     <div class="fil">
       <label>Estado</label>
-      <select id="g-est" onchange="carregarGeral()"><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option></select>
+      <select id="g-est" onchange="syncRegsGeral();carregarGeral()"><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option></select>
       <label>Mês</label><select id="g-mes" onchange="carregarGeral()"></select>
       <label>Ano</label><select id="g-ano" onchange="carregarGeral()"></select>
     </div>
@@ -220,12 +164,12 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <div class="card"><div class="cl">% da meta atingida</div><div class="cv" id="g-pct">—</div><div class="cs cm">Base: faturamento pago</div></div>
     </div>
     <div class="row2">
-      <div class="gbox">
+      <div class="gbox" style="margin-bottom:0">
         <h3>Evolução mensal — previsto vs executado vs pago</h3>
         <div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
         <div style="position:relative;height:220px"><canvas id="ch-mensal"></canvas></div>
       </div>
-      <div class="gbox">
+      <div class="gbox" style="margin-bottom:0">
         <div class="gbox-h">
           <h3>Pago por serviço</h3>
           <select id="g-reg-pz" onchange="renderPizza()"><option value="">Todas regionais</option></select>
@@ -234,10 +178,33 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <div style="position:relative;height:200px"><canvas id="ch-pizza"></canvas></div>
       </div>
     </div>
-    <div class="stit">Divergência por regional — executado vs pago</div>
+
+    <!-- QUADRO EVENTOS POR REGIONAL -->
+    <div class="stit" style="margin-top:1.25rem">Eventos por regional — previsto vs executado vs pago</div>
     <div class="tbox">
-      <table><thead><tr><th>Regional</th><th>Previsto (R$)</th><th>Exec. (eventos)</th><th>Pago (eventos)</th><th>Diferença</th><th>Divergência</th><th>Status</th></tr></thead>
-      <tbody id="tb-reg-div"></tbody></table>
+      <table><thead><tr><th>Regional</th><th>Eventos previstos</th><th>Eventos executados</th><th>Eventos pagos</th><th>Diferença (exec/pago)</th><th>Divergência %</th><th>Status</th></tr></thead>
+      <tbody id="tb-evt-reg"></tbody></table>
+    </div>
+
+    <!-- QUADRO FATURAMENTO POR REGIONAL -->
+    <div class="stit">Faturamento por regional</div>
+    <div class="tbox">
+      <table><thead><tr><th>Regional</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência (exec/pago)</th><th>% meta</th></tr></thead>
+      <tbody id="tb-fat-reg"></tbody></table>
+    </div>
+
+    <!-- QUADRO TARIFA PREVISTA VS PAGA -->
+    <div class="stit">Comparativo de tarifas — prevista vs paga</div>
+    <div class="tbox">
+      <table><thead><tr><th>Serviço</th><th>Regional</th><th>Tarifa prevista (caderno)</th><th>Tarifa paga (boletim)</th><th>Diferença</th><th>Status</th></tr></thead>
+      <tbody id="tb-tar"></tbody></table>
+    </div>
+
+    <!-- QUADRO PROPORÇÃO POR SERVIÇO -->
+    <div class="stit">Proporção por serviço — previsto vs executado vs pago</div>
+    <div class="tbox">
+      <table><thead><tr><th>Serviço</th><th>% previsto</th><th>% executado</th><th>% pago</th><th>Desvio (prev/pago)</th><th>Status</th></tr></thead>
+      <tbody id="tb-prop"></tbody></table>
     </div>
   </div>
 
@@ -245,18 +212,16 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
   <div id="tab-servico" class="con" style="display:none">
     <div class="fil">
       <label>Estado</label>
-      <select id="s-est" onchange="carregarServico()"><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option></select>
+      <select id="s-est" onchange="syncRegsServ();carregarServico()"><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option></select>
       <label>Regional</label><select id="s-reg" onchange="carregarServico()"><option value="">Todas</option></select>
       <label>Mês</label><select id="s-mes" onchange="carregarServico()"></select>
       <label>Ano</label><select id="s-ano" onchange="carregarServico()"></select>
     </div>
-    <div class="alerta al-info" style="margin-bottom:1.25rem">
-      <span>ℹ</span><span>A distribuição proporcional revela se a Equatorial está substituindo serviços de tarifa alta por serviços de tarifa baixa. Compare <strong>% Caderno</strong> vs <strong>% Pago</strong>.</span>
-    </div>
-    <div class="gbox" style="margin-bottom:1.25rem">
+    <div class="alerta al-info"><span>ℹ</span><span>Compare <strong>% Caderno</strong> vs <strong>% Pago</strong> para detectar substituição de serviços de tarifa alta por baixa.</span></div>
+    <div class="gbox">
       <h3>Distribuição proporcional — caderno vs executado vs pago</h3>
       <div class="leg"><span><i style="background:var(--vm)"></i>Caderno</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
-      <div id="dist-bars" style="margin-top:10px"></div>
+      <div id="dist-bars"></div>
     </div>
     <div class="stit">Detalhe por serviço</div>
     <div class="tbox">
@@ -277,40 +242,53 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     <div id="r-alerta" class="alerta al-warn" style="display:none"><span>⚠</span><span id="r-alerta-txt"></span></div>
     <div class="cards" id="r-cards"></div>
     <div class="row2">
-      <div class="gbox">
+      <div class="gbox" style="margin-bottom:0">
         <h3 id="r-ch-tit">Evolução mensal</h3>
         <div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
         <div style="position:relative;height:200px"><canvas id="ch-reg-m"></canvas></div>
       </div>
-      <div class="gbox">
+      <div class="gbox" style="margin-bottom:0">
         <h3>Distribuição por serviço — pago</h3>
         <div class="leg" id="leg-reg-pz"></div>
         <div style="position:relative;height:200px"><canvas id="ch-reg-pz"></canvas></div>
       </div>
     </div>
-    <div class="stit">Divergência por serviço</div>
+    <div class="stit" style="margin-top:1.25rem">Eventos por serviço — previsto vs executado vs pago</div>
     <div class="tbox">
-      <table><thead><tr><th>Serviço</th><th>Tarifa</th><th>Previsto</th><th>Executado</th><th>Pago</th><th>Dif.exec/pago</th><th>Valor não pago</th><th>Status</th></tr></thead>
-      <tbody id="tb-reg-svc"></tbody></table>
+      <table><thead><tr><th>Serviço</th><th>Eventos prev.</th><th>Eventos exec.</th><th>Eventos pagos</th><th>Dif.(exec/pago)</th><th>Divergência %</th><th>Status</th></tr></thead>
+      <tbody id="tb-reg-evt"></tbody></table>
+    </div>
+    <div class="stit">Faturamento por serviço</div>
+    <div class="tbox">
+      <table><thead><tr><th>Serviço</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead>
+      <tbody id="tb-reg-fat"></tbody></table>
+    </div>
+    <div class="stit">Comparativo de tarifas</div>
+    <div class="tbox">
+      <table><thead><tr><th>Serviço</th><th>Tarifa prevista</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead>
+      <tbody id="tb-reg-tar"></tbody></table>
+    </div>
+    <div class="stit">Proporção por serviço</div>
+    <div class="tbox">
+      <table><thead><tr><th>Serviço</th><th>% previsto</th><th>% executado</th><th>% pago</th><th>Desvio</th><th>Status</th></tr></thead>
+      <tbody id="tb-reg-prop"></tbody></table>
     </div>
   </div>
 
   <!-- LANÇAR PRODUÇÃO -->
   <div id="tab-lancar" class="con" style="display:none">
-    <div class="alerta al-info" style="margin-bottom:1.25rem">
-      <span>ℹ</span><span>Faça o upload da planilha <strong>Producao_Real_Campo_CENEGED.xlsx</strong>. O sistema bloqueia reenvio de períodos já importados.</span>
-    </div>
-    <div class="gbox" style="margin-bottom:1.25rem">
+    <div class="alerta al-info"><span>ℹ</span><span>Faça o upload de <strong>um arquivo por vez</strong>. O sistema bloqueia reenvio de períodos já importados.</span></div>
+    <div class="gbox">
       <h3>Upload da planilha de produção real</h3>
       <div class="uarea" id="ua-prod" onclick="document.getElementById('uf-prod').click()" ondragover="dragOver(event,'ua-prod')" ondragleave="dragLeave('ua-prod')" ondrop="dropFile(event,'prod')">
         <div style="font-size:32px">📤</div>
         <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
-        <p style="font-size:11px;margin-top:4px">Producao_Real_Campo_CENEGED.xlsx</p>
+        <p style="font-size:11px;margin-top:4px">Producao_Real_Campo_CENEGED.xlsx — um arquivo por vez</p>
         <input type="file" id="uf-prod" accept=".xlsx" onchange="processarUpload(this.files[0],'prod')">
       </div>
       <div id="pv-prod" style="display:none;margin-top:1rem">
-        <div class="alerta al-ok" id="prod-st"><span>✓</span><span id="prod-st-txt"></span></div>
-        <div id="prod-dup-alerta" class="alerta al-warn" style="display:none"><span>⚠</span><span id="prod-dup-txt"></span></div>
+        <div class="alerta al-ok"><span>✓</span><span id="prod-st-txt"></span></div>
+        <div id="prod-dup-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="prod-dup-txt"></span></div>
         <div class="stit">Revisão dos dados</div>
         <div class="revbox">
           <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Regional</th><th>Serviço</th><th style="text-align:right">Qtd executada</th><th>Status</th></tr></thead>
@@ -318,7 +296,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         </div>
         <div class="btn-row">
           <button class="btn btn-s" onclick="cancelarUpload('prod')">Cancelar</button>
-          <button class="btn btn-p" onclick="salvarProducao()">✓ Confirmar e salvar</button>
+          <button class="btn btn-p" id="btn-salvar-prod" onclick="salvarProducao()">✓ Confirmar e salvar</button>
         </div>
       </div>
     </div>
@@ -327,28 +305,26 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <button class="btn btn-s btn-sm" onclick="carregarHistProd()">↻ Atualizar</button>
     </div>
     <div class="tbox">
-      <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Regional</th><th>Total eventos</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead>
+      <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead>
       <tbody id="tb-hist-prod"></tbody></table>
     </div>
   </div>
 
   <!-- IMPORTAR BOLETIM -->
   <div id="tab-boletim" class="con" style="display:none">
-    <div class="alerta al-info" style="margin-bottom:1.25rem">
-      <span>ℹ</span><span>Faça o upload da planilha <strong>Boletim_Pagamento_CENEGED.xlsx</strong>. O sistema bloqueia reenvio de períodos já importados.</span>
-    </div>
-    <div class="gbox" style="margin-bottom:1.25rem">
+    <div class="alerta al-info"><span>ℹ</span><span>Faça o upload de <strong>um arquivo por vez</strong>. O sistema bloqueia reenvio de períodos já importados.</span></div>
+    <div class="gbox">
       <h3>Upload do boletim de pagamento</h3>
       <div class="uarea" id="ua-bol" onclick="document.getElementById('uf-bol').click()" ondragover="dragOver(event,'ua-bol')" ondragleave="dragLeave('ua-bol')" ondrop="dropFile(event,'bol')">
         <div style="font-size:32px">📤</div>
         <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
-        <p style="font-size:11px;margin-top:4px">Boletim_Pagamento_CENEGED.xlsx</p>
+        <p style="font-size:11px;margin-top:4px">Boletim_Pagamento_CENEGED.xlsx — um arquivo por vez</p>
         <input type="file" id="uf-bol" accept=".xlsx" onchange="processarUpload(this.files[0],'bol')">
       </div>
       <div id="pv-bol" style="display:none;margin-top:1rem">
-        <div class="alerta al-ok" id="bol-st"><span>✓</span><span id="bol-st-txt"></span></div>
-        <div id="bol-dup-alerta" class="alerta al-warn" style="display:none"><span>⚠</span><span id="bol-dup-txt"></span></div>
-        <div id="bol-tar-alerta" class="alerta al-warn" style="display:none"><span>⚠</span><span id="bol-tar-txt"></span></div>
+        <div class="alerta al-ok"><span>✓</span><span id="bol-st-txt"></span></div>
+        <div id="bol-dup-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="bol-dup-txt"></span></div>
+        <div id="bol-tar-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="bol-tar-txt"></span></div>
         <div class="stit">Revisão dos dados</div>
         <div class="revbox">
           <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Regional</th><th>Serviço</th><th style="text-align:right">Tarifa</th><th style="text-align:right">Qtd paga</th><th style="text-align:right">Valor pago</th><th>Tarifa</th></tr></thead>
@@ -356,7 +332,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         </div>
         <div class="btn-row">
           <button class="btn btn-s" onclick="cancelarUpload('bol')">Cancelar</button>
-          <button class="btn btn-p" onclick="salvarBoletim()">✓ Confirmar e salvar</button>
+          <button class="btn btn-p" id="btn-salvar-bol" onclick="salvarBoletim()">✓ Confirmar e salvar</button>
         </div>
       </div>
     </div>
@@ -375,11 +351,11 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
       <div>
         <p style="font-size:15px;font-weight:700">Cadernos de Serviço</p>
-        <p style="font-size:12px;color:var(--tx2);margin-top:3px">Gerencie cadernos vigentes e históricos. O caderno ativo define a meta e tarifas do período atual.</p>
+        <p style="font-size:12px;color:var(--tx2);margin-top:3px">O caderno ativo define a meta e tarifas do período atual.</p>
       </div>
       <button class="btn btn-p" onclick="toggleUploadCad()">+ Novo caderno</button>
     </div>
-    <div id="upload-cad-box" class="gbox" style="display:none;margin-bottom:1.25rem">
+    <div id="upload-cad-box" class="gbox" style="display:none">
       <h3>Upload do caderno de serviços</h3>
       <div class="uarea" id="ua-cad" onclick="document.getElementById('uf-cad').click()" ondragover="dragOver(event,'ua-cad')" ondragleave="dragLeave('ua-cad')" ondrop="dropFile(event,'cad')">
         <div style="font-size:32px">📤</div>
@@ -397,22 +373,22 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <div style="margin-top:1rem;padding:12px;background:var(--am-cl);border-radius:var(--r2);border:1px solid #f0c070">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--am)">
             <input type="checkbox" id="cad-conf" style="width:16px;height:16px;accent-color:var(--vm)">
-            <strong>Confirmo que os valores extraídos estão corretos e autorizo a ativação deste caderno.</strong>
+            <strong>Confirmo que os valores estão corretos e autorizo a ativação.</strong>
           </label>
         </div>
         <div class="btn-row">
           <button class="btn btn-s" onclick="cancelarUpload('cad')">Cancelar</button>
-          <button class="btn btn-p" onclick="salvarCaderno()">✓ Ativar caderno</button>
+          <button class="btn btn-p" id="btn-salvar-cad" onclick="salvarCaderno()">✓ Ativar caderno</button>
         </div>
       </div>
     </div>
     <div id="lista-cadernos"><div class="loader">Carregando cadernos...</div></div>
   </div>
 
-  <!-- GESTÃO DE USUÁRIOS -->
+  <!-- USUÁRIOS -->
   <div id="tab-usuarios" class="con" style="display:none">
     <div id="convite-alerta"></div>
-    <div class="gbox" style="margin-bottom:1.25rem">
+    <div class="gbox">
       <h3>Convidar novo usuário</h3>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:10px">
         <div class="fg" style="margin:0"><label>Nome</label><input type="text" id="n-nome" placeholder="Nome completo"></div>
@@ -427,56 +403,47 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       </div>
       <div id="perms-anal" style="display:none;margin-top:12px;padding:12px;background:var(--az-cl);border-radius:var(--r2);border:1px solid #b5d4f4">
         <p style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:8px">Permissões do analista</p>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;cursor:pointer">
-          <input type="checkbox" id="n-pp" style="width:15px;height:15px;accent-color:var(--vm)">Lançar produção real em campo
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-          <input type="checkbox" id="n-pb" style="width:15px;height:15px;accent-color:var(--vm)">Importar boletim de pagamento
-        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="n-pp" style="width:15px;height:15px;accent-color:var(--vm)">Lançar produção real</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="n-pb" style="width:15px;height:15px;accent-color:var(--vm)">Importar boletim</label>
       </div>
-      <div class="btn-row" style="margin-top:14px">
-        <button class="btn btn-p" onclick="convidarUsuario()">✉ Enviar convite</button>
-      </div>
+      <div class="btn-row" style="margin-top:14px"><button class="btn btn-p" onclick="convidarUsuario()">✉ Enviar convite</button></div>
     </div>
     <div class="stit-row">
       <div class="stit">Usuários cadastrados</div>
       <button class="btn btn-s btn-sm" onclick="carregarUsuarios()">↻ Atualizar</button>
     </div>
     <div class="tbox">
-      <table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Permissões (analista)</th><th>Cadastrado em</th><th>Último acesso</th><th>Ação</th></tr></thead>
+      <table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Permissões</th><th>Cadastrado em</th><th>Último acesso</th><th>Ação</th></tr></thead>
       <tbody id="lista-usuarios"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Carregando...</td></tr></tbody></table>
     </div>
-    <div class="alerta al-warn" style="margin-top:1rem">
-      <span>⚠</span><span>Alterações de perfil e permissões têm efeito imediato no próximo acesso do usuário.</span>
-    </div>
+    <div class="alerta al-warn" style="margin-top:1rem"><span>⚠</span><span>Alterações têm efeito imediato no próximo acesso do usuário.</span></div>
   </div>
 </div>
 
 <script>
-// ═══════════════════ SUPABASE ═══════════════════
-const SURL = 'https://wcefqhivhaejueenburz.supabase.co';
-const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
-const { createClient } = supabase;
-const sb = createClient(SURL, SKEY);
+const SURL='https://wcefqhivhaejueenburz.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
+const {createClient}=supabase;
+const sb=createClient(SURL,SKEY);
 
-// ═══════════════════ ESTADO GLOBAL ═══════════════════
-let perfil = null, role = '', email = '';
-let chMensal=null, chPizza=null, chRegM=null, chRegPz=null;
-let dadosProd=[], dadosBol=[], dadosCad=[];
-// CACHE — evita múltiplas consultas
-let cache = { tarifas:{}, producao:{}, boletins:{}, boletimItens:{} };
+let perfil=null,role='',userEmail='';
+let chMensal=null,chPizza=null,chRegM=null,chRegPz=null;
+let dadosProd=[],dadosBol=[],dadosCad=[];
+let salvandoProd=false,salvandoBol=false,salvandoCad=false;
 
-const MESES_N = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const REGS = { MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'], PI:['METROPOLITANA','NORTE','SUL'] };
-const COR_S = ['#BE2F3B','#378ADD','#1D9E75','#BA7517','#533AB7','#D4537E','#888780','#0F6E56','#7F77DD'];
+// CACHE GLOBAL
+let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
 
-const fmtR = v => 'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtN = v => Number(v||0).toLocaleString('pt-BR');
-const mA   = (m,a) => String(m).padStart(2,'0')+'/'+a;
-const nmM  = m => MESES_N[m]||m;
+const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['METROPOLITANA','NORTE','SUL']};
+const CS=['#BE2F3B','#378ADD','#1D9E75','#BA7517','#533AB7','#D4537E','#888780','#0F6E56','#7F77DD'];
 
-// ═══════════════════ AUTH ═══════════════════
-async function fazerLogin() {
+const fR=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fN=v=>Number(v||0).toLocaleString('pt-BR');
+const mA=(m,a)=>String(m).padStart(2,'0')+'/'+a;
+
+// ═══ AUTH ═══
+async function fazerLogin(){
   const e=document.getElementById('li-email').value.trim();
   const s=document.getElementById('li-senha').value;
   const er=document.getElementById('login-erro');
@@ -487,121 +454,131 @@ async function fazerLogin() {
 }
 async function fazerLogout(){
   await sb.auth.signOut();
-  cache={tarifas:{},producao:{},boletins:{},boletimItens:{}};
+  C={cads:[],tars:[],prod:[],bols:[],itens:[]};
   document.getElementById('app').style.display='none';
   document.getElementById('tela-login').style.display='flex';
 }
 async function iniciarApp(user){
   document.getElementById('tela-login').style.display='none';
   document.getElementById('app').style.display='block';
-  email=user.email;
+  userEmail=user.email;
   const {data}=await sb.from('usuarios_perfil_completo').select('*').eq('id',user.id).single();
   perfil=data||{role:user.user_metadata?.role||'viewer',perm_producao:false,perm_boletim:false};
   role=perfil.role||'viewer';
-  document.getElementById('tb-user').textContent=email;
+  document.getElementById('tb-user').textContent=userEmail;
   document.getElementById('tb-role').textContent={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[role]||'Visualizador';
   aplicarPermissoes();
   preencherPeriodos();
-  syncRegsGeral(); syncRegsServ(); syncRegsReg();
-  await carregarTodosOsDados();
-  await carregarGeral();
+  syncRegsGeral();syncRegsServ();syncRegsReg();
+  await carregarCache();
+  carregarGeral();
 }
 function aplicarPermissoes(){
+  document.querySelectorAll('.tab-admin').forEach(b=>b.style.display='none');
   const pp=perfil?.perm_producao||false;
   const pb=perfil?.perm_boletim||false;
-  document.querySelectorAll('.tab-admin').forEach(b=>b.style.display='none');
-  if(role==='admin'||role==='analyst'){
-    if(role==='admin'||(role==='analyst'&&pp)) document.querySelector('[onclick*="lancar"]').style.display='block';
-    if(role==='admin'||(role==='analyst'&&pb)) document.querySelector('[onclick*="boletim"]').style.display='block';
-    if(role==='admin') document.querySelector('[onclick*="cadernos"]').style.display='block';
-    if(role==='admin') document.querySelector('[onclick*="usuarios"]').style.display='block';
+  if(role==='admin'||(role==='analyst'&&pp)) document.querySelector('[onclick*="lancar"]').style.display='block';
+  if(role==='admin'||(role==='analyst'&&pb)) document.querySelector('[onclick*="boletim"]').style.display='block';
+  if(role==='admin'){
+    document.querySelector('[onclick*="cadernos"]').style.display='block';
+    document.querySelector('[onclick*="usuarios"]').style.display='block';
   }
 }
-sb.auth.getSession().then(({data:{session}})=>{ if(session) iniciarApp(session.user); });
-document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.getElementById('tela-login').style.display!=='none') fazerLogin(); });
+sb.auth.getSession().then(({data:{session}})=>{if(session) iniciarApp(session.user);});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('tela-login').style.display!=='none') fazerLogin();});
 
-// ═══════════════════ CACHE / BUSCA EM LOTE ═══════════════════
-async function carregarTodosOsDados(){
-  // Busca tarifas de todos cadernos ativos de uma vez
-  const {data:cads}=await sb.from('cadernos').select('id,estado,vigencia_inicio,data_fim,ativo,confirmado,nome').eq('confirmado',true);
-  if(cads) cads.forEach(c=>{ cache.tarifas[c.id]=c; });
+// ═══ CACHE — BUSCA TUDO DE UMA VEZ ═══
+async function carregarCache(){
+  // 1. Cadernos confirmados
+  const {data:cads}=await sb.from('cadernos').select('*').eq('confirmado',true).order('id');
+  C.cads=cads||[];
 
-  const cadIds=(cads||[]).map(c=>c.id);
-  if(cadIds.length){
-    const {data:tars}=await sb.from('caderno_tarifas').select('*').in('caderno_id',cadIds);
-    if(tars) tars.forEach(t=>{ if(!cache.tarifas[t.caderno_id].tarifas) cache.tarifas[t.caderno_id].tarifas=[]; cache.tarifas[t.caderno_id].tarifas.push(t); });
-  }
+  // 2. Tarifas de todos os cadernos de uma só vez
+  if(C.cads.length){
+    const ids=C.cads.map(c=>c.id);
+    const {data:tars}=await sb.from('caderno_tarifas').select('*').in('caderno_id',ids);
+    C.tars=tars||[];
+  } else C.tars=[];
 
-  // Busca toda produção real de uma vez
-  const {data:prod}=await sb.from('producao_real').select('*');
-  if(prod) prod.forEach(r=>{ const k=r.mes+'|'+r.ano+'|'+r.estado+'|'+r.regional+'|'+r.cod_servico; cache.producao[k]=r; });
+  // 3. Produção real
+  const {data:prod}=await sb.from('producao_real').select('*').eq('ativo',true);
+  C.prod=prod||[];
 
-  // Busca todos boletins e itens de uma vez
-  const {data:bols}=await sb.from('boletins').select('*');
-  if(bols) bols.forEach(b=>{ cache.boletins[b.id]=b; });
-  const bolIds=(bols||[]).map(b=>b.id);
-  if(bolIds.length){
-    const {data:itens}=await sb.from('boletim_itens').select('*').in('boletim_id',bolIds);
-    if(itens) itens.forEach(i=>{ if(!cache.boletimItens[i.boletim_id]) cache.boletimItens[i.boletim_id]=[]; cache.boletimItens[i.boletim_id].push(i); });
-  }
+  // 4. Boletins e itens
+  const {data:bols}=await sb.from('boletins').select('*').eq('ativo',true);
+  C.bols=bols||[];
+  if(C.bols.length){
+    const bids=C.bols.map(b=>b.id);
+    const {data:itens}=await sb.from('boletim_itens').select('*').in('boletim_id',bids);
+    C.itens=itens||[];
+  } else C.itens=[];
 }
 
-function getCadAtivo(estado, mes, ano){
-  const mesAnoNum = ano*100+mes;
-  return Object.values(cache.tarifas).filter(c=>{
+// ═══ HELPERS DE CÁLCULO ═══
+function getCadAtivo(estado,mes,ano){
+  const mn=ano*100+mes;
+  return C.cads.filter(c=>{
     if(estado!=='TODOS'&&c.estado!==estado) return false;
-    if(!c.confirmado) return false;
-    const ini = parseInt((c.vigencia_inicio||'01/2000').split('/').reverse().join(''))||0;
-    const fim = c.data_fim ? parseInt(c.data_fim.split('/').reverse().join(''))||999999 : 999999;
-    return mesAnoNum>=ini && mesAnoNum<=fim;
+    const ini=parseInt((c.vigencia_inicio||'01/2000').split('/').reverse().join(''))||0;
+    const fim=c.data_fim?parseInt(c.data_fim.split('/').reverse().join(''))||999999:999999;
+    return mn>=ini&&mn<=fim;
   });
 }
-
-function calcPrevisto(estado, mes, ano, regional=''){
+function getTarifas(estado,mes,ano,regional=''){
   const cads=getCadAtivo(estado,mes,ano);
-  let total=0;
-  cads.forEach(c=>{
-    (c.tarifas||[]).forEach(t=>{
-      if(regional&&t.regional!==regional) return;
-      if(estado!=='TODOS'&&t.estado!==estado) return;
-      total+=parseFloat(t.faturamento_previsto)||0;
-    });
+  const ids=new Set(cads.map(c=>c.id));
+  return C.tars.filter(t=>{
+    if(!ids.has(t.caderno_id)) return false;
+    if(estado!=='TODOS'&&t.estado!==estado) return false;
+    if(regional&&t.regional!==regional) return false;
+    return true;
   });
-  return total;
 }
-
-function calcExecutado(estado, mes, ano, regional=''){
-  let totalVal=0, totalEvt=0;
-  const cads=getCadAtivo(estado,mes,ano);
+function getProd(estado,mes,ano,regional=''){
+  return C.prod.filter(r=>{
+    if(r.mes!==mes||r.ano!==ano) return false;
+    if(estado!=='TODOS'&&r.estado!==estado) return false;
+    if(regional&&r.regional!==regional) return false;
+    return true;
+  });
+}
+function getItens(estado,mes,ano,regional=''){
+  const bids=new Set(C.bols.filter(b=>b.mes===mes&&b.ano===ano&&(estado==='TODOS'||b.estado===estado)).map(b=>b.id));
+  return C.itens.filter(i=>{
+    if(!bids.has(i.boletim_id)) return false;
+    if(regional&&i.regional!==regional) return false;
+    return true;
+  });
+}
+function calcPrevisto(estado,mes,ano,regional=''){
+  const tars=getTarifas(estado,mes,ano,regional);
+  return tars.reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||0),0);
+}
+function calcPrevEvt(estado,mes,ano,regional=''){
+  const tars=getTarifas(estado,mes,ano,regional);
+  return tars.reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);
+}
+function calcExec(estado,mes,ano,regional=''){
+  const prod=getProd(estado,mes,ano,regional);
+  const tars=getTarifas(estado,mes,ano,regional);
   const tarMap={};
-  cads.forEach(c=>(c.tarifas||[]).forEach(t=>{ tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0; }));
-  Object.values(cache.producao).forEach(r=>{
-    if(r.mes!==mes||r.ano!==ano) return;
-    if(estado!=='TODOS'&&r.estado!==estado) return;
-    if(regional&&r.regional!==regional) return;
+  tars.forEach(t=>tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
+  let val=0,evt=0;
+  prod.forEach(r=>{
     const tar=tarMap[r.estado+'|'+r.regional+'|'+r.cod_servico]||0;
-    totalVal+=r.qde_executada*tar;
-    totalEvt+=r.qde_executada;
+    val+=r.qde_executada*tar;
+    evt+=r.qde_executada;
   });
-  return {val:totalVal, evt:totalEvt};
+  return {val,evt};
+}
+function calcPago(estado,mes,ano,regional=''){
+  const itens=getItens(estado,mes,ano,regional);
+  let val=0,evt=0;
+  itens.forEach(i=>{val+=parseFloat(i.valor_pago)||0;evt+=i.qde_paga||0;});
+  return {val,evt};
 }
 
-function calcPago(estado, mes, ano, regional=''){
-  let totalVal=0, totalEvt=0;
-  Object.values(cache.boletins).forEach(b=>{
-    if(b.mes!==mes||b.ano!==ano) return;
-    if(estado!=='TODOS'&&b.estado!==estado) return;
-    const itens=cache.boletimItens[b.id]||[];
-    itens.forEach(i=>{
-      if(regional&&i.regional!==regional) return;
-      totalVal+=parseFloat(i.valor_pago)||0;
-      totalEvt+=i.qde_paga||0;
-    });
-  });
-  return {val:totalVal, evt:totalEvt};
-}
-
-// ═══════════════════ NAVEGAÇÃO ═══════════════════
+// ═══ NAVEGAÇÃO ═══
 function setTab(id,btn){
   document.querySelectorAll('.con').forEach(t=>t.style.display='none');
   document.getElementById('tab-'+id).style.display='block';
@@ -615,67 +592,82 @@ function setTab(id,btn){
   if(id==='boletim') carregarHistBol();
 }
 
-// ═══════════════════ FILTROS ═══════════════════
+// ═══ FILTROS ═══
 function preencherPeriodos(){
-  const ano=new Date().getFullYear(), mes=new Date().getMonth()+1;
+  const ano=new Date().getFullYear(),mes=new Date().getMonth()+1;
   ['g','s','r'].forEach(p=>{
     const sm=document.getElementById(p+'-mes');
     const sa=document.getElementById(p+'-ano');
     if(!sm||!sa) return;
-    sm.innerHTML=MESES_N.slice(1).map((n,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${n}</option>`).join('');
+    sm.innerHTML=MN.slice(1).map((n,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${n}</option>`).join('');
     sa.innerHTML=[ano-1,ano,ano+1].map(a=>`<option value="${a}" ${a===ano?'selected':''}>${a}</option>`).join('');
   });
 }
-function syncRegsGeral(){ const e=document.getElementById('g-est')?.value||'MA'; const s=document.getElementById('g-reg-pz'); if(s){s.innerHTML='<option value="">Todas regionais</option>'+(REGS[e]||REGS.MA).map(r=>`<option value="${r}">${r}</option>`).join('');} }
-function syncRegsServ(){ const e=document.getElementById('s-est')?.value||'MA'; const s=document.getElementById('s-reg'); if(s){s.innerHTML='<option value="">Todas</option>'+(REGS[e]||REGS.MA).map(r=>`<option value="${r}">${r}</option>`).join('');} }
-function syncRegsReg(){ const e=document.getElementById('r-est')?.value||'MA'; const s=document.getElementById('r-reg'); if(s){s.innerHTML=(REGS[e]||REGS.MA).map(r=>`<option value="${r}">${r}</option>`).join('');} }
+function syncRegsGeral(){
+  const e=document.getElementById('g-est')?.value||'MA';
+  const s=document.getElementById('g-reg-pz');
+  if(s) s.innerHTML='<option value="">Todas regionais</option>'+(REGS[e]||REGS.MA).map(r=>`<option value="${r}">${r}</option>`).join('');
+}
+function syncRegsServ(){
+  const e=document.getElementById('s-est')?.value||'MA';
+  const s=document.getElementById('s-reg');
+  if(s) s.innerHTML='<option value="">Todas</option>'+(REGS[e]||REGS.MA).map(r=>`<option value="${r}">${r}</option>`).join('');
+}
+function syncRegsReg(){
+  const e=document.getElementById('r-est')?.value||'MA';
+  const s=document.getElementById('r-reg');
+  if(s) s.innerHTML=(REGS[e]||REGS.MA).map(r=>`<option value="${r}">${r}</option>`).join('');
+}
 
-// ═══════════════════ VISÃO GERAL ═══════════════════
-async function carregarGeral(){
+// ═══ VISÃO GERAL ═══
+function carregarGeral(){
   const estado=document.getElementById('g-est').value;
   const mes=parseInt(document.getElementById('g-mes').value);
   const ano=parseInt(document.getElementById('g-ano').value);
   syncRegsGeral();
 
   const prev=calcPrevisto(estado,mes,ano);
-  const exec=calcExecutado(estado,mes,ano);
+  const prevEvt=calcPrevEvt(estado,mes,ano);
+  const exec=calcExec(estado,mes,ano);
   const pago=calcPago(estado,mes,ano);
   const pct=prev>0?(pago.val/prev*100):0;
-  const dEP=exec.val-prev;
-  const dPE=pago.val-exec.val;
 
-  document.getElementById('g-prev').textContent=fmtR(prev);
-  document.getElementById('g-exec').textContent=fmtR(exec.val);
-  document.getElementById('g-pago').textContent=fmtR(pago.val);
+  document.getElementById('g-prev').textContent=fR(prev);
+  document.getElementById('g-exec').textContent=fR(exec.val);
+  document.getElementById('g-pago').textContent=fR(pago.val);
   document.getElementById('g-pct').textContent=pct.toFixed(1)+'%';
+  const dEP=exec.val-prev,dPE=pago.val-exec.val;
   const se=document.getElementById('g-exec-s');
   se.className='cs '+(dEP>=0?'cp':'cw');
-  se.textContent=(dEP>=0?'▲ ':'▼ ')+fmtR(Math.abs(dEP))+(dEP>=0?' acima':' abaixo')+' da meta';
+  se.textContent=(dEP>=0?'▲ ':'▼ ')+fR(Math.abs(dEP))+(dEP>=0?' acima':' abaixo')+' da meta';
   const sp=document.getElementById('g-pago-s');
   sp.className='cs '+(dPE>=0?'cp':'cn');
-  sp.textContent=(dPE>=0?'▲ ':'▼ ')+fmtR(Math.abs(dPE))+(dPE>=0?' acima':' abaixo')+' do executado';
+  sp.textContent=(dPE>=0?'▲ ':'▼ ')+fR(Math.abs(dPE))+(dPE>=0?' acima':' abaixo')+' do executado';
 
   const al=document.getElementById('g-alerta');
   if(Math.abs(dPE)>1000&&exec.val>0){
-    const pDiv=((exec.evt-pago.evt)/exec.evt*100).toFixed(1);
-    document.getElementById('g-alerta-txt').innerHTML=`Divergência: Equatorial pagou <strong>${(100-parseFloat(pDiv)).toFixed(1)}%</strong> da produção real. Diferença de <strong>${fmtR(Math.abs(dPE))}</strong> não reconhecida.`;
+    const pDiv=exec.evt>0?((exec.evt-pago.evt)/exec.evt*100).toFixed(1):'0';
+    document.getElementById('g-alerta-txt').innerHTML=`Divergência: Equatorial pagou <strong>${(100-parseFloat(pDiv)).toFixed(1)}%</strong> da produção real. Diferença de <strong>${fR(Math.abs(dPE))}</strong> não reconhecida.`;
     al.style.display='flex';
   } else al.style.display='none';
 
   renderGraficoMensal(estado,ano);
   renderPizza();
-  renderTabelaRegDiv(estado,mes,ano);
+  renderTabelaEvtReg(estado,mes,ano);
+  renderTabelaFatReg(estado,mes,ano);
+  renderTabelaTarifas(estado,mes,ano);
+  renderTabelaProporcao(estado,mes,ano);
 }
 
 function renderGraficoMensal(estado,ano){
   const prev=[],exec=[],pago=[];
   for(let m=1;m<=12;m++){
     prev.push(calcPrevisto(estado,m,ano));
-    exec.push(calcExecutado(estado,m,ano).val);
+    exec.push(calcExec(estado,m,ano).val);
     pago.push(calcPago(estado,m,ano).val);
   }
   if(chMensal) chMensal.destroy();
-  chMensal=new Chart(document.getElementById('ch-mensal'),{type:'bar',data:{labels:MESES_N.slice(1),datasets:[
+  chMensal=new Chart(document.getElementById('ch-mensal'),{type:'bar',data:{labels:MN.slice(1),datasets:[
     {label:'Previsto',data:prev,type:'line',borderColor:'#BE2F3B',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2,borderDash:[5,3]},
     {label:'Executado',data:exec,type:'line',borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2},
     {label:'Pago',data:pago,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0}
@@ -687,98 +679,116 @@ function renderPizza(){
   const reg=document.getElementById('g-reg-pz')?.value||'';
   const mes=parseInt(document.getElementById('g-mes')?.value)||new Date().getMonth()+1;
   const ano=parseInt(document.getElementById('g-ano')?.value)||new Date().getFullYear();
+  const itens=getItens(estado,mes,ano,reg);
   const map={};
-  Object.values(cache.boletins).forEach(b=>{
-    if(b.mes!==mes||b.ano!==ano) return;
-    if(estado!=='TODOS'&&b.estado!==estado) return;
-    (cache.boletimItens[b.id]||[]).forEach(i=>{
-      if(reg&&i.regional!==reg) return;
-      if(!map[i.cod_servico]) map[i.cod_servico]={desc:i.descricao_servico,val:0};
-      map[i.cod_servico].val+=parseFloat(i.valor_pago)||0;
-    });
-  });
+  itens.forEach(i=>{if(!map[i.cod_servico]) map[i.cod_servico]={desc:i.descricao_servico,val:0};map[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
   const svcs=Object.entries(map).sort((a,b)=>b[1].val-a[1].val);
-  const lel=document.getElementById('leg-pz');
-  lel.innerHTML=svcs.map((s,i)=>`<span><i style="background:${COR_S[i%COR_S.length]};width:10px;height:10px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,20)}</span>`).join('');
+  document.getElementById('leg-pz').innerHTML=svcs.map((s,i)=>`<span><i style="background:${CS[i%CS.length]};width:10px;height:10px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,20)}</span>`).join('');
   if(chPizza) chPizza.destroy();
-  chPizza=new Chart(document.getElementById('ch-pizza'),{type:'doughnut',data:{labels:svcs.map(s=>s[1].desc),datasets:[{data:svcs.map(s=>s[1].val),backgroundColor:COR_S,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtR(c.raw)}}}}});
+  if(!svcs.length) return;
+  chPizza=new Chart(document.getElementById('ch-pizza'),{type:'doughnut',data:{labels:svcs.map(s=>s[1].desc),datasets:[{data:svcs.map(s=>s[1].val),backgroundColor:CS,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fR(c.raw)}}}}});
 }
 
-function renderTabelaRegDiv(estado,mes,ano){
+function renderTabelaEvtReg(estado,mes,ano){
   const regs=estado==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[estado]||[]);
-  const tb=document.getElementById('tb-reg-div');
+  const tb=document.getElementById('tb-evt-reg');
   tb.innerHTML='';
   regs.forEach(reg=>{
-    const prev=calcPrevisto(estado,mes,ano,reg);
-    const exec=calcExecutado(estado,mes,ano,reg);
+    const prevE=calcPrevEvt(estado,mes,ano,reg);
+    const exec=calcExec(estado,mes,ano,reg);
     const pago=calcPago(estado,mes,ano,reg);
     const diff=pago.evt-exec.evt;
     const pct=exec.evt>0?((exec.evt-pago.evt)/exec.evt*100):0;
     const bc=Math.abs(pct)<2?'#1D9E75':pct>5?'#E24B4A':'#EF9F27';
     const st=Math.abs(pct)<2?'<span class="pill p-ok">Normal</span>':pct>5?'<span class="pill p-danger">Crítico</span>':'<span class="pill p-warn">Atenção</span>';
-    tb.innerHTML+=`<tr><td><strong>${reg}</strong></td><td>${fmtR(prev)}</td><td>${fmtN(exec.evt)}</td><td>${fmtN(pago.evt)}</td><td style="color:${diff>=0?'#1D9E75':'#BE2F3B'}">${diff>=0?'+':''}${fmtN(diff)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${bc}"></div></div><span style="font-size:11px;color:${bc};font-weight:700;min-width:40px">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;
+    tb.innerHTML+=`<tr><td><strong>${reg}</strong></td><td>${fN(prevE)}</td><td>${fN(exec.evt)}</td><td>${fN(pago.evt)}</td><td style="color:${diff>=0?'#1D9E75':'#BE2F3B'}">${diff>=0?'+':''}${fN(diff)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${bc}"></div></div><span style="font-size:11px;color:${bc};font-weight:700">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;
   });
 }
 
-// ═══════════════════ POR SERVIÇO ═══════════════════
+function renderTabelaFatReg(estado,mes,ano){
+  const regs=estado==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[estado]||[]);
+  const tb=document.getElementById('tb-fat-reg');
+  tb.innerHTML='';
+  regs.forEach(reg=>{
+    const prev=calcPrevisto(estado,mes,ano,reg);
+    const exec=calcExec(estado,mes,ano,reg);
+    const pago=calcPago(estado,mes,ano,reg);
+    const div=pago.val-exec.val;
+    const pct=prev>0?(pago.val/prev*100):0;
+    const cor=div>=0?'#1D9E75':'#BE2F3B';
+    tb.innerHTML+=`<tr><td><strong>${reg}</strong></td><td>${fR(prev)}</td><td>${fR(exec.val)}</td><td>${fR(pago.val)}</td><td style="color:${cor}">${div>=0?'+':''}${fR(div)}</td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;
+  });
+}
+
+function renderTabelaTarifas(estado,mes,ano){
+  const tb=document.getElementById('tb-tar');
+  tb.innerHTML='';
+  const tars=getTarifas(estado,mes,ano);
+  const itMap={};
+  getItens(estado,mes,ano).forEach(i=>{itMap[i.regional+'|'+i.cod_servico]=parseFloat(i.preco_unitario)||0;});
+  tars.forEach(t=>{
+    const tarPaga=itMap[t.regional+'|'+t.cod_servico]||0;
+    const diff=tarPaga-parseFloat(t.preco_unitario);
+    const div=Math.abs(diff)>0.01;
+    tb.innerHTML+=`<tr><td style="font-size:11px">${t.descricao_servico}</td><td>${t.regional}</td><td>${fR(t.preco_unitario)}</td><td style="color:${div?'#BE2F3B':'inherit'}">${tarPaga>0?fR(tarPaga):'—'}</td><td style="color:${div?'#BE2F3B':'#1D9E75'}">${tarPaga>0?(diff>=0?'+':'')+fR(diff):'—'}</td><td>${tarPaga>0?(div?'<span class="pill p-danger">⚠ Diverge</span>':'<span class="pill p-ok">Ok</span>'):'<span class="pill p-cinza">Sem dados</span>'}</td></tr>`;
+  });
+}
+
+function renderTabelaProporcao(estado,mes,ano){
+  const tb=document.getElementById('tb-prop');
+  tb.innerHTML='';
+  const tars=getTarifas(estado,mes,ano);
+  const svcMap={};
+  tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
+  const prodRows=getProd(estado,mes,ano);
+  const execMap={};
+  prodRows.forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
+  const itens=getItens(estado,mes,ano);
+  const pagoMap={};
+  itens.forEach(i=>pagoMap[i.cod_servico]=(pagoMap[i.cod_servico]||0)+(i.qde_paga||0));
+  const totP=Object.values(svcMap).reduce((s,v)=>s+v.prev,0);
+  const totE=Object.values(execMap).reduce((s,v)=>s+v,0);
+  const totG=Object.values(pagoMap).reduce((s,v)=>s+v,0);
+  Object.entries(svcMap).forEach(([cod,s])=>{
+    const pP=totP>0?(s.prev/totP*100):0;
+    const pE=totE>0?((execMap[cod]||0)/totE*100):0;
+    const pG=totG>0?((pagoMap[cod]||0)/totG*100):0;
+    const dev=Math.abs(pP-pG);
+    const st=dev>2?'<span class="pill p-danger">Desvio</span>':dev>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>';
+    tb.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${pP.toFixed(1)}%</td><td>${pE.toFixed(1)}%</td><td>${pG.toFixed(1)}%</td><td style="color:${dev>2?'#BE2F3B':dev>.5?'#BA7517':'#1D9E75'}">${dev.toFixed(1)}pp</td><td>${st}</td></tr>`;
+  });
+}
+
+// ═══ POR SERVIÇO ═══
 function carregarServico(){
   const estado=document.getElementById('s-est').value;
   const reg=document.getElementById('s-reg').value;
   const mes=parseInt(document.getElementById('s-mes').value);
   const ano=parseInt(document.getElementById('s-ano').value);
   syncRegsServ();
-
-  const cads=getCadAtivo(estado,mes,ano);
+  const tars=getTarifas(estado,mes,ano,reg);
   const svcMap={};
-  cads.forEach(c=>(c.tarifas||[]).forEach(t=>{
-    if(reg&&t.regional!==reg) return;
-    if(estado!=='TODOS'&&t.estado!==estado) return;
-    if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0,tarifa:parseFloat(t.preco_unitario)||0};
-    svcMap[t.cod_servico].prev+=t.eventos_previstos||0;
-  }));
-
+  tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0,tarifa:parseFloat(t.preco_unitario)||0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
   const execMap={};
-  Object.values(cache.producao).forEach(r=>{
-    if(r.mes!==mes||r.ano!==ano) return;
-    if(estado!=='TODOS'&&r.estado!==estado) return;
-    if(reg&&r.regional!==reg) return;
-    execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada;
-  });
-
+  getProd(estado,mes,ano,reg).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
   const pagoMap={};
-  Object.values(cache.boletins).forEach(b=>{
-    if(b.mes!==mes||b.ano!==ano) return;
-    if(estado!=='TODOS'&&b.estado!==estado) return;
-    (cache.boletimItens[b.id]||[]).forEach(i=>{
-      if(reg&&i.regional!==reg) return;
-      if(!pagoMap[i.cod_servico]) pagoMap[i.cod_servico]={qde:0,val:0};
-      pagoMap[i.cod_servico].qde+=i.qde_paga||0;
-      pagoMap[i.cod_servico].val+=parseFloat(i.valor_pago)||0;
-    });
-  });
-
+  getItens(estado,mes,ano,reg).forEach(i=>{if(!pagoMap[i.cod_servico]) pagoMap[i.cod_servico]={qde:0,val:0};pagoMap[i.cod_servico].qde+=i.qde_paga||0;pagoMap[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
   const totP=Object.values(svcMap).reduce((s,v)=>s+v.prev,0);
   const totE=Object.values(execMap).reduce((s,v)=>s+v,0);
   const totG=Object.values(pagoMap).reduce((s,v)=>s+v.qde,0);
-  const tb=document.getElementById('tb-svc');
-  const db=document.getElementById('dist-bars');
-  tb.innerHTML=''; db.innerHTML='';
-
+  const tb=document.getElementById('tb-svc'),db=document.getElementById('dist-bars');
+  tb.innerHTML='';db.innerHTML='';
   Object.entries(svcMap).forEach(([cod,s])=>{
-    const exec=execMap[cod]||0;
-    const pago=pagoMap[cod]?.qde||0;
-    const valP=pagoMap[cod]?.val||0;
-    const pP=totP>0?(s.prev/totP*100):0;
-    const pE=totE>0?(exec/totE*100):0;
-    const pG=totG>0?(pago/totG*100):0;
+    const exec=execMap[cod]||0,pago=pagoMap[cod]?.qde||0,valP=pagoMap[cod]?.val||0;
+    const pP=totP>0?(s.prev/totP*100):0,pE=totE>0?(exec/totE*100):0,pG=totG>0?(pago/totG*100):0;
     const dev=Math.abs(pP-pG);
     const al=dev>2?'<span class="pill p-danger">Desvio</span>':dev>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>';
-    tb.innerHTML+=`<tr><td style="font-size:12px">${s.desc}</td><td>${fmtR(s.tarifa)}</td><td>${fmtN(s.prev)}</td><td>${pP.toFixed(1)}%</td><td>${fmtN(exec)}</td><td>${pE.toFixed(1)}%</td><td>${fmtN(pago)}</td><td>${pG.toFixed(1)}%</td><td>${fmtR(valP)}</td><td>${al}</td></tr>`;
+    tb.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fR(s.tarifa)}</td><td>${fN(s.prev)}</td><td>${pP.toFixed(1)}%</td><td>${fN(exec)}</td><td>${pE.toFixed(1)}%</td><td>${fN(pago)}</td><td>${pG.toFixed(1)}%</td><td>${fR(valP)}</td><td>${al}</td></tr>`;
     db.innerHTML+=`<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;margin-bottom:5px">${s.desc} <span style="font-size:10px;color:var(--tx2);font-weight:400">· R$ ${s.tarifa.toFixed(2)}/evento</span>${dev>2?`<span style="font-size:10px;color:var(--vm);margin-left:6px">⚠ Desvio ${dev.toFixed(1)}pp</span>`:''}</div>${[['Caderno','#BE2F3B',pP],['Executado','#1D9E75',pE],['Pago','#378ADD',pG]].map(([l,c,p])=>`<div style="display:grid;grid-template-columns:70px 1fr 45px;gap:6px;align-items:center;margin-bottom:3px"><span style="font-size:11px;color:var(--tx2)">${l}</span><div style="background:#f0f0ee;border-radius:3px;height:10px;overflow:hidden"><div style="width:${p*2}%;height:100%;background:${c};border-radius:3px"></div></div><span style="font-size:11px;color:var(--tx2);text-align:right">${p.toFixed(1)}%</span></div>`).join('')}</div>`;
   });
 }
 
-// ═══════════════════ POR REGIONAL ═══════════════════
+// ═══ POR REGIONAL ═══
 function carregarRegional(){
   const estado=document.getElementById('r-est').value;
   const reg=document.getElementById('r-reg').value;
@@ -787,72 +797,82 @@ function carregarRegional(){
   document.getElementById('r-ch-tit').textContent=`Evolução mensal — ${reg}`;
 
   const prev=calcPrevisto(estado,mes,ano,reg);
-  const exec=calcExecutado(estado,mes,ano,reg);
+  const prevE=calcPrevEvt(estado,mes,ano,reg);
+  const exec=calcExec(estado,mes,ano,reg);
   const pago=calcPago(estado,mes,ano,reg);
-  const pct=prev>0?(pago.val/prev*100):0;
-  const diff=pago.val-exec.val;
+  const pct=prev>0?(pago.val/prev*100):0,diff=pago.val-exec.val;
 
   document.getElementById('r-cards').innerHTML=`
-    <div class="card"><div class="cl">Faturamento previsto (caderno)</div><div class="cv">${fmtR(prev)}</div><div class="cs cm">Meta da regional</div></div>
-    <div class="card"><div class="cl">Faturamento executado (campo)</div><div class="cv">${fmtR(exec.val)}</div><div class="cs ${exec.val>=prev?'cp':'cw'}">${exec.val>=prev?'▲ Acima':'▼ Abaixo'} da meta</div></div>
-    <div class="card"><div class="cl">Faturamento pago (Equatorial)</div><div class="cv">${fmtR(pago.val)}</div><div class="cs ${diff>=0?'cp':'cn'}">${fmtR(Math.abs(diff))} ${diff>=0?'acima':'abaixo'} do executado · ${pct.toFixed(1)}% meta</div></div>`;
+    <div class="card"><div class="cl">Faturamento previsto (caderno)</div><div class="cv">${fR(prev)}</div><div class="cs cm">Meta da regional</div></div>
+    <div class="card"><div class="cl">Faturamento executado (campo)</div><div class="cv">${fR(exec.val)}</div><div class="cs ${exec.val>=prev?'cp':'cw'}">${exec.val>=prev?'▲ Acima':'▼ Abaixo'} da meta</div></div>
+    <div class="card"><div class="cl">Faturamento pago (Equatorial)</div><div class="cv">${fR(pago.val)}</div><div class="cs ${diff>=0?'cp':'cn'}">${fR(Math.abs(diff))} ${diff>=0?'acima':'abaixo'} do executado · ${pct.toFixed(1)}% meta</div></div>`;
 
   const pDiv=exec.evt>0?((exec.evt-pago.evt)/exec.evt*100):0;
   const rAl=document.getElementById('r-alerta');
-  if(Math.abs(pDiv)>2){document.getElementById('r-alerta-txt').innerHTML=`Regional ${reg}: Equatorial pagou <strong>${(100-pDiv).toFixed(1)}%</strong> da produção. Diferença de <strong>${fmtR(Math.abs(diff))}</strong> não reconhecida.`;rAl.style.display='flex';}
+  if(Math.abs(pDiv)>2){document.getElementById('r-alerta-txt').innerHTML=`Regional ${reg}: Equatorial pagou <strong>${(100-pDiv).toFixed(1)}%</strong> da produção. Diferença de <strong>${fR(Math.abs(diff))}</strong>.`;rAl.style.display='flex';}
   else rAl.style.display='none';
 
+  // Gráfico evolução
   const sP=[],sE=[],sG=[];
-  for(let m=1;m<=12;m++){
-    sP.push(calcPrevisto(estado,m,ano,reg));
-    sE.push(calcExecutado(estado,m,ano,reg).val);
-    sG.push(calcPago(estado,m,ano,reg).val);
-  }
+  for(let m=1;m<=12;m++){sP.push(calcPrevisto(estado,m,ano,reg));sE.push(calcExec(estado,m,ano,reg).val);sG.push(calcPago(estado,m,ano,reg).val);}
   if(chRegM) chRegM.destroy();
-  chRegM=new Chart(document.getElementById('ch-reg-m'),{type:'bar',data:{labels:MESES_N.slice(1),datasets:[
+  chRegM=new Chart(document.getElementById('ch-reg-m'),{type:'bar',data:{labels:MN.slice(1),datasets:[
     {label:'Previsto',data:sP,type:'line',borderColor:'#BE2F3B',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2,borderDash:[5,3]},
     {label:'Executado',data:sE,type:'line',borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2},
     {label:'Pago',data:sG,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+(v/1e3).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}});
 
-  const pizzaMap={};
-  Object.values(cache.boletins).forEach(b=>{
-    if(b.mes!==mes||b.ano!==ano||b.estado!==estado) return;
-    (cache.boletimItens[b.id]||[]).forEach(i=>{
-      if(i.regional!==reg) return;
-      if(!pizzaMap[i.cod_servico]) pizzaMap[i.cod_servico]={desc:i.descricao_servico,val:0};
-      pizzaMap[i.cod_servico].val+=parseFloat(i.valor_pago)||0;
-    });
-  });
-  const svcs=Object.entries(pizzaMap).sort((a,b)=>b[1].val-a[1].val);
-  document.getElementById('leg-reg-pz').innerHTML=svcs.map((s,i)=>`<span><i style="background:${COR_S[i%COR_S.length]};width:10px;height:10px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,18)}</span>`).join('');
+  // Pizza
+  const pm={};
+  getItens(estado,mes,ano,reg).forEach(i=>{if(!pm[i.cod_servico]) pm[i.cod_servico]={desc:i.descricao_servico,val:0};pm[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
+  const sv=Object.entries(pm).sort((a,b)=>b[1].val-a[1].val);
+  document.getElementById('leg-reg-pz').innerHTML=sv.map((s,i)=>`<span><i style="background:${CS[i%CS.length]};width:10px;height:10px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,18)}</span>`).join('');
   if(chRegPz) chRegPz.destroy();
-  chRegPz=new Chart(document.getElementById('ch-reg-pz'),{type:'doughnut',data:{labels:svcs.map(s=>s[1].desc),datasets:[{data:svcs.map(s=>s[1].val),backgroundColor:COR_S,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtR(c.raw)}}}}});
+  if(sv.length) chRegPz=new Chart(document.getElementById('ch-reg-pz'),{type:'doughnut',data:{labels:sv.map(s=>s[1].desc),datasets:[{data:sv.map(s=>s[1].val),backgroundColor:CS,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fR(c.raw)}}}}});
 
-  const cads=getCadAtivo(estado,mes,ano);
-  const tarReg={};
-  cads.forEach(c=>(c.tarifas||[]).forEach(t=>{ if(t.regional===reg) tarReg[t.cod_servico]={desc:t.descricao_servico,tarifa:parseFloat(t.preco_unitario)||0,prev:t.eventos_previstos||0}; }));
+  // Tabelas por serviço
+  const tars=getTarifas(estado,mes,ano,reg);
+  const tarMap={};
+  tars.forEach(t=>tarMap[t.cod_servico]={desc:t.descricao_servico,tarifa:parseFloat(t.preco_unitario)||0,prev:parseFloat(t.eventos_previstos)||0,fat:parseFloat(t.faturamento_previsto)||0});
   const execByS={};
-  Object.values(cache.producao).forEach(r=>{ if(r.mes===mes&&r.ano===ano&&r.estado===estado&&r.regional===reg) execByS[r.cod_servico]=(execByS[r.cod_servico]||0)+r.qde_executada; });
-  const pagoByS={};
-  Object.values(cache.boletins).forEach(b=>{ if(b.mes===mes&&b.ano===ano&&b.estado===estado)(cache.boletimItens[b.id]||[]).forEach(i=>{ if(i.regional===reg) pagoByS[i.cod_servico]=(pagoByS[i.cod_servico]||0)+i.qde_paga; }); });
+  getProd(estado,mes,ano,reg).forEach(r=>execByS[r.cod_servico]=(execByS[r.cod_servico]||0)+r.qde_executada);
+  const pagoByS={};const itarByS={};
+  getItens(estado,mes,ano,reg).forEach(i=>{pagoByS[i.cod_servico]=(pagoByS[i.cod_servico]||0)+(i.qde_paga||0);itarByS[i.cod_servico]=parseFloat(i.preco_unitario)||0;});
 
-  const tb=document.getElementById('tb-reg-svc');
-  tb.innerHTML='';
-  Object.entries(tarReg).forEach(([cod,s])=>{
-    const ex=execByS[cod]||0, pg=pagoByS[cod]||0;
-    const df=pg-ex, vnp=Math.abs(df)*s.tarifa;
-    const st=Math.abs(df)<10?'<span class="pill p-ok">Ok</span>':df<-100?'<span class="pill p-danger">Crítico</span>':'<span class="pill p-warn">Atenção</span>';
-    tb.innerHTML+=`<tr><td style="font-size:12px">${s.desc}</td><td>${fmtR(s.tarifa)}</td><td>${fmtN(s.prev)}</td><td>${fmtN(ex)}</td><td>${fmtN(pg)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fmtN(df)}</td><td>${df<0?fmtR(vnp):'—'}</td><td>${st}</td></tr>`;
+  const totPE=Object.values(tarMap).reduce((s,v)=>s+v.prev,0);
+  const totEE=Object.values(execByS).reduce((s,v)=>s+v,0);
+  const totGE=Object.values(pagoByS).reduce((s,v)=>s+v,0);
+
+  const tbE=document.getElementById('tb-reg-evt'),tbF=document.getElementById('tb-reg-fat'),tbT=document.getElementById('tb-reg-tar'),tbP=document.getElementById('tb-reg-prop');
+  tbE.innerHTML='';tbF.innerHTML='';tbT.innerHTML='';tbP.innerHTML='';
+
+  Object.entries(tarMap).forEach(([cod,s])=>{
+    const ex=execByS[cod]||0,pg=pagoByS[cod]||0;
+    const df=pg-ex,pct2=ex>0?((ex-pg)/ex*100):0;
+    const bc=Math.abs(pct2)<2?'#1D9E75':pct2>5?'#E24B4A':'#EF9F27';
+    const st=Math.abs(pct2)<2?'<span class="pill p-ok">Ok</span>':pct2>5?'<span class="pill p-danger">Crítico</span>':'<span class="pill p-warn">Atenção</span>';
+    tbE.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fN(s.prev)}</td><td>${fN(ex)}</td><td>${fN(pg)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fN(df)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct2)*10,100)}%;background:${bc}"></div></div><span style="font-size:11px;color:${bc};font-weight:700">${pct2.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;
+
+    const fatE=ex*s.tarifa,fatP=pg*s.tarifa,fatDiff=fatP-fatE,pctM=s.fat>0?(fatP/s.fat*100):0;
+    tbF.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fR(s.fat)}</td><td>${fR(fatE)}</td><td>${fR(fatP)}</td><td style="color:${fatDiff>=0?'#1D9E75':'#BE2F3B'}">${fatDiff>=0?'+':''}${fR(fatDiff)}</td><td><span class="pill ${pctM>=95?'p-ok':pctM>=85?'p-warn':'p-danger'}">${pctM.toFixed(1)}%</span></td></tr>`;
+
+    const tarP=itarByS[cod]||0,tarDiff=tarP-s.tarifa,tarDiv=Math.abs(tarDiff)>0.01;
+    tbT.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fR(s.tarifa)}</td><td style="color:${tarDiv?'#BE2F3B':'inherit'}">${tarP>0?fR(tarP):'—'}</td><td style="color:${tarDiv?'#BE2F3B':'#1D9E75'}">${tarP>0?(tarDiff>=0?'+':'')+fR(tarDiff):'—'}</td><td>${tarP>0?(tarDiv?'<span class="pill p-danger">⚠ Diverge</span>':'<span class="pill p-ok">Ok</span>'):'<span class="pill p-cinza">Sem dados</span>'}</td></tr>`;
+
+    const pP2=totPE>0?(s.prev/totPE*100):0,pE2=totEE>0?(ex/totEE*100):0,pG2=totGE>0?(pg/totGE*100):0;
+    const dev=Math.abs(pP2-pG2);
+    tbP.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${pP2.toFixed(1)}%</td><td>${pE2.toFixed(1)}%</td><td>${pG2.toFixed(1)}%</td><td style="color:${dev>2?'#BE2F3B':dev>.5?'#BA7517':'#1D9E75'}">${dev.toFixed(1)}pp</td><td>${dev>2?'<span class="pill p-danger">Desvio</span>':dev>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
   });
 }
 
-// ═══════════════════ UPLOAD ═══════════════════
+// ═══ UPLOAD ═══
 function dragOver(e,id){e.preventDefault();document.getElementById(id).classList.add('drag')}
 function dragLeave(id){document.getElementById(id).classList.remove('drag')}
 function dropFile(e,tipo){e.preventDefault();dragLeave('ua-'+tipo);const f=e.dataTransfer.files[0];if(f)processarUpload(f,tipo);}
 async function processarUpload(file,tipo){
   if(!file||!file.name.endsWith('.xlsx')){alert('Selecione um arquivo .xlsx válido.');return;}
+  // Reset input para evitar múltiplos disparos
+  document.getElementById('uf-'+tipo).value='';
   const buf=await file.arrayBuffer();
   const wb=XLSX.read(buf,{type:'array'});
   if(tipo==='prod') parsearProducao(wb);
@@ -866,67 +886,55 @@ function lerAbas(wb){
     const ws=wb.Sheets[est];
     if(!ws) return;
     const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:2});
-    r.forEach(row=>{ if(!row.ESTADO) row.ESTADO=est; });
+    r.forEach(row=>{if(!row.ESTADO) row.ESTADO=est;});
     rows=[...rows,...r];
   });
   return rows;
 }
 
-async function parsearProducao(wb){
+function parsearProducao(wb){
   dadosProd=[];
-  let erros=0, duplicados=[];
+  let erros=0,dups=[];
   const rows=lerAbas(wb);
-  for(const r of rows){
-    if(!r.MES||!r.ANO||!r.REGIONAL||!r.COD_SERVICO||r.QTD_EXECUTADA===''){erros++;continue;}
-    const mes=parseInt(r.MES), ano=parseInt(r.ANO), est=String(r.ESTADO).trim(), reg=String(r.REGIONAL).trim(), cod=String(r.COD_SERVICO).trim();
-    const k=`${mes}|${ano}|${est}|${reg}|${cod}`;
-    if(cache.producao[k]){
-      const dupKey=`${mA(mes,ano)} — ${est} — ${reg}`;
-      if(!duplicados.includes(dupKey)) duplicados.push(dupKey);
-    }
-    dadosProd.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),qde_executada:parseInt(r.QTD_EXECUTADA)||0,_dup:!!cache.producao[k]});
-  }
-  if(dadosProd.length===0){alert('Nenhum dado encontrado. Verifique o arquivo.');return;}
-  document.getElementById('prod-st-txt').textContent=`${dadosProd.length} registros carregados${erros?` (${erros} linhas ignoradas)`:''}`;
-  const dupEl=document.getElementById('prod-dup-alerta');
-  if(duplicados.length){document.getElementById('prod-dup-txt').textContent=`Atenção: ${duplicados.length} combinação(ões) já existem no banco e serão substituídas: ${duplicados.slice(0,3).join(', ')}${duplicados.length>3?'...':''}`;dupEl.style.display='flex';}
-  else dupEl.style.display='none';
-  const tb=document.getElementById('tb-pv-prod');
-  tb.innerHTML=dadosProd.map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;font-weight:700">${fmtN(r.qde_executada)}</td><td>${r._dup?'<span class="pill p-warn">Substituirá</span>':'<span class="pill p-ok">Novo</span>'}</td></tr>`).join('');
+  rows.forEach(r=>{
+    if(!r.MES||!r.ANO||!r.REGIONAL||!r.COD_SERVICO||r.QTD_EXECUTADA===''){erros++;return;}
+    const mes=parseInt(r.MES),ano=parseInt(r.ANO),est=String(r.ESTADO).trim(),reg=String(r.REGIONAL).trim(),cod=String(r.COD_SERVICO).trim();
+    const jaExiste=C.prod.find(p=>p.mes===mes&&p.ano===ano&&p.estado===est&&p.regional===reg&&p.cod_servico===cod);
+    if(jaExiste){const dk=`${mA(mes,ano)} — ${est} — ${reg}`;if(!dups.includes(dk)) dups.push(dk);}
+    dadosProd.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),qde_executada:parseInt(r.QTD_EXECUTADA)||0,_dup:!!jaExiste});
+  });
+  if(!dadosProd.length){alert('Nenhum dado encontrado.');return;}
+  document.getElementById('prod-st-txt').textContent=`${dadosProd.length} registros carregados${erros?` (${erros} ignorados)`:''}`;
+  const da=document.getElementById('prod-dup-al');
+  if(dups.length){document.getElementById('prod-dup-txt').textContent=`Já importados — serão substituídos: ${dups.join(', ')}`;da.style.display='flex';}else da.style.display='none';
+  document.getElementById('tb-pv-prod').innerHTML=dadosProd.map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;font-weight:700">${fN(r.qde_executada)}</td><td>${r._dup?'<span class="pill p-warn">Substituirá</span>':'<span class="pill p-ok">Novo</span>'}</td></tr>`).join('');
   document.getElementById('pv-prod').style.display='block';
 }
 
-async function parsearBoletim(wb){
+function parsearBoletim(wb){
   dadosBol=[];
-  let erros=0, duplicados=[];
+  let erros=0,dups=[];
   const rows=lerAbas(wb);
   const tarMap={};
-  Object.values(cache.tarifas).forEach(c=>(c.tarifas||[]).forEach(t=>{tarMap[t.cod_servico+'|'+t.regional]=parseFloat(t.preco_unitario)||0;}));
-
-  for(const r of rows){
-    if(!r.MES||!r.ANO||!r.REGIONAL||!r.COD_SERVICO){erros++;continue;}
-    const mes=parseInt(r.MES), ano=parseInt(r.ANO), est=String(r.ESTADO).trim(), reg=String(r.REGIONAL).trim(), cod=String(r.COD_SERVICO).trim();
-    // Verifica duplicado no cache
-    const bolExiste=Object.values(cache.boletins).find(b=>b.mes===mes&&b.ano===ano&&b.estado===est);
-    if(bolExiste){const dk=`${mA(mes,ano)} — ${est}`;if(!duplicados.includes(dk)) duplicados.push(dk);}
+  C.tars.forEach(t=>tarMap[t.cod_servico+'|'+t.regional]=parseFloat(t.preco_unitario)||0);
+  rows.forEach(r=>{
+    if(!r.MES||!r.ANO||!r.REGIONAL||!r.COD_SERVICO){erros++;return;}
+    const mes=parseInt(r.MES),ano=parseInt(r.ANO),est=String(r.ESTADO).trim(),reg=String(r.REGIONAL).trim(),cod=String(r.COD_SERVICO).trim();
+    const bolExiste=C.bols.find(b=>b.mes===mes&&b.ano===ano&&b.estado===est);
+    if(bolExiste){const dk=`${mA(mes,ano)} — ${est}`;if(!dups.includes(dk)) dups.push(dk);}
     dadosBol.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO||'0').replace(',','.'))||0,qde_paga:parseInt(r.QDE_PAGA)||0,_dup:!!bolExiste});
-  }
-  if(dadosBol.length===0){alert('Nenhum dado encontrado. Verifique o arquivo.');return;}
-
-  const alertasTar=[];
-  dadosBol.forEach(r=>{const tc=tarMap[r.cod_servico+'|'+r.regional];if(tc&&Math.abs(tc-r.preco_unitario)>0.01) alertasTar.push(`${r.descricao_servico}/${r.regional}: caderno R$${tc.toFixed(2)} vs boletim R$${r.preco_unitario.toFixed(2)}`);});
-  const tEl=document.getElementById('bol-tar-alerta');
-  if(alertasTar.length){document.getElementById('bol-tar-txt').innerHTML=`<strong>Tarifas divergentes do caderno ativo:</strong><br>${alertasTar.slice(0,4).join('<br>')}`;tEl.style.display='flex';}else tEl.style.display='none';
-
+  });
+  if(!dadosBol.length){alert('Nenhum dado encontrado.');return;}
+  const alertaTar=[];
+  dadosBol.forEach(r=>{const tc=tarMap[r.cod_servico+'|'+r.regional];if(tc&&Math.abs(tc-r.preco_unitario)>0.01) alertaTar.push(`${r.regional}: ${r.descricao_servico}`);});
+  const ta=document.getElementById('bol-tar-al');
+  if(alertaTar.length){document.getElementById('bol-tar-txt').innerHTML=`<strong>Tarifas divergentes do caderno:</strong> ${alertaTar.slice(0,3).join(', ')}`;ta.style.display='flex';}else ta.style.display='none';
   document.getElementById('bol-st-txt').textContent=`${dadosBol.length} registros carregados${erros?` (${erros} ignorados)`:''}`;
-  const dupEl=document.getElementById('bol-dup-alerta');
-  if(duplicados.length){document.getElementById('bol-dup-txt').textContent=`Período já importado — será substituído: ${duplicados.join(', ')}`;dupEl.style.display='flex';}else dupEl.style.display='none';
-
-  const tb=document.getElementById('tb-pv-bol');
-  tb.innerHTML=dadosBol.map(r=>{
-    const tc=tarMap[r.cod_servico+'|'+r.regional];
-    const div=tc&&Math.abs(tc-r.preco_unitario)>0.01;
-    return `<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;color:${div?'#BE2F3B':'inherit'}">${fmtR(r.preco_unitario)}</td><td style="text-align:right;font-weight:700">${fmtN(r.qde_paga)}</td><td style="text-align:right">${fmtR(r.preco_unitario*r.qde_paga)}</td><td>${div?'<span class="pill p-danger">⚠ Diverge</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
+  const da=document.getElementById('bol-dup-al');
+  if(dups.length){document.getElementById('bol-dup-txt').textContent=`Período já importado — será substituído: ${dups.join(', ')}`;da.style.display='flex';}else da.style.display='none';
+  document.getElementById('tb-pv-bol').innerHTML=dadosBol.map(r=>{
+    const tc=tarMap[r.cod_servico+'|'+r.regional],div=tc&&Math.abs(tc-r.preco_unitario)>0.01;
+    return `<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;color:${div?'#BE2F3B':'inherit'}">${fR(r.preco_unitario)}</td><td style="text-align:right;font-weight:700">${fN(r.qde_paga)}</td><td style="text-align:right">${fR(r.preco_unitario*r.qde_paga)}</td><td>${div?'<span class="pill p-danger">⚠ Diverge</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
   }).join('');
   document.getElementById('pv-bol').style.display='block';
 }
@@ -939,146 +947,135 @@ function parsearCaderno(wb){
     if(!r.REGIONAL||!r.COD_SERVICO||!r.VIGENCIA_INICIO||r.PRECO_UNITARIO===''||r.EVENTOS_PREVISTOS===''){erros++;return;}
     dadosCad.push({estado:String(r.ESTADO||'').trim(),regional:String(r.REGIONAL).trim(),cod_servico:String(r.COD_SERVICO).trim(),descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),vigencia_inicio:String(r.VIGENCIA_INICIO).trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO).replace(',','.'))||0,eventos_previstos:parseFloat(String(r.EVENTOS_PREVISTOS).replace(',','.'))||0});
   });
-  if(dadosCad.length===0){alert('Nenhum dado encontrado. Verifique o arquivo.');return;}
-  const vig=dadosCad[0]?.vigencia_inicio||'', est=dadosCad[0]?.estado||'';
+  if(!dadosCad.length){alert('Nenhum dado encontrado. Verifique se o arquivo tem aba MA ou PI.');return;}
+  const vig=dadosCad[0]?.vigencia_inicio||'',est=dadosCad[0]?.estado||'';
   document.getElementById('cad-st-txt').textContent=`${dadosCad.length} tarifas carregadas — ${est} — Vigência: ${vig}${erros?` (${erros} ignoradas)`:''}`;
-  document.getElementById('tb-pv-cad').innerHTML=dadosCad.map(r=>`<tr><td style="font-weight:700;color:var(--vm)">${r.vigencia_inicio}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right">${fmtR(r.preco_unitario)}</td><td style="text-align:right">${fmtN(r.eventos_previstos)}</td><td style="text-align:right;font-weight:700">${fmtR(r.preco_unitario*r.eventos_previstos)}</td></tr>`).join('');
+  document.getElementById('tb-pv-cad').innerHTML=dadosCad.map(r=>`<tr><td style="font-weight:700;color:var(--vm)">${r.vigencia_inicio}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right">${fR(r.preco_unitario)}</td><td style="text-align:right">${fN(r.eventos_previstos)}</td><td style="text-align:right;font-weight:700">${fR(r.preco_unitario*r.eventos_previstos)}</td></tr>`).join('');
   document.getElementById('pv-cad').style.display='block';
 }
 
 function cancelarUpload(tipo){
   document.getElementById('pv-'+tipo).style.display='none';
-  document.getElementById('uf-'+tipo).value='';
   if(tipo==='prod') dadosProd=[];
   if(tipo==='bol')  dadosBol=[];
   if(tipo==='cad')  dadosCad=[];
 }
 
-// ═══════════════════ SALVAR ═══════════════════
+// ═══ SALVAR ═══
 async function salvarProducao(){
-  if(!dadosProd.length) return;
+  if(salvandoProd||!dadosProd.length) return;
+  salvandoProd=true;
+  const btn=document.getElementById('btn-salvar-prod');
+  btn.textContent='Salvando...';btn.disabled=true;
   const user=(await sb.auth.getUser()).data.user;
-  for(const r of dadosProd){
-    await sb.from('producao_real').upsert({mes:r.mes,ano:r.ano,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,qde_executada:r.qde_executada,importado_por:user.id},{onConflict:'mes,ano,estado,regional,cod_servico'});
-  }
-  alert(`✓ ${dadosProd.length} registros salvos!`);
-  cancelarUpload('prod');
-  await carregarTodosOsDados();
-  carregarHistProd();
+  // Upsert em lote
+  const {error}=await sb.from('producao_real').upsert(
+    dadosProd.map(r=>({mes:r.mes,ano:r.ano,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,qde_executada:r.qde_executada,ativo:true,importado_por:user.id})),
+    {onConflict:'mes,ano,estado,regional,cod_servico'}
+  );
+  if(error){alert('Erro ao salvar: '+error.message);}
+  else{alert(`✓ ${dadosProd.length} registros salvos!`);cancelarUpload('prod');await carregarCache();carregarHistProd();}
+  btn.textContent='✓ Confirmar e salvar';btn.disabled=false;salvandoProd=false;
 }
 
 async function salvarBoletim(){
-  if(!dadosBol.length) return;
+  if(salvandoBol||!dadosBol.length) return;
+  salvandoBol=true;
+  const btn=document.getElementById('btn-salvar-bol');
+  btn.textContent='Salvando...';btn.disabled=true;
   const user=(await sb.auth.getUser()).data.user;
   const {mes,ano,estado}=dadosBol[0];
-  // Remove boletim existente do mesmo período
-  const bolExiste=Object.values(cache.boletins).find(b=>b.mes===mes&&b.ano===ano&&b.estado===estado);
+  // Remove boletim existente
+  const bolExiste=C.bols.find(b=>b.mes===mes&&b.ano===ano&&b.estado===estado);
   if(bolExiste) await sb.from('boletins').delete().eq('id',bolExiste.id);
-  const {data:bol}=await sb.from('boletins').insert({mes,ano,estado,importado_por:user.id}).select().single();
-  if(!bol){alert('Erro ao salvar boletim.');return;}
-  await sb.from('boletim_itens').insert(dadosBol.map(r=>({boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga})));
-  alert(`✓ Boletim ${nmM(mes)}/${ano} — ${estado} salvo!`);
-  cancelarUpload('bol');
-  await carregarTodosOsDados();
-  carregarHistBol();
+  const {data:bol,error:e1}=await sb.from('boletins').insert({mes,ano,estado,ativo:true,importado_por:user.id}).select().single();
+  if(e1||!bol){alert('Erro ao criar boletim.');btn.textContent='✓ Confirmar e salvar';btn.disabled=false;salvandoBol=false;return;}
+  const {error:e2}=await sb.from('boletim_itens').insert(dadosBol.map(r=>({boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga})));
+  if(e2){alert('Erro ao salvar itens: '+e2.message);}
+  else{alert(`✓ Boletim ${MN[mes]}/${ano} — ${estado} salvo!`);cancelarUpload('bol');await carregarCache();carregarHistBol();}
+  btn.textContent='✓ Confirmar e salvar';btn.disabled=false;salvandoBol=false;
 }
 
 async function salvarCaderno(){
-  if(!document.getElementById('cad-conf').checked){alert('Confirme os dados marcando a caixa antes de ativar.');return;}
+  if(salvandoCad) return;
+  if(!document.getElementById('cad-conf').checked){alert('Confirme os dados marcando a caixa.');return;}
   if(!dadosCad.length) return;
+  salvandoCad=true;
+  const btn=document.getElementById('btn-salvar-cad');
+  btn.textContent='Salvando...';btn.disabled=true;
   const user=(await sb.auth.getUser()).data.user;
   const {estado,vigencia_inicio}=dadosCad[0];
   // Encerra cadernos ativos do mesmo estado
-  const ativos=Object.values(cache.tarifas).filter(c=>c.estado===estado&&c.ativo);
+  const ativos=C.cads.filter(c=>c.estado===estado&&c.ativo);
   for(const c of ativos) await sb.from('cadernos').update({ativo:false,data_fim:vigencia_inicio}).eq('id',c.id);
-  const {data:cad}=await sb.from('cadernos').insert({estado,nome:`Caderno ${estado} — ${vigencia_inicio}`,vigencia_inicio,ativo:true,confirmado:true,importado_por:user.id}).select().single();
-  if(!cad){alert('Erro ao criar caderno.');return;}
-  await sb.from('caderno_tarifas').insert(dadosCad.map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos})));
-  alert(`✓ Caderno ativado! Vigência: ${vigencia_inicio}`);
-  document.getElementById('cad-conf').checked=false;
-  cancelarUpload('cad');
-  document.getElementById('upload-cad-box').style.display='none';
-  await carregarTodosOsDados();
-  carregarCadernos();
+  // Cria novo caderno
+  const {data:cad,error:e1}=await sb.from('cadernos').insert({estado,nome:`Caderno ${estado} — vigência ${vigencia_inicio}`,vigencia_inicio,ativo:true,confirmado:true,importado_por:user.id}).select().single();
+  if(e1||!cad){alert('Erro ao criar caderno: '+(e1?.message||''));btn.textContent='✓ Ativar caderno';btn.disabled=false;salvandoCad=false;return;}
+  // Insere tarifas em lote
+  const tarifas=dadosCad.map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos}));
+  const {error:e2}=await sb.from('caderno_tarifas').insert(tarifas);
+  if(e2){alert('Erro ao salvar tarifas: '+e2.message);await sb.from('cadernos').delete().eq('id',cad.id);}
+  else{alert(`✓ Caderno ativado com ${tarifas.length} tarifas! Vigência: ${vigencia_inicio}`);document.getElementById('cad-conf').checked=false;cancelarUpload('cad');document.getElementById('upload-cad-box').style.display='none';await carregarCache();carregarCadernos();}
+  btn.textContent='✓ Ativar caderno';btn.disabled=false;salvandoCad=false;
 }
 
-// ═══════════════════ HISTÓRICOS ═══════════════════
+// ═══ HISTÓRICOS ═══
 async function carregarHistProd(){
-  const {data:prod}=await sb.from('producao_real').select('mes,ano,estado,regional,qde_executada,importado_em,ativo').order('ano',{ascending:false}).order('mes',{ascending:false});
+  const {data:prod}=await sb.from('producao_real').select('mes,ano,estado,qde_executada,importado_em,ativo').order('ano',{ascending:false}).order('mes',{ascending:false});
   const tb=document.getElementById('tb-hist-prod');
-  if(!prod){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum lançamento encontrado.</td></tr>';return;}
+  if(!prod?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum lançamento.</td></tr>';return;}
   const agrup={};
   prod.forEach(r=>{
-    const k=`${r.mes}|${r.ano}|${r.estado}|${r.regional}`;
-    if(!agrup[k]) agrup[k]={mes:r.mes,ano:r.ano,estado:r.estado,regional:r.regional,total:0,em:r.importado_em,ativo:r.ativo!==false};
+    const k=`${r.mes}|${r.ano}|${r.estado}`;
+    if(!agrup[k]) agrup[k]={mes:r.mes,ano:r.ano,estado:r.estado,total:0,em:r.importado_em,ativo:r.ativo!==false};
     agrup[k].total+=r.qde_executada;
   });
-  tb.innerHTML=Object.values(agrup).map(r=>`<tr>
-    <td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td>${fmtN(r.total)}</td>
-    <td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'—'}</td>
-    <td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td>
-    <td style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn btn-s btn-sm" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}','${r.regional}',${r.ativo})">${r.ativo?'Inativar':'Ativar'}</button>
-      <button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}','${r.regional}')">Excluir</button>
-    </td>
-  </tr>`).join('');
+  tb.innerHTML=Object.values(agrup).map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${fN(r.total)}</td><td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'—'}</td><td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',${r.ativo})">${r.ativo?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}')">Excluir</button></td></tr>`).join('');
 }
-
-async function inativarProd(mes,ano,est,reg,ativo){
-  const novoAtivo=!ativo;
-  await sb.from('producao_real').update({ativo:novoAtivo}).eq('mes',mes).eq('ano',ano).eq('estado',est).eq('regional',reg);
-  await carregarTodosOsDados(); carregarHistProd();
+async function inativarProd(mes,ano,est,ativo){
+  await sb.from('producao_real').update({ativo:!ativo}).eq('mes',mes).eq('ano',ano).eq('estado',est);
+  await carregarCache();carregarHistProd();
 }
-async function excluirProd(mes,ano,est,reg){
-  if(!confirm(`Excluir permanentemente o lançamento ${mA(mes,ano)} — ${est} — ${reg}?`)) return;
-  await sb.from('producao_real').delete().eq('mes',mes).eq('ano',ano).eq('estado',est).eq('regional',reg);
-  await carregarTodosOsDados(); carregarHistProd();
+async function excluirProd(mes,ano,est){
+  if(!confirm(`Excluir ${mA(mes,ano)} — ${est}?`)) return;
+  await sb.from('producao_real').delete().eq('mes',mes).eq('ano',ano).eq('estado',est);
+  await carregarCache();carregarHistProd();
 }
 
 async function carregarHistBol(){
   const {data:bols}=await sb.from('boletins').select('*').order('ano',{ascending:false}).order('mes',{ascending:false});
   const tb=document.getElementById('tb-hist-bol');
-  if(!bols||!bols.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum boletim importado.</td></tr>';return;}
+  if(!bols?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum boletim.</td></tr>';return;}
   tb.innerHTML='';
   for(const b of bols){
-    const itens=cache.boletimItens[b.id]||[];
-    const totEvt=itens.reduce((s,i)=>s+(i.qde_paga||0),0);
-    const totVal=itens.reduce((s,i)=>s+(parseFloat(i.valor_pago)||0),0);
-    tb.innerHTML+=`<tr>
-      <td>${mA(b.mes,b.ano)}</td><td>${b.estado}</td><td>${fmtN(totEvt)}</td><td>${fmtR(totVal)}</td>
-      <td>${b.importado_em?new Date(b.importado_em).toLocaleDateString('pt-BR'):'—'}</td>
-      <td>${b.ativo!==false?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-s btn-sm" onclick="inativarBol(${b.id},${b.ativo!==false})">${b.ativo!==false?'Inativar':'Ativar'}</button>
-        <button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirBol(${b.id},'${mA(b.mes,b.ano)}','${b.estado}')">Excluir</button>
-      </td>
-    </tr>`;
+    const itens=C.itens.filter(i=>i.boletim_id===b.id);
+    const totE=itens.reduce((s,i)=>s+(i.qde_paga||0),0);
+    const totV=itens.reduce((s,i)=>s+(parseFloat(i.valor_pago)||0),0);
+    tb.innerHTML+=`<tr><td>${mA(b.mes,b.ano)}</td><td>${b.estado}</td><td>${fN(totE)}</td><td>${fR(totV)}</td><td>${b.importado_em?new Date(b.importado_em).toLocaleDateString('pt-BR'):'—'}</td><td>${b.ativo!==false?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarBol(${b.id},${b.ativo!==false})">${b.ativo!==false?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirBol(${b.id},'${mA(b.mes,b.ano)}','${b.estado}')">Excluir</button></td></tr>`;
   }
 }
 async function inativarBol(id,ativo){
   await sb.from('boletins').update({ativo:!ativo}).eq('id',id);
-  await carregarTodosOsDados(); carregarHistBol();
+  await carregarCache();carregarHistBol();
 }
 async function excluirBol(id,periodo,est){
-  if(!confirm(`Excluir permanentemente o boletim ${periodo} — ${est}?`)) return;
+  if(!confirm(`Excluir boletim ${periodo} — ${est}?`)) return;
   await sb.from('boletins').delete().eq('id',id);
-  await carregarTodosOsDados(); carregarHistBol();
+  await carregarCache();carregarHistBol();
 }
 
-// ═══════════════════ CADERNOS ═══════════════════
+// ═══ CADERNOS ═══
 function toggleUploadCad(){const b=document.getElementById('upload-cad-box');b.style.display=b.style.display==='none'?'block':'none';}
 
-async function carregarCadernos(){
-  await carregarTodosOsDados();
+function carregarCadernos(){
   const el=document.getElementById('lista-cadernos');
-  const cads=Object.values(cache.tarifas);
-  if(!cads.length){el.innerHTML='<div class="loader">Nenhum caderno cadastrado ainda.</div>';return;}
+  if(!C.cads.length){el.innerHTML='<div class="loader">Nenhum caderno cadastrado ainda.</div>';return;}
   let html='';
-  cads.sort((a,b)=>b.importado_em>a.importado_em?1:-1).forEach(c=>{
-    const tars=c.tarifas||[];
+  [...C.cads].reverse().forEach(c=>{
+    const tars=C.tars.filter(t=>t.caderno_id===c.id);
     const totalMeta=tars.reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||0),0);
     const regsCount=new Set(tars.map(t=>t.regional)).size;
-    const svcsCount=tars.length/Math.max(regsCount,1);
+    const svcsCount=regsCount>0?tars.length/regsCount:0;
     const status=c.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Encerrado</span>';
     const conf=c.confirmado?'<span style="color:var(--vd);font-weight:700">✓ Sim</span>':'<span style="color:var(--am);font-weight:700">⚠ Pendente</span>';
     html+=`<div class="ccard ${c.ativo?'ativo':''}">
@@ -1095,33 +1092,19 @@ async function carregarCadernos(){
         </div>
       </div>
       <div class="ccard-st">
-        <div class="ccard-s"><div class="sl">Meta mensal total</div><div class="sv">${fmtR(totalMeta)}</div></div>
+        <div class="ccard-s"><div class="sl">Meta mensal total</div><div class="sv">${fR(totalMeta)}</div></div>
         <div class="ccard-s"><div class="sl">Regionais</div><div class="sv">${regsCount}</div></div>
         <div class="ccard-s"><div class="sl">Serviços</div><div class="sv">${Math.round(svcsCount)}</div></div>
         <div class="ccard-s"><div class="sl">Confirmado</div><div class="sv">${conf}</div></div>
       </div>
       <div class="ccard-vig">
-        <div>
-          <label>Mês/Ano inicial</label>
-          <input type="text" id="vig-ini-${c.id}" value="${c.vigencia_inicio||''}" placeholder="MM/AAAA">
-        </div>
-        <div>
-          <label>Mês/Ano final</label>
-          <input type="text" id="vig-fim-${c.id}" value="${c.data_fim||''}" placeholder="MM/AAAA (deixe vazio se ativo)">
-        </div>
-        <div>
-          <label>Ativo</label>
-          <div class="ckbox">
-            <input type="checkbox" id="vig-atv-${c.id}" ${c.ativo?'checked':''} style="width:16px;height:16px;accent-color:var(--vm)">
-            <span>Sim</span>
-          </div>
-        </div>
+        <div><label>Mês/Ano inicial</label><input type="text" id="vi-${c.id}" value="${c.vigencia_inicio||''}" placeholder="MM/AAAA"></div>
+        <div><label>Mês/Ano final</label><input type="text" id="vf-${c.id}" value="${c.data_fim||''}" placeholder="MM/AAAA"></div>
+        <div><label>Ativo</label><div class="ckbox"><input type="checkbox" id="va-${c.id}" ${c.ativo?'checked':''} style="width:16px;height:16px;accent-color:var(--vm)"><span>Sim</span></div></div>
       </div>
-      <div class="tar-box" id="tar-box-${c.id}">
-        <table>
-          <thead><tr><th>Regional</th><th>Serviço</th><th style="text-align:right">Tarifa</th><th style="text-align:right">Eventos prev.</th><th style="text-align:right">Fat. previsto</th></tr></thead>
-          <tbody>${tars.map(t=>`<tr><td>${t.regional}</td><td style="font-size:11px">${t.descricao_servico}</td><td style="text-align:right">${fmtR(t.preco_unitario)}</td><td style="text-align:right">${fmtN(t.eventos_previstos)}</td><td style="text-align:right;font-weight:700">${fmtR(t.faturamento_previsto)}</td></tr>`).join('')}
-          </tbody>
+      <div class="tar-box" id="tar-${c.id}">
+        <table><thead><tr><th>Regional</th><th>Serviço</th><th style="text-align:right">Tarifa</th><th style="text-align:right">Eventos prev.</th><th style="text-align:right">Fat. previsto</th></tr></thead>
+        <tbody>${tars.map(t=>`<tr><td>${t.regional}</td><td style="font-size:11px">${t.descricao_servico}</td><td style="text-align:right">${fR(t.preco_unitario)}</td><td style="text-align:right">${fN(t.eventos_previstos)}</td><td style="text-align:right;font-weight:700">${fR(t.faturamento_previsto)}</td></tr>`).join('')}</tbody>
         </table>
       </div>
     </div>`;
@@ -1129,59 +1112,46 @@ async function carregarCadernos(){
   el.innerHTML=html;
 }
 
-function toggleTarifas(id){const b=document.getElementById('tar-box-'+id);b.style.display=b.style.display==='none'||!b.style.display?'block':'none';}
+function toggleTarifas(id){const b=document.getElementById('tar-'+id);b.style.display=b.style.display==='block'?'none':'block';}
 
 async function salvarVigencia(id){
-  const ini=document.getElementById('vig-ini-'+id).value.trim();
-  const fim=document.getElementById('vig-fim-'+id).value.trim();
-  const atv=document.getElementById('vig-atv-'+id).checked;
+  const ini=document.getElementById('vi-'+id).value.trim();
+  const fim=document.getElementById('vf-'+id).value.trim();
+  const atv=document.getElementById('va-'+id).checked;
   await sb.from('cadernos').update({vigencia_inicio:ini,data_fim:fim||null,ativo:atv}).eq('id',id);
-  await carregarTodosOsDados(); carregarCadernos();
+  await carregarCache();carregarCadernos();
   alert('✓ Vigência atualizada!');
 }
 async function inativarCaderno(id,ativo){
   await sb.from('cadernos').update({ativo:!ativo}).eq('id',id);
-  await carregarTodosOsDados(); carregarCadernos();
+  await carregarCache();carregarCadernos();
 }
 async function excluirCaderno(id,nome){
-  if(!confirm(`Excluir permanentemente o caderno "${nome}"? Esta ação não pode ser desfeita.`)) return;
+  if(!confirm(`Excluir permanentemente "${nome}"?`)) return;
   await sb.from('cadernos').delete().eq('id',id);
-  await carregarTodosOsDados(); carregarCadernos();
+  await carregarCache();carregarCadernos();
 }
 
-// ═══════════════════ USUÁRIOS ═══════════════════
+// ═══ USUÁRIOS ═══
 async function carregarUsuarios(){
   const el=document.getElementById('lista-usuarios');
   const {data:users}=await sb.from('usuarios_perfil_completo').select('*').order('criado_em',{ascending:false});
-  if(!users||!users.length){el.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum usuário cadastrado.</td></tr>';return;}
+  if(!users?.length){el.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum usuário.</td></tr>';return;}
   const rl={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'};
   el.innerHTML=users.map(u=>`<tr>
     <td>${u.nome||'—'}</td><td>${u.email}</td>
     <td><select onchange="alterarRole('${u.id}',this.value)" style="font-size:12px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd)">${['admin','analyst','viewer'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${rl[r]}</option>`).join('')}</select></td>
-    <td>${u.role==='analyst'?`<label style="display:flex;align-items:center;gap:5px;font-size:12px;margin-bottom:4px"><input type="checkbox" ${u.perm_producao?'checked':''} onchange="alterarPerm('${u.id}','perm_producao',this.checked)" style="accent-color:var(--vm)">Produção real</label><label style="display:flex;align-items:center;gap:5px;font-size:12px"><input type="checkbox" ${u.perm_boletim?'checked':''} onchange="alterarPerm('${u.id}','perm_boletim',this.checked)" style="accent-color:var(--vm)">Boletim</label>`:'<span style="font-size:11px;color:var(--tx2)">—</span>'}</td>
+    <td>${u.role==='analyst'?`<label style="display:flex;align-items:center;gap:5px;font-size:12px;margin-bottom:4px"><input type="checkbox" ${u.perm_producao?'checked':''} onchange="alterarPerm('${u.id}','perm_producao',this.checked)" style="accent-color:var(--vm)">Produção</label><label style="display:flex;align-items:center;gap:5px;font-size:12px"><input type="checkbox" ${u.perm_boletim?'checked':''} onchange="alterarPerm('${u.id}','perm_boletim',this.checked)" style="accent-color:var(--vm)">Boletim</label>`:'<span style="font-size:11px;color:var(--tx2)">—</span>'}</td>
     <td>${u.criado_em?new Date(u.criado_em).toLocaleDateString('pt-BR'):'—'}</td>
     <td>${u.last_sign_in_at?new Date(u.last_sign_in_at).toLocaleString('pt-BR'):'<span style="color:var(--tx2);font-size:11px">Nunca</span>'}</td>
     <td>${u.ativo?`<button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="desativarUser('${u.id}')">Desativar</button>`:'<span class="pill p-cinza">Inativo</span>'}</td>
   </tr>`).join('');
 }
-async function alterarRole(id,r){
-  await sb.from('usuarios_perfil').update({role:r,perm_producao:r==='admin',perm_boletim:r==='admin',atualizado_em:new Date().toISOString()}).eq('id',id);
-  carregarUsuarios();
-}
-async function alterarPerm(id,campo,val){
-  await sb.from('usuarios_perfil').update({[campo]:val,atualizado_em:new Date().toISOString()}).eq('id',id);
-}
-async function desativarUser(id){
-  if(!confirm('Desativar este usuário?')) return;
-  await sb.from('usuarios_perfil').update({ativo:false}).eq('id',id);
-  carregarUsuarios();
-}
+async function alterarRole(id,r){await sb.from('usuarios_perfil').update({role:r,perm_producao:r==='admin',perm_boletim:r==='admin',atualizado_em:new Date().toISOString()}).eq('id',id);carregarUsuarios();}
+async function alterarPerm(id,campo,val){await sb.from('usuarios_perfil').update({[campo]:val,atualizado_em:new Date().toISOString()}).eq('id',id);}
+async function desativarUser(id){if(!confirm('Desativar?')) return;await sb.from('usuarios_perfil').update({ativo:false}).eq('id',id);carregarUsuarios();}
 async function convidarUsuario(){
-  const nome=document.getElementById('n-nome').value.trim();
-  const email=document.getElementById('n-email').value.trim();
-  const r=document.getElementById('n-role').value;
-  const pp=r==='analyst'?document.getElementById('n-pp').checked:r==='admin';
-  const pb=r==='analyst'?document.getElementById('n-pb').checked:r==='admin';
+  const nome=document.getElementById('n-nome').value.trim(),email=document.getElementById('n-email').value.trim(),r=document.getElementById('n-role').value;
   if(!email){alert('Informe o e-mail.');return;}
   await sb.auth.admin.inviteUserByEmail(email,{data:{role:r,nome}}).catch(()=>{});
   document.getElementById('convite-alerta').innerHTML=`<div class="alerta al-ok"><span>✓</span><span>Convite enviado para <strong>${email}</strong> como <strong>${{admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[r]}</strong>.</span></div>`;

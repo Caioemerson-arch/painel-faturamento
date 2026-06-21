@@ -854,6 +854,7 @@ function setTab(id, btn) {
   if (id === 'servico') carregarServico();
   if (id === 'regional') carregarRegional();
   if (id === 'cadernos') carregarListaCadernos();
+  if (id === 'usuarios') carregarListaUsuarios();
 }
 
 // ═══════════════════════════════════════════════
@@ -1752,8 +1753,6 @@ iniciarApp = async function(user) {
   atualizarRegiaisSelect();
   await carregarGeral();
   await carregarHistoricos();
-  await carregarListaCadernos();
-  await carregarListaUsuarios();
   populaSelectRegionaisPizza();
 };
 

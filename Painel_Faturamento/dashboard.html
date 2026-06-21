@@ -34,7 +34,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 
 /* LAYOUT PRINCIPAL */
 #app{display:none;min-height:100vh;display:none}
-.layout{display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+.layout{display:block;min-height:100vh}
 
 /* SIDEBAR */
 .sidebar{background:var(--az-esc);display:flex;flex-direction:column;position:fixed;top:0;left:0;width:200px;height:100vh;z-index:100;overflow-y:auto}
@@ -55,7 +55,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 .sb-out:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.7)}
 
 /* MAIN */
-.main{margin-left:200px;display:flex;flex-direction:column;min-height:100vh;max-width:calc(100vw - 200px);overflow-x:hidden}
+.main{margin-left:200px;display:flex;flex-direction:column;min-height:100vh;width:calc(100vw - 200px)}
 .main-header{background:var(--br);border-bottom:1px solid var(--bd);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .page-info{display:flex;flex-direction:column}
 .page-title{font-size:14px;font-weight:700;color:var(--pt)}
@@ -65,7 +65,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 .btn-xls:hover{background:#c0dd97}
 .btn-pdf{font-size:11px;padding:6px 12px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px}
 .btn-pdf:hover{background:#a02632}
-.con{padding:1.25rem 1.5rem;flex:1;min-width:0;overflow-x:hidden}
+.con{padding:1.25rem 1.5rem;flex:1;min-width:0}
 
 /* FILTROS */
 .fil{display:flex;gap:10px;flex-wrap:nowrap;margin-bottom:1.25rem;align-items:center;overflow-x:auto}

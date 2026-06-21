@@ -739,7 +739,10 @@ body { font-family: Arial, sans-serif; background: var(--cinza-bg); color: var(-
       </div>
     </div>
 
-    <div class="sec-titulo">Usuários cadastrados</div>
+    <div class="sec-titulo" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Usuários cadastrados</span>
+      <button class="btn btn-secondary" style="font-size:11px;padding:4px 12px" onclick="carregarListaUsuarios()">↻ Atualizar</button>
+    </div>
     <div class="tbox">
       <table>
         <thead>
@@ -749,6 +752,7 @@ body { font-family: Arial, sans-serif; background: var(--cinza-bg); color: var(-
             <th>Perfil</th>
             <th>Permissões (analista)</th>
             <th>Cadastrado em</th>
+            <th>Último acesso</th>
             <th>Ação</th>
           </tr>
         </thead>
@@ -1762,7 +1766,7 @@ iniciarApp = async function(user) {
 async function carregarListaUsuarios() {
   const el = document.getElementById('lista-usuarios');
   if (!el) return;
-  const { data: users } = await sb.from('usuarios_perfil').select('*').order('criado_em', { ascending: false });
+  const { data: users } = await sb.from('usuarios_perfil_completo').select('*').order('criado_em', { ascending: false });
   if (!users || users.length === 0) { el.innerHTML = '<div class="loader">Nenhum usuário cadastrado ainda.</div>'; return; }
 
   const rolesLabel = { admin: 'Administrador', analyst: 'Analista', viewer: 'Visualizador' };
@@ -1788,6 +1792,7 @@ async function carregarListaUsuarios() {
         ` : '<span style="font-size:11px;color:var(--cinza-texto)">—</span>'}
       </td>
       <td>${u.criado_em ? new Date(u.criado_em).toLocaleDateString('pt-BR') : '—'}</td>
+      <td>${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString('pt-BR') : '<span style="color:var(--cinza-texto);font-size:11px">Nunca acessou</span>'}</td>
       <td>
         ${u.ativo
           ? `<button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;color:var(--vermelho)" onclick="desativarUsuario('${u.id}')">Desativar</button>`

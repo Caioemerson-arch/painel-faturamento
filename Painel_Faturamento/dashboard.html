@@ -1070,18 +1070,22 @@ async function carregarUsuarios(){
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
           <div>
             <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Abas permitidas</p>
-            ${ABAS_DISP.map(a=>`<label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" ${abas.includes(a.id)?'checked':''} onchange="alterarAbas('${u.id}','${a.id}',this.checked)" style="accent-color:var(--vm);width:13px;height:13px">${a.label}</label>`).join('')}
+            ${ABAS_DISP.map(a=>`<label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="aba-${u.id}-${a.id}" ${abas.includes(a.id)?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">${a.label}</label>`).join('')}
           </div>
           <div>
             <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Uploads (analista)</p>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" ${u.perm_producao?'checked':''} onchange="alterarPerm('${u.id}','perm_producao',this.checked)" style="accent-color:var(--vm);width:13px;height:13px">Lançar produção</label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" ${u.perm_boletim?'checked':''} onchange="alterarPerm('${u.id}','perm_boletim',this.checked)" style="accent-color:var(--vm);width:13px;height:13px">Importar boletim</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pp-${u.id}" ${u.perm_producao?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Lançar produção</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="pb-${u.id}" ${u.perm_boletim?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Importar boletim</label>
           </div>
           <div>
             <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Exportações</p>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" ${u.perm_exportar_pdf?'checked':''} onchange="alterarPerm('${u.id}','perm_exportar_pdf',this.checked)" style="accent-color:var(--vm);width:13px;height:13px">Exportar PDF</label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" ${u.perm_exportar_excel?'checked':''} onchange="alterarPerm('${u.id}','perm_exportar_excel',this.checked)" style="accent-color:var(--vm);width:13px;height:13px">Exportar Excel</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="ppdf-${u.id}" ${u.perm_exportar_pdf?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Exportar PDF</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="pxls-${u.id}" ${u.perm_exportar_excel?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Exportar Excel</label>
           </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)">
+          <button class="btn btn-s btn-sm" style="margin-right:8px" onclick="togglePerms('perms-${u.id}')">Cancelar</button>
+          <button class="btn btn-p btn-sm" onclick="salvarPermissoes('${u.id}')"><i class="ti ti-device-floppy" aria-hidden="true"></i> Salvar permissões</button>
         </div>
       </div>
     </td></tr>`;
@@ -1089,13 +1093,26 @@ async function carregarUsuarios(){
 }
 function togglePerms(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none';}
 async function alterarRole(id,r){await sb.from('usuarios_perfil').update({role:r,perm_producao:r==='admin',perm_boletim:r==='admin',perm_exportar_pdf:r==='admin',perm_exportar_excel:r==='admin',atualizado_em:new Date().toISOString()}).eq('id',id);carregarUsuarios();}
-async function alterarPerm(id,campo,val){await sb.from('usuarios_perfil').update({[campo]:val,atualizado_em:new Date().toISOString()}).eq('id',id);}
-async function alterarAbas(id,aba,val){
-  const {data:u}=await sb.from('usuarios_perfil').select('abas_permitidas').eq('id',id).single();
-  let abas=u?.abas_permitidas||['geral','servico','regional'];
-  if(val){if(!abas.includes(aba)) abas=[...abas,aba];}
-  else abas=abas.filter(a=>a!==aba);
-  await sb.from('usuarios_perfil').update({abas_permitidas:abas,atualizado_em:new Date().toISOString()}).eq('id',id);
+
+async function salvarPermissoes(userId){
+  const ABAS_IDS=['geral','servico','regional','lancar','boletim','cadernos','usuarios'];
+  const abas=ABAS_IDS.filter(a=>document.getElementById('aba-'+userId+'-'+a)?.checked);
+  const pp=document.getElementById('pp-'+userId)?.checked||false;
+  const pb=document.getElementById('pb-'+userId)?.checked||false;
+  const ppdf=document.getElementById('ppdf-'+userId)?.checked||false;
+  const pxls=document.getElementById('pxls-'+userId)?.checked||false;
+  const {error}=await sb.from('usuarios_perfil').update({
+    abas_permitidas:abas,
+    perm_producao:pp,
+    perm_boletim:pb,
+    perm_exportar_pdf:ppdf,
+    perm_exportar_excel:pxls,
+    atualizado_em:new Date().toISOString()
+  }).eq('id',userId);
+  if(error){alert('Erro ao salvar: '+error.message);return;}
+  alert('✓ Permissões salvas com sucesso!');
+  togglePerms('perms-'+userId);
+  carregarUsuarios();
 }
 async function desativarUser(id){if(!confirm('Desativar?')) return;await sb.from('usuarios_perfil').update({ativo:false}).eq('id',id);carregarUsuarios();}
 async function convidarUsuario(){

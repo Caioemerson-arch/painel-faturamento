@@ -7,120 +7,187 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-:root{--vm:#BE2F3B;--vm-cl:#f9eaea;--pt:#2C2C2A;--bg:#f5f4f1;--bd:#e0deda;--tx2:#7B7B7B;--br:#ffffff;--vd:#1D9E75;--vd-cl:#eaf3de;--az:#378ADD;--az-cl:#e6f1fb;--am:#BA7517;--am-cl:#faeeda;--r:10px;--r2:6px;--sh:0 1px 3px rgba(0,0,0,.08)}
+:root{
+  --vm:#BE2F3B;--vm-cl:#f9eaea;--az-esc:#1A1A2E;--pt:#2C2C2A;
+  --bg:#f5f4f1;--bd:#e0deda;--tx2:#7B7B7B;--br:#fff;
+  --vd:#1D9E75;--vd-cl:#eaf3de;--az:#378ADD;--az-cl:#e6f1fb;
+  --am:#BA7517;--am-cl:#faeeda;--r:10px;--r2:6px;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size:14px}
-#tela-login{min-height:100vh;display:flex;align-items:center;justify-content:center}
-.lbox{background:var(--br);border-radius:var(--r);padding:2.5rem 2rem;width:360px;box-shadow:var(--sh);border:1px solid var(--bd)}
-.llogo{display:flex;align-items:center;gap:10px;margin-bottom:2rem;justify-content:center}
-.lico{width:40px;height:40px;background:var(--vm);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700}
-.lbox label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;margin-top:14px}
-.lbox input{width:100%;padding:9px 12px;border:1px solid var(--bd);border-radius:var(--r2);font-size:14px}
+
+/* LOGIN */
+#tela-login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--az-esc)}
+.lbox{background:var(--br);border-radius:var(--r);padding:2.5rem 2rem;width:380px;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.llogo{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:2rem}
+.llogo img{height:52px;width:auto}
+.llogo p{font-size:12px;color:var(--tx2)}
+.lbox label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;margin-top:14px;font-weight:700}
+.lbox input{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:var(--r2);font-size:14px}
 .lbox input:focus{outline:none;border-color:var(--vm)}
-.btn-login{width:100%;margin-top:20px;padding:10px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;cursor:pointer}
+.btn-login{width:100%;margin-top:20px;padding:11px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;cursor:pointer}
 .btn-login:hover{background:#a02632}
 #login-erro{color:var(--vm);font-size:12px;margin-top:8px;text-align:center}
-#app{display:none;min-height:100vh}
-.topbar{background:var(--br);border-bottom:1px solid var(--bd);padding:0 1.5rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.tl{display:flex;align-items:center;gap:10px}
-.tlogo{width:32px;height:32px;background:var(--vm);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
-.topbar h1{font-size:15px;font-weight:700}
-.tr{display:flex;align-items:center;gap:12px}
-.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;background:var(--vm-cl);color:var(--vm)}
-.btn-out{font-size:12px;padding:5px 12px;border:1px solid var(--bd);border-radius:var(--r2);background:var(--br);cursor:pointer;color:var(--tx2)}
-.tabbar{background:var(--br);border-bottom:1px solid var(--bd);padding:0 1.5rem;display:flex;overflow-x:auto}
-.tabbar button{font-size:13px;padding:14px 18px;background:none;border:none;border-bottom:2px solid transparent;color:var(--tx2);cursor:pointer;white-space:nowrap;font-weight:500}
-.tabbar button.active{color:var(--vm);border-bottom-color:var(--vm)}
-.tabbar button:hover:not(.active){color:var(--pt);background:var(--bg)}
-.tab-admin{display:none}
-.con{padding:1.5rem;max-width:1400px;margin:0 auto}
+
+/* LAYOUT PRINCIPAL */
+#app{display:none;min-height:100vh;display:none}
+.layout{display:grid;grid-template-columns:200px 1fr;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{background:var(--az-esc);display:flex;flex-direction:column;position:fixed;top:0;left:0;width:200px;height:100vh;z-index:100;overflow-y:auto}
+.sb-logo{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo img{height:30px;width:auto}
+.sb-user{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--vm);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:700;flex-shrink:0}
+.sb-uname{font-size:11px;color:rgba(255,255,255,.8);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-urole{font-size:9px;color:var(--vm);font-weight:700;margin-top:1px}
+.sb-nav{padding:8px 0;flex:1}
+.sb-sec{font-size:9px;color:rgba(255,255,255,.3);padding:10px 14px 4px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12px;color:rgba(255,255,255,.55);cursor:pointer;border-left:2px solid transparent;transition:.15s;text-decoration:none}
+.sb-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.05)}
+.sb-item.active{color:#fff;background:rgba(190,47,59,.18);border-left-color:var(--vm)}
+.sb-item i{font-size:15px;flex-shrink:0}
+.sb-bottom{padding:12px 14px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-out{font-size:11px;color:rgba(255,255,255,.45);background:none;border:1px solid rgba(255,255,255,.12);border-radius:var(--r2);padding:6px 10px;width:100%;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px}
+.sb-out:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.7)}
+
+/* MAIN */
+.main{margin-left:200px;display:flex;flex-direction:column;min-height:100vh}
+.main-header{background:var(--br);border-bottom:1px solid var(--bd);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-info{display:flex;flex-direction:column}
+.page-title{font-size:14px;font-weight:700;color:var(--pt)}
+.page-sub{font-size:11px;color:var(--tx2);margin-top:1px}
+.header-actions{display:flex;gap:8px;align-items:center}
+.btn-xls{font-size:11px;padding:6px 12px;background:var(--vd-cl);color:#3B6D11;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px}
+.btn-xls:hover{background:#c0dd97}
+.btn-pdf{font-size:11px;padding:6px 12px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px}
+.btn-pdf:hover{background:#a02632}
+.con{padding:1.25rem 1.5rem;flex:1}
+
+/* FILTROS */
 .fil{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
-.fil label{font-size:12px;color:var(--tx2)}
-.fil select,.fil input{font-size:13px;padding:7px 12px;border:1px solid var(--bd);border-radius:var(--r2);background:var(--br);color:var(--pt);cursor:pointer}
+.fil label{font-size:11px;color:var(--tx2);font-weight:700}
+.fil select{font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:var(--r2);background:var(--br);color:var(--pt);cursor:pointer}
 .fil select:focus{outline:none;border-color:var(--vm)}
-.alerta{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:var(--r2);margin-bottom:1.25rem;font-size:13px}
+
+/* ALERTAS */
+.alerta{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--r2);margin-bottom:1.25rem;font-size:12px}
 .al-warn{background:var(--am-cl);color:var(--am);border:1px solid #f0c070}
 .al-info{background:var(--az-cl);color:#185FA5;border:1px solid #b5d4f4}
 .al-ok{background:var(--vd-cl);color:#0F6E56;border:1px solid #9fe1cb}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:1.25rem}
-.card{background:var(--br);border-radius:var(--r);padding:1.1rem 1.25rem;border:1px solid var(--bd)}
-.card .cl{font-size:11px;color:var(--tx2);margin-bottom:6px;font-weight:500}
-.card .cv{font-size:22px;font-weight:700}
-.card .cs{font-size:11px;margin-top:5px}
+
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:1.25rem}
+.card{background:var(--br);border-radius:var(--r);padding:1rem 1.1rem;border:1px solid var(--bd);border-top:3px solid var(--vm)}
+.card.vd{border-top-color:var(--vd)}
+.card .cl{font-size:10px;color:var(--tx2);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.card .cv{font-size:20px;font-weight:700;color:var(--pt)}
+.card .cs{font-size:10px;margin-top:4px}
 .cn{color:var(--vm)}.cp{color:var(--vd)}.cw{color:var(--am)}.cm{color:var(--tx2)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.25rem}
-.gbox{background:var(--br);border-radius:var(--r);padding:1.1rem 1.25rem;border:1px solid var(--bd);margin-bottom:1.25rem}
-.gbox h3{font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+
+/* BOXES */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem}
+.gbox{background:var(--br);border-radius:var(--r);padding:1rem 1.1rem;border:1px solid var(--bd)}
+.gbox h3{font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
+.gbox h3::before{content:'';display:block;width:3px;height:12px;background:var(--vm);border-radius:2px;flex-shrink:0}
 .gbox-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .gbox-h h3{margin:0}
 .gbox-h select{font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)}
 .leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
-.leg span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx2)}
-.leg i{width:10px;height:10px;border-radius:2px;display:inline-block}
-.stit{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
-.stit-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.stit-row .stit{margin:0}
+.leg span{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--tx2)}
+.leg i{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+/* TABELAS */
+.sec{font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sec::before{content:'';display:block;width:3px;height:10px;background:var(--vm);border-radius:2px}
+.sec-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sec-row .sec{margin:0}
 .tbox{background:var(--br);border-radius:var(--r);border:1px solid var(--bd);overflow:hidden;margin-bottom:1.25rem;overflow-x:auto}
-.tbox table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+.tbox table{width:100%;border-collapse:collapse;font-size:12px;min-width:500px}
 .tbox thead tr{background:var(--bg)}
-.tbox th{padding:10px 12px;text-align:left;font-weight:700;color:var(--tx2);font-size:11px;text-transform:uppercase;white-space:nowrap}
+.tbox th{padding:9px 12px;text-align:left;font-weight:700;color:var(--tx2);font-size:10px;text-transform:uppercase;white-space:nowrap}
 .tbox td{padding:9px 12px;border-top:1px solid var(--bd);white-space:nowrap}
 .tbox tr:hover td{background:#fafaf8}
-.pill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:700}
-.p-ok{background:var(--vd-cl);color:#0F6E56}
-.p-warn{background:var(--am-cl);color:var(--am)}
-.p-danger{background:var(--vm-cl);color:var(--vm)}
+.pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700}
+.p-ok{background:var(--vd-cl);color:#3B6D11}
+.p-warn{background:var(--am-cl);color:#854F0B}
+.p-danger{background:var(--vm-cl);color:#A32D2D}
 .p-cinza{background:var(--bg);color:var(--tx2)}
-.prog{display:flex;align-items:center;gap:8px}
-.prog-t{flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;min-width:60px}
+.p-info{background:var(--az-cl);color:#185FA5}
+.prog{display:flex;align-items:center;gap:6px}
+.prog-t{flex:1;height:5px;background:var(--bg);border-radius:3px;overflow:hidden;min-width:50px}
 .prog-f{height:100%;border-radius:3px}
-.uarea{border:2px dashed var(--bd);border-radius:var(--r);padding:2rem;text-align:center;cursor:pointer;transition:.2s}
+
+/* UPLOAD */
+.uarea{border:2px dashed var(--bd);border-radius:var(--r);padding:1.75rem;text-align:center;cursor:pointer;transition:.2s}
 .uarea:hover,.uarea.drag{border-color:var(--vm);background:var(--vm-cl)}
 .uarea input[type=file]{display:none}
-.uarea p{font-size:13px;color:var(--tx2);margin-top:8px}
-.fg{margin-bottom:1rem}
-.fg label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;font-weight:700}
-.fg input,.fg select{width:100%;padding:8px 12px;border:1px solid var(--bd);border-radius:var(--r2);font-size:13px;background:var(--br)}
-.btn{font-size:13px;padding:8px 18px;border-radius:var(--r2);cursor:pointer;font-weight:700;transition:.15s}
-.btn-p{background:var(--vm);color:#fff;border:none}.btn-p:hover{background:#a02632}
-.btn-s{background:var(--br);color:var(--pt);border:1px solid var(--bd)}.btn-s:hover{background:var(--bg)}
-.btn-sm{font-size:11px;padding:4px 10px}
-.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem}
-.ccard{background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1.1rem 1.25rem;margin-bottom:10px}
-.ccard.ativo{border-color:var(--vm);border-width:2px}
-.ccard-h{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:10px;flex-wrap:wrap}
-.ccard-t{font-size:14px;font-weight:700}
-.ccard-m{font-size:12px;color:var(--tx2);margin-top:3px}
-.ccard-st{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.ccard-s{background:var(--bg);border-radius:var(--r2);padding:8px 10px}
-.ccard-s .sl{font-size:10px;color:var(--tx2);margin-bottom:3px}
-.ccard-s .sv{font-size:13px;font-weight:700}
-.ccard-vig{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;padding:10px;background:var(--az-cl);border-radius:var(--r2);border:1px solid #b5d4f4;margin-top:8px}
-.ccard-vig label{font-size:11px;color:#185FA5;font-weight:700;display:block;margin-bottom:3px}
-.ccard-vig input{font-size:12px;padding:5px 8px;border:1px solid #b5d4f4;border-radius:var(--r2);background:var(--br);width:100%}
-.ckbox{display:flex;align-items:center;gap:6px;font-size:12px;color:#185FA5;font-weight:700;padding-bottom:4px}
-.tar-box{background:var(--bg);border-radius:var(--r2);padding:1rem;margin-top:10px;display:none;overflow-x:auto}
-.tar-box table{width:100%;border-collapse:collapse;font-size:12px}
-.tar-box th{padding:6px 10px;text-align:left;font-size:11px;color:var(--tx2);font-weight:700;background:var(--br);border-bottom:1px solid var(--bd)}
-.tar-box td{padding:6px 10px;border-bottom:1px solid var(--bd)}
-.revbox{background:var(--br);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:1rem;max-height:380px;overflow-y:auto}
+.uarea p{font-size:12px;color:var(--tx2);margin-top:6px}
+.revbox{background:var(--br);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:1rem;max-height:360px;overflow-y:auto}
 .revbox table{width:100%;border-collapse:collapse;font-size:12px}
 .revbox thead{position:sticky;top:0;background:var(--bg)}
-.revbox th{padding:8px 12px;text-align:left;font-size:11px;color:var(--tx2);font-weight:700}
+.revbox th{padding:8px 12px;text-align:left;font-size:10px;color:var(--tx2);font-weight:700;text-transform:uppercase}
 .revbox td{padding:7px 12px;border-top:1px solid var(--bd)}
+
+/* BOTÕES */
+.btn{font-size:12px;padding:7px 16px;border-radius:var(--r2);cursor:pointer;font-weight:700;transition:.15s;display:inline-flex;align-items:center;gap:5px}
+.btn-p{background:var(--vm);color:#fff;border:none}.btn-p:hover{background:#a02632}
+.btn-s{background:var(--br);color:var(--pt);border:1px solid var(--bd)}.btn-s:hover{background:var(--bg)}
+.btn-sm{font-size:10px;padding:4px 10px}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem}
+
+/* CADERNO */
+.ccard{background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:10px}
+.ccard.ativo{border-color:var(--vm);border-width:2px}
+.ccard-h{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+.ccard-t{font-size:13px;font-weight:700}
+.ccard-m{font-size:11px;color:var(--tx2);margin-top:2px}
+.ccard-st{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.ccard-s{background:var(--bg);border-radius:var(--r2);padding:8px 10px}
+.ccard-s .sl{font-size:9px;color:var(--tx2);margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em}
+.ccard-s .sv{font-size:13px;font-weight:700}
+.ccard-vig{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;padding:10px;background:var(--az-cl);border-radius:var(--r2);border:1px solid #b5d4f4;margin-top:8px}
+.ccard-vig label{font-size:10px;color:#185FA5;font-weight:700;display:block;margin-bottom:3px}
+.ccard-vig input{font-size:11px;padding:5px 8px;border:1px solid #b5d4f4;border-radius:var(--r2);background:var(--br);width:100%}
+.ckbox{display:flex;align-items:center;gap:6px;font-size:11px;color:#185FA5;font-weight:700;padding-bottom:4px}
+.tar-box{background:var(--bg);border-radius:var(--r2);padding:.875rem;margin-top:10px;display:none;overflow-x:auto}
+.tar-box table{width:100%;border-collapse:collapse;font-size:11px}
+.tar-box th{padding:6px 10px;text-align:left;font-size:10px;color:var(--tx2);font-weight:700;background:var(--br);border-bottom:1px solid var(--bd);text-transform:uppercase}
+.tar-box td{padding:6px 10px;border-bottom:1px solid var(--bd)}
+
+/* USUÁRIOS */
+.user-perm-box{background:var(--bg);border-radius:var(--r2);padding:10px;margin-top:8px;display:none}
+.user-perm-box.open{display:block}
+.perm-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.perm-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--pt)}
+.perm-item input{accent-color:var(--vm);width:13px;height:13px}
+.abas-check{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px}
 .loader{text-align:center;padding:3rem;color:var(--tx2);font-size:13px}
-@media(max-width:768px){.row2{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.ccard-st{grid-template-columns:1fr 1fr}.con{padding:1rem}.ccard-vig{grid-template-columns:1fr 1fr}}
+
+/* EXCEL MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;display:none}
+.modal-overlay.open{display:flex}
+.modal{background:var(--br);border-radius:var(--r);padding:1.5rem;width:480px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:1rem;color:var(--pt)}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.fg{margin-bottom:.875rem}
+.fg label{display:block;font-size:11px;color:var(--tx2);margin-bottom:4px;font-weight:700}
+.fg select,.fg input{width:100%;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r2);font-size:12px;background:var(--br)}
+
+@media(max-width:768px){.layout{grid-template-columns:1fr}.sidebar{display:none}.main{margin-left:0}.cards{grid-template-columns:1fr 1fr}.row2{grid-template-columns:1fr}.ccard-st{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="tela-login">
   <div class="lbox">
-    <div class="llogo"><div class="lico">C</div><span style="font-size:18px;font-weight:700">CENEGED</span></div>
-    <div style="text-align:center;margin-bottom:1.5rem">
-      <p style="font-size:15px;font-weight:700">Painel de Faturamento</p>
-      <p style="font-size:12px;color:var(--tx2);margin-top:3px">Acesse com seu e-mail e senha</p>
+    <div class="llogo">
+      <img src="https://www.ceneged.com.br/wp-content/uploads/2023/02/Logo-Ceneged.png" alt="CENEGED">
+      <p>Painel de Faturamento</p>
     </div>
     <label>E-mail</label><input type="email" id="li-email" placeholder="seu@ceneged.com.br" autocomplete="email">
     <label>Senha</label><input type="password" id="li-senha" placeholder="••••••••" autocomplete="current-password">
@@ -129,294 +196,277 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
   </div>
 </div>
 
+<!-- APP -->
 <div id="app">
-  <div class="topbar">
-    <div class="tl"><div class="tlogo">C</div><h1>Painel de Faturamento — CENEGED</h1></div>
-    <div class="tr">
-      <span id="tb-user" style="font-size:12px;color:var(--tx2)"></span>
-      <span id="tb-role" class="badge"></span>
-      <button class="btn-out" onclick="fazerLogout()">Sair</button>
-    </div>
-  </div>
-  <div class="tabbar">
-    <button class="active" onclick="setTab('geral',this)">Visão Geral</button>
-    <button onclick="setTab('servico',this)">Por Serviço</button>
-    <button onclick="setTab('regional',this)">Por Regional</button>
-    <button class="tab-admin" onclick="setTab('lancar',this)">Lançar Produção</button>
-    <button class="tab-admin" onclick="setTab('boletim',this)">Importar Boletim</button>
-    <button class="tab-admin" onclick="setTab('cadernos',this)">Cadernos de Serviço</button>
-    <button class="tab-admin" onclick="setTab('usuarios',this)">Gestão de Usuários</button>
-  </div>
-
-  <!-- VISÃO GERAL -->
-  <div id="tab-geral" class="con">
-    <div class="fil">
-      <label>Estado</label>
-      <select id="g-est" onchange="syncRegsGeral();carregarGeral()"><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option></select>
-      <label>Mês</label><select id="g-mes" onchange="carregarGeral()"></select>
-      <label>Ano</label><select id="g-ano" onchange="carregarGeral()"></select>
-    </div>
-    <div id="g-alerta" class="alerta al-warn" style="display:none"><span>⚠</span><span id="g-alerta-txt"></span></div>
-    <div class="cards">
-      <div class="card"><div class="cl">Faturamento previsto (caderno)</div><div class="cv" id="g-prev">—</div><div class="cs cm">Meta mensal vigente</div></div>
-      <div class="card"><div class="cl">Faturamento executado (campo)</div><div class="cv" id="g-exec">—</div><div class="cs" id="g-exec-s">—</div></div>
-      <div class="card"><div class="cl">Faturamento pago (Equatorial)</div><div class="cv" id="g-pago">—</div><div class="cs" id="g-pago-s">—</div></div>
-      <div class="card"><div class="cl">% da meta atingida</div><div class="cv" id="g-pct">—</div><div class="cs cm">Base: faturamento pago</div></div>
-    </div>
-    <div class="row2">
-      <div class="gbox" style="margin-bottom:0">
-        <h3>Evolução mensal — previsto vs executado vs pago</h3>
-        <div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
-        <div style="position:relative;height:220px"><canvas id="ch-mensal"></canvas></div>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-logo">
+        <img src="https://www.ceneged.com.br/wp-content/uploads/2023/02/Logo-Ceneged-1.png" alt="CENEGED">
       </div>
-      <div class="gbox" style="margin-bottom:0">
-        <div class="gbox-h">
-          <h3>Pago por serviço</h3>
-          <select id="g-reg-pz" onchange="renderPizza()"><option value="">Todas regionais</option></select>
-        </div>
-        <div class="leg" id="leg-pz"></div>
-        <div style="position:relative;height:200px"><canvas id="ch-pizza"></canvas></div>
-      </div>
-    </div>
-
-    <!-- QUADRO EVENTOS POR REGIONAL -->
-    <div class="stit" style="margin-top:1.25rem">Eventos por regional — previsto vs executado vs pago</div>
-    <div class="tbox">
-      <table><thead><tr><th>Regional</th><th>Eventos previstos</th><th>Eventos executados</th><th>Eventos pagos</th><th>Diferença (exec/pago)</th><th>Divergência %</th><th>Status</th></tr></thead>
-      <tbody id="tb-evt-reg"></tbody></table>
-    </div>
-
-    <!-- QUADRO FATURAMENTO POR REGIONAL -->
-    <div class="stit">Faturamento por regional</div>
-    <div class="tbox">
-      <table><thead><tr><th>Regional</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência (exec/pago)</th><th>% meta</th></tr></thead>
-      <tbody id="tb-fat-reg"></tbody></table>
-    </div>
-
-    <!-- QUADRO TARIFA PREVISTA VS PAGA -->
-    <div class="stit">Comparativo de tarifas — prevista vs paga</div>
-    <div class="tbox">
-      <table><thead><tr><th>Serviço</th><th>Regional</th><th>Tarifa prevista (caderno)</th><th>Tarifa paga (boletim)</th><th>Diferença</th><th>Status</th></tr></thead>
-      <tbody id="tb-tar"></tbody></table>
-    </div>
-
-    <!-- QUADRO PROPORÇÃO POR SERVIÇO -->
-    <div class="stit">Proporção por serviço — previsto vs executado vs pago</div>
-    <div class="tbox">
-      <table><thead><tr><th>Serviço</th><th>% previsto</th><th>% executado</th><th>% pago</th><th>Desvio (prev/pago)</th><th>Status</th></tr></thead>
-      <tbody id="tb-prop"></tbody></table>
-    </div>
-  </div>
-
-  <!-- POR SERVIÇO -->
-  <div id="tab-servico" class="con" style="display:none">
-    <div class="fil">
-      <label>Estado</label>
-      <select id="s-est" onchange="syncRegsServ();carregarServico()"><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option></select>
-      <label>Regional</label><select id="s-reg" onchange="carregarServico()"><option value="">Todas</option></select>
-      <label>Mês</label><select id="s-mes" onchange="carregarServico()"></select>
-      <label>Ano</label><select id="s-ano" onchange="carregarServico()"></select>
-    </div>
-    <div class="alerta al-info"><span>ℹ</span><span>Compare <strong>% Caderno</strong> vs <strong>% Pago</strong> para detectar substituição de serviços de tarifa alta por baixa.</span></div>
-    <div class="gbox">
-      <h3>Distribuição proporcional — caderno vs executado vs pago</h3>
-      <div class="leg"><span><i style="background:var(--vm)"></i>Caderno</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
-      <div id="dist-bars"></div>
-    </div>
-    <div class="stit">Detalhe por serviço</div>
-    <div class="tbox">
-      <table><thead><tr><th>Serviço</th><th>Tarifa</th><th>Prev.(evt)</th><th>%cad</th><th>Exec.(evt)</th><th>%exec</th><th>Pago(evt)</th><th>%pago</th><th>Valor pago</th><th>Alerta</th></tr></thead>
-      <tbody id="tb-svc"></tbody></table>
-    </div>
-  </div>
-
-  <!-- POR REGIONAL -->
-  <div id="tab-regional" class="con" style="display:none">
-    <div class="fil">
-      <label>Estado</label>
-      <select id="r-est" onchange="syncRegsReg();carregarRegional()"><option value="MA">Maranhão</option><option value="PI">Piauí</option></select>
-      <label>Regional</label><select id="r-reg" onchange="carregarRegional()"></select>
-      <label>Mês</label><select id="r-mes" onchange="carregarRegional()"></select>
-      <label>Ano</label><select id="r-ano" onchange="carregarRegional()"></select>
-    </div>
-    <div id="r-alerta" class="alerta al-warn" style="display:none"><span>⚠</span><span id="r-alerta-txt"></span></div>
-    <div class="cards" id="r-cards"></div>
-    <div class="row2">
-      <div class="gbox" style="margin-bottom:0">
-        <h3 id="r-ch-tit">Evolução mensal</h3>
-        <div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
-        <div style="position:relative;height:200px"><canvas id="ch-reg-m"></canvas></div>
-      </div>
-      <div class="gbox" style="margin-bottom:0">
-        <h3>Distribuição por serviço — pago</h3>
-        <div class="leg" id="leg-reg-pz"></div>
-        <div style="position:relative;height:200px"><canvas id="ch-reg-pz"></canvas></div>
-      </div>
-    </div>
-    <div class="stit" style="margin-top:1.25rem">Eventos por serviço — previsto vs executado vs pago</div>
-    <div class="tbox">
-      <table><thead><tr><th>Serviço</th><th>Eventos prev.</th><th>Eventos exec.</th><th>Eventos pagos</th><th>Dif.(exec/pago)</th><th>Divergência %</th><th>Status</th></tr></thead>
-      <tbody id="tb-reg-evt"></tbody></table>
-    </div>
-    <div class="stit">Faturamento por serviço</div>
-    <div class="tbox">
-      <table><thead><tr><th>Serviço</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead>
-      <tbody id="tb-reg-fat"></tbody></table>
-    </div>
-    <div class="stit">Comparativo de tarifas</div>
-    <div class="tbox">
-      <table><thead><tr><th>Serviço</th><th>Tarifa prevista</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead>
-      <tbody id="tb-reg-tar"></tbody></table>
-    </div>
-    <div class="stit">Proporção por serviço</div>
-    <div class="tbox">
-      <table><thead><tr><th>Serviço</th><th>% previsto</th><th>% executado</th><th>% pago</th><th>Desvio</th><th>Status</th></tr></thead>
-      <tbody id="tb-reg-prop"></tbody></table>
-    </div>
-  </div>
-
-  <!-- LANÇAR PRODUÇÃO -->
-  <div id="tab-lancar" class="con" style="display:none">
-    <div class="alerta al-info"><span>ℹ</span><span>Faça o upload de <strong>um arquivo por vez</strong>. O sistema bloqueia reenvio de períodos já importados.</span></div>
-    <div class="gbox">
-      <h3>Upload da planilha de produção real</h3>
-      <div class="uarea" id="ua-prod" onclick="document.getElementById('uf-prod').click()" ondragover="dragOver(event,'ua-prod')" ondragleave="dragLeave('ua-prod')" ondrop="dropFile(event,'prod')">
-        <div style="font-size:32px">📤</div>
-        <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
-        <p style="font-size:11px;margin-top:4px">Producao_Real_Campo_CENEGED.xlsx — um arquivo por vez</p>
-        <input type="file" id="uf-prod" accept=".xlsx" onchange="processarUpload(this.files[0],'prod')">
-      </div>
-      <div id="pv-prod" style="display:none;margin-top:1rem">
-        <div class="alerta al-ok"><span>✓</span><span id="prod-st-txt"></span></div>
-        <div id="prod-dup-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="prod-dup-txt"></span></div>
-        <div class="stit">Revisão dos dados</div>
-        <div class="revbox">
-          <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Regional</th><th>Serviço</th><th style="text-align:right">Qtd executada</th><th>Status</th></tr></thead>
-          <tbody id="tb-pv-prod"></tbody></table>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-s" onclick="cancelarUpload('prod')">Cancelar</button>
-          <button class="btn btn-p" id="btn-salvar-prod" onclick="salvarProducao()">✓ Confirmar e salvar</button>
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">CE</div>
+        <div>
+          <div class="sb-uname" id="sb-uname">—</div>
+          <div class="sb-urole" id="sb-urole">—</div>
         </div>
       </div>
+      <div class="sb-nav" id="sb-nav">
+        <div class="sb-sec">Visões</div>
+        <a class="sb-item active" id="nav-geral" onclick="setTab('geral',this)"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Visão Geral</a>
+        <a class="sb-item" id="nav-servico" onclick="setTab('servico',this)"><i class="ti ti-list-details" aria-hidden="true"></i>Por Serviço</a>
+        <a class="sb-item" id="nav-regional" onclick="setTab('regional',this)"><i class="ti ti-map-pin" aria-hidden="true"></i>Por Regional</a>
+        <div class="sb-sec">Dados</div>
+        <a class="sb-item" id="nav-lancar" onclick="setTab('lancar',this)" style="display:none"><i class="ti ti-upload" aria-hidden="true"></i>Lançar Produção</a>
+        <a class="sb-item" id="nav-boletim" onclick="setTab('boletim',this)" style="display:none"><i class="ti ti-file-invoice" aria-hidden="true"></i>Importar Boletim</a>
+        <a class="sb-item" id="nav-cadernos" onclick="setTab('cadernos',this)" style="display:none"><i class="ti ti-book" aria-hidden="true"></i>Cadernos</a>
+        <div class="sb-sec">Gestão</div>
+        <a class="sb-item" id="nav-usuarios" onclick="setTab('usuarios',this)" style="display:none"><i class="ti ti-users" aria-hidden="true"></i>Usuários</a>
+      </div>
+      <div class="sb-bottom">
+        <button class="sb-out" onclick="fazerLogout()"><i class="ti ti-logout" aria-hidden="true"></i>Sair</button>
+      </div>
     </div>
-    <div class="stit-row">
-      <div class="stit">Histórico de lançamentos</div>
-      <button class="btn btn-s btn-sm" onclick="carregarHistProd()">↻ Atualizar</button>
-    </div>
-    <div class="tbox">
-      <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead>
-      <tbody id="tb-hist-prod"></tbody></table>
-    </div>
-  </div>
 
-  <!-- IMPORTAR BOLETIM -->
-  <div id="tab-boletim" class="con" style="display:none">
-    <div class="alerta al-info"><span>ℹ</span><span>Faça o upload de <strong>um arquivo por vez</strong>. O sistema bloqueia reenvio de períodos já importados.</span></div>
-    <div class="gbox">
-      <h3>Upload do boletim de pagamento</h3>
-      <div class="uarea" id="ua-bol" onclick="document.getElementById('uf-bol').click()" ondragover="dragOver(event,'ua-bol')" ondragleave="dragLeave('ua-bol')" ondrop="dropFile(event,'bol')">
-        <div style="font-size:32px">📤</div>
-        <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
-        <p style="font-size:11px;margin-top:4px">Boletim_Pagamento_CENEGED.xlsx — um arquivo por vez</p>
-        <input type="file" id="uf-bol" accept=".xlsx" onchange="processarUpload(this.files[0],'bol')">
-      </div>
-      <div id="pv-bol" style="display:none;margin-top:1rem">
-        <div class="alerta al-ok"><span>✓</span><span id="bol-st-txt"></span></div>
-        <div id="bol-dup-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="bol-dup-txt"></span></div>
-        <div id="bol-tar-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="bol-tar-txt"></span></div>
-        <div class="stit">Revisão dos dados</div>
-        <div class="revbox">
-          <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Regional</th><th>Serviço</th><th style="text-align:right">Tarifa</th><th style="text-align:right">Qtd paga</th><th style="text-align:right">Valor pago</th><th>Tarifa</th></tr></thead>
-          <tbody id="tb-pv-bol"></tbody></table>
+    <!-- MAIN -->
+    <div class="main">
+      <div class="main-header">
+        <div class="page-info">
+          <div class="page-title" id="page-title">Visão Geral</div>
+          <div class="page-sub" id="page-sub">Maranhão · —</div>
         </div>
-        <div class="btn-row">
-          <button class="btn btn-s" onclick="cancelarUpload('bol')">Cancelar</button>
-          <button class="btn btn-p" id="btn-salvar-bol" onclick="salvarBoletim()">✓ Confirmar e salvar</button>
+        <div class="header-actions">
+          <button class="btn-xls" id="btn-xls" style="display:none" onclick="abrirModalExcel()"><i class="ti ti-file-spreadsheet" aria-hidden="true"></i>Excel</button>
+          <button class="btn-pdf" id="btn-pdf" style="display:none" onclick="exportarPDF()"><i class="ti ti-file-type-pdf" aria-hidden="true"></i>PDF</button>
         </div>
       </div>
-    </div>
-    <div class="stit-row">
-      <div class="stit">Histórico de boletins</div>
-      <button class="btn btn-s btn-sm" onclick="carregarHistBol()">↻ Atualizar</button>
-    </div>
-    <div class="tbox">
-      <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Total pago</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead>
-      <tbody id="tb-hist-bol"></tbody></table>
-    </div>
-  </div>
 
-  <!-- CADERNOS -->
-  <div id="tab-cadernos" class="con" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
-      <div>
-        <p style="font-size:15px;font-weight:700">Cadernos de Serviço</p>
-        <p style="font-size:12px;color:var(--tx2);margin-top:3px">O caderno ativo define a meta e tarifas do período atual.</p>
-      </div>
-      <button class="btn btn-p" onclick="toggleUploadCad()">+ Novo caderno</button>
-    </div>
-    <div id="upload-cad-box" class="gbox" style="display:none">
-      <h3>Upload do caderno de serviços</h3>
-      <div class="uarea" id="ua-cad" onclick="document.getElementById('uf-cad').click()" ondragover="dragOver(event,'ua-cad')" ondragleave="dragLeave('ua-cad')" ondrop="dropFile(event,'cad')">
-        <div style="font-size:32px">📤</div>
-        <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
-        <p style="font-size:11px;margin-top:4px">Caderno_Servicos_CENEGED.xlsx</p>
-        <input type="file" id="uf-cad" accept=".xlsx" onchange="processarUpload(this.files[0],'cad')">
-      </div>
-      <div id="pv-cad" style="display:none;margin-top:1rem">
-        <div class="alerta al-ok"><span>✓</span><span id="cad-st-txt"></span></div>
-        <div class="stit">Tarifas extraídas — confirme antes de ativar</div>
-        <div class="revbox">
-          <table><thead><tr><th>Vigência</th><th>Estado</th><th>Regional</th><th>Serviço</th><th style="text-align:right">Tarifa</th><th style="text-align:right">Eventos prev.</th><th style="text-align:right">Fat. previsto</th></tr></thead>
-          <tbody id="tb-pv-cad"></tbody></table>
-        </div>
-        <div style="margin-top:1rem;padding:12px;background:var(--am-cl);border-radius:var(--r2);border:1px solid #f0c070">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--am)">
-            <input type="checkbox" id="cad-conf" style="width:16px;height:16px;accent-color:var(--vm)">
-            <strong>Confirmo que os valores estão corretos e autorizo a ativação.</strong>
-          </label>
-        </div>
-        <div class="btn-row">
-          <button class="btn btn-s" onclick="cancelarUpload('cad')">Cancelar</button>
-          <button class="btn btn-p" id="btn-salvar-cad" onclick="salvarCaderno()">✓ Ativar caderno</button>
-        </div>
-      </div>
-    </div>
-    <div id="lista-cadernos"><div class="loader">Carregando cadernos...</div></div>
-  </div>
+      <!-- CONTEÚDO DAS ABAS -->
+      <div class="con">
 
-  <!-- USUÁRIOS -->
-  <div id="tab-usuarios" class="con" style="display:none">
-    <div id="convite-alerta"></div>
-    <div class="gbox">
-      <h3>Convidar novo usuário</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:10px">
-        <div class="fg" style="margin:0"><label>Nome</label><input type="text" id="n-nome" placeholder="Nome completo"></div>
-        <div class="fg" style="margin:0"><label>E-mail</label><input type="email" id="n-email" placeholder="usuario@ceneged.com.br"></div>
-        <div class="fg" style="margin:0"><label>Perfil</label>
-          <select id="n-role" onchange="togglePermsAnal()">
-            <option value="viewer">Visualizador</option>
-            <option value="analyst">Analista</option>
-            <option value="admin">Administrador</option>
-          </select>
+        <!-- VISÃO GERAL -->
+        <div id="tab-geral">
+          <div class="fil">
+            <label>Estado</label>
+            <select id="g-est" onchange="syncRegsGeral();carregarGeral()"><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option></select>
+            <label>Mês</label><select id="g-mes" onchange="carregarGeral()"></select>
+            <label>Ano</label><select id="g-ano" onchange="carregarGeral()"></select>
+          </div>
+          <div id="g-alerta" class="alerta al-warn" style="display:none"><span>⚠</span><span id="g-alerta-txt"></span></div>
+          <div class="cards">
+            <div class="card"><div class="cl">Previsto (caderno)</div><div class="cv" id="g-prev">—</div><div class="cs cm">Meta mensal vigente</div></div>
+            <div class="card"><div class="cl">Executado (campo)</div><div class="cv" id="g-exec">—</div><div class="cs" id="g-exec-s">—</div></div>
+            <div class="card"><div class="cl">Pago (Equatorial)</div><div class="cv" id="g-pago">—</div><div class="cs" id="g-pago-s">—</div></div>
+            <div class="card vd"><div class="cl">% Meta atingida</div><div class="cv" id="g-pct">—</div><div class="cs cm">Base: faturamento pago</div></div>
+          </div>
+          <div class="row2">
+            <div class="gbox">
+              <h3>Evolução mensal</h3>
+              <div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
+              <div style="position:relative;height:200px"><canvas id="ch-mensal"></canvas></div>
+            </div>
+            <div class="gbox">
+              <div class="gbox-h">
+                <h3>Pago por serviço</h3>
+                <select id="g-reg-pz" onchange="renderPizza()"><option value="">Todas regionais</option></select>
+              </div>
+              <div class="leg" id="leg-pz"></div>
+              <div style="position:relative;height:185px"><canvas id="ch-pizza"></canvas></div>
+            </div>
+          </div>
+          <div class="sec">Eventos por regional</div>
+          <div class="tbox"><table><thead><tr><th>Regional</th><th>Eventos previstos</th><th>Eventos executados</th><th>Eventos pagos</th><th>Diferença</th><th>Divergência %</th><th>Status</th></tr></thead><tbody id="tb-evt-reg"></tbody></table></div>
+          <div class="sec">Faturamento por regional</div>
+          <div class="tbox"><table><thead><tr><th>Regional</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-fat-reg"></tbody></table></div>
+          <div class="row2">
+            <div>
+              <div class="sec">Tarifa prevista vs paga</div>
+              <div class="tbox"><table><thead><tr><th>Serviço</th><th>Regional</th><th>Tarifa prevista</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-tar"></tbody></table></div>
+            </div>
+            <div>
+              <div class="sec">Proporção por serviço</div>
+              <div class="tbox"><table><thead><tr><th>Serviço</th><th>% previsto</th><th>% executado</th><th>% pago</th><th>Desvio</th><th>Status</th></tr></thead><tbody id="tb-prop"></tbody></table></div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div id="perms-anal" style="display:none;margin-top:12px;padding:12px;background:var(--az-cl);border-radius:var(--r2);border:1px solid #b5d4f4">
-        <p style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:8px">Permissões do analista</p>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="n-pp" style="width:15px;height:15px;accent-color:var(--vm)">Lançar produção real</label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" id="n-pb" style="width:15px;height:15px;accent-color:var(--vm)">Importar boletim</label>
-      </div>
-      <div class="btn-row" style="margin-top:14px"><button class="btn btn-p" onclick="convidarUsuario()">✉ Enviar convite</button></div>
+
+        <!-- POR SERVIÇO -->
+        <div id="tab-servico" style="display:none">
+          <div class="fil">
+            <label>Estado</label>
+            <select id="s-est" onchange="syncRegsServ();carregarServico()"><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option></select>
+            <label>Regional</label><select id="s-reg" onchange="carregarServico()"><option value="">Todas</option></select>
+            <label>Mês</label><select id="s-mes" onchange="carregarServico()"></select>
+            <label>Ano</label><select id="s-ano" onchange="carregarServico()"></select>
+          </div>
+          <div class="alerta al-info"><span>ℹ</span><span>Compare <strong>% Caderno</strong> vs <strong>% Pago</strong> para detectar substituição de serviços de tarifa alta por baixa.</span></div>
+          <div class="gbox" style="margin-bottom:1.25rem">
+            <h3>Distribuição proporcional — caderno vs executado vs pago</h3>
+            <div class="leg"><span><i style="background:var(--vm)"></i>Caderno</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
+            <div id="dist-bars" style="margin-top:10px"></div>
+          </div>
+          <div class="sec">Detalhe por serviço</div>
+          <div class="tbox"><table><thead><tr><th>Serviço</th><th>Tarifa</th><th>Prev.(evt)</th><th>%cad</th><th>Exec.(evt)</th><th>%exec</th><th>Pago(evt)</th><th>%pago</th><th>Valor pago</th><th>Alerta</th></tr></thead><tbody id="tb-svc"></tbody></table></div>
+        </div>
+
+        <!-- POR REGIONAL -->
+        <div id="tab-regional" style="display:none">
+          <div class="fil">
+            <label>Estado</label>
+            <select id="r-est" onchange="syncRegsReg();carregarRegional()"><option value="MA">Maranhão</option><option value="PI">Piauí</option></select>
+            <label>Regional</label><select id="r-reg" onchange="carregarRegional()"></select>
+            <label>Mês</label><select id="r-mes" onchange="carregarRegional()"></select>
+            <label>Ano</label><select id="r-ano" onchange="carregarRegional()"></select>
+          </div>
+          <div id="r-alerta" class="alerta al-warn" style="display:none"><span>⚠</span><span id="r-alerta-txt"></span></div>
+          <div class="cards" id="r-cards"></div>
+          <div class="row2">
+            <div class="gbox"><h3 id="r-ch-tit">Evolução mensal</h3><div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div><div style="position:relative;height:190px"><canvas id="ch-reg-m"></canvas></div></div>
+            <div class="gbox"><h3>Distribuição por serviço — pago</h3><div class="leg" id="leg-reg-pz"></div><div style="position:relative;height:190px"><canvas id="ch-reg-pz"></canvas></div></div>
+          </div>
+          <div class="sec">Eventos por serviço</div>
+          <div class="tbox"><table><thead><tr><th>Serviço</th><th>Prev.(evt)</th><th>Exec.(evt)</th><th>Pago(evt)</th><th>Diferença</th><th>Divergência %</th><th>Status</th></tr></thead><tbody id="tb-reg-evt"></tbody></table></div>
+          <div class="sec">Faturamento por serviço</div>
+          <div class="tbox"><table><thead><tr><th>Serviço</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-reg-fat"></tbody></table></div>
+          <div class="row2">
+            <div>
+              <div class="sec">Tarifa prevista vs paga</div>
+              <div class="tbox"><table><thead><tr><th>Serviço</th><th>Tarifa prev.</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-reg-tar"></tbody></table></div>
+            </div>
+            <div>
+              <div class="sec">Proporção por serviço</div>
+              <div class="tbox"><table><thead><tr><th>Serviço</th><th>% previsto</th><th>% exec.</th><th>% pago</th><th>Desvio</th><th>Status</th></tr></thead><tbody id="tb-reg-prop"></tbody></table></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LANÇAR PRODUÇÃO -->
+        <div id="tab-lancar" style="display:none">
+          <div class="alerta al-info"><span>ℹ</span><span>Envie <strong>um arquivo por vez</strong>. Períodos já importados serão identificados antes de salvar.</span></div>
+          <div class="gbox" style="margin-bottom:1.25rem">
+            <h3>Upload da planilha de produção real</h3>
+            <div class="uarea" id="ua-prod" onclick="document.getElementById('uf-prod').click()" ondragover="dragOver(event,'ua-prod')" ondragleave="dragLeave('ua-prod')" ondrop="dropFile(event,'prod')">
+              <i class="ti ti-upload" style="font-size:28px;color:var(--tx2)" aria-hidden="true"></i>
+              <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
+              <p style="font-size:10px;margin-top:4px">Producao_Real_Campo_CENEGED.xlsx</p>
+              <input type="file" id="uf-prod" accept=".xlsx" onchange="processarUpload(this.files[0],'prod')">
+            </div>
+            <div id="pv-prod" style="display:none;margin-top:1rem">
+              <div class="alerta al-ok"><span>✓</span><span id="prod-st-txt"></span></div>
+              <div id="prod-dup-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="prod-dup-txt"></span></div>
+              <div class="sec">Revisão dos dados</div>
+              <div class="revbox"><table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Regional</th><th>Serviço</th><th>Qtd executada</th><th>Status</th></tr></thead><tbody id="tb-pv-prod"></tbody></table></div>
+              <div class="btn-row"><button class="btn btn-s" onclick="cancelarUpload('prod')">Cancelar</button><button class="btn btn-p" id="btn-sv-prod" onclick="salvarProducao()">✓ Confirmar e salvar</button></div>
+            </div>
+          </div>
+          <div class="sec-row"><div class="sec">Histórico de lançamentos</div><button class="btn btn-s btn-sm" onclick="carregarHistProd()">↻ Atualizar</button></div>
+          <div class="tbox"><table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tb-hist-prod"></tbody></table></div>
+        </div>
+
+        <!-- IMPORTAR BOLETIM -->
+        <div id="tab-boletim" style="display:none">
+          <div class="alerta al-info"><span>ℹ</span><span>Envie <strong>um arquivo por vez</strong>. Períodos já importados serão identificados antes de salvar.</span></div>
+          <div class="gbox" style="margin-bottom:1.25rem">
+            <h3>Upload do boletim de pagamento</h3>
+            <div class="uarea" id="ua-bol" onclick="document.getElementById('uf-bol').click()" ondragover="dragOver(event,'ua-bol')" ondragleave="dragLeave('ua-bol')" ondrop="dropFile(event,'bol')">
+              <i class="ti ti-file-invoice" style="font-size:28px;color:var(--tx2)" aria-hidden="true"></i>
+              <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
+              <p style="font-size:10px;margin-top:4px">Boletim_Pagamento_CENEGED.xlsx</p>
+              <input type="file" id="uf-bol" accept=".xlsx" onchange="processarUpload(this.files[0],'bol')">
+            </div>
+            <div id="pv-bol" style="display:none;margin-top:1rem">
+              <div class="alerta al-ok"><span>✓</span><span id="bol-st-txt"></span></div>
+              <div id="bol-dup-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="bol-dup-txt"></span></div>
+              <div id="bol-tar-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="bol-tar-txt"></span></div>
+              <div class="sec">Revisão dos dados</div>
+              <div class="revbox"><table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Regional</th><th>Serviço</th><th>Tarifa</th><th>Qtd paga</th><th>Valor pago</th><th>Tarifa</th></tr></thead><tbody id="tb-pv-bol"></tbody></table></div>
+              <div class="btn-row"><button class="btn btn-s" onclick="cancelarUpload('bol')">Cancelar</button><button class="btn btn-p" id="btn-sv-bol" onclick="salvarBoletim()">✓ Confirmar e salvar</button></div>
+            </div>
+          </div>
+          <div class="sec-row"><div class="sec">Histórico de boletins</div><button class="btn btn-s btn-sm" onclick="carregarHistBol()">↻ Atualizar</button></div>
+          <div class="tbox"><table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Total pago</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tb-hist-bol"></tbody></table></div>
+        </div>
+
+        <!-- CADERNOS -->
+        <div id="tab-cadernos" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+            <div><p style="font-size:15px;font-weight:700">Cadernos de Serviço</p><p style="font-size:11px;color:var(--tx2);margin-top:3px">O caderno ativo define a meta e tarifas do período.</p></div>
+            <button class="btn btn-p" onclick="toggleUploadCad()"><i class="ti ti-plus" aria-hidden="true"></i>Novo caderno</button>
+          </div>
+          <div id="upload-cad-box" class="gbox" style="display:none;margin-bottom:1.25rem">
+            <h3>Upload do caderno de serviços</h3>
+            <div class="uarea" id="ua-cad" onclick="document.getElementById('uf-cad').click()" ondragover="dragOver(event,'ua-cad')" ondragleave="dragLeave('ua-cad')" ondrop="dropFile(event,'cad')">
+              <i class="ti ti-book" style="font-size:28px;color:var(--tx2)" aria-hidden="true"></i>
+              <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
+              <p style="font-size:10px;margin-top:4px">Caderno_Servicos_CENEGED.xlsx</p>
+              <input type="file" id="uf-cad" accept=".xlsx" onchange="processarUpload(this.files[0],'cad')">
+            </div>
+            <div id="pv-cad" style="display:none;margin-top:1rem">
+              <div class="alerta al-ok"><span>✓</span><span id="cad-st-txt"></span></div>
+              <div class="sec">Tarifas extraídas — confirme antes de ativar</div>
+              <div class="revbox"><table><thead><tr><th>Vigência</th><th>Estado</th><th>Regional</th><th>Serviço</th><th>Tarifa</th><th>Eventos prev.</th><th>Fat. previsto</th></tr></thead><tbody id="tb-pv-cad"></tbody></table></div>
+              <div style="margin-top:1rem;padding:12px;background:var(--am-cl);border-radius:var(--r2);border:1px solid #f0c070">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--am)">
+                  <input type="checkbox" id="cad-conf" style="width:15px;height:15px;accent-color:var(--vm)">
+                  <strong>Confirmo que os valores estão corretos e autorizo a ativação.</strong>
+                </label>
+              </div>
+              <div class="btn-row"><button class="btn btn-s" onclick="cancelarUpload('cad')">Cancelar</button><button class="btn btn-p" id="btn-sv-cad" onclick="salvarCaderno()">✓ Ativar caderno</button></div>
+            </div>
+          </div>
+          <div id="lista-cadernos"><div class="loader">Carregando cadernos...</div></div>
+        </div>
+
+        <!-- USUÁRIOS -->
+        <div id="tab-usuarios" style="display:none">
+          <div id="convite-alerta"></div>
+          <div class="gbox" style="margin-bottom:1.25rem">
+            <h3>Convidar novo usuário</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:10px">
+              <div class="fg" style="margin:0"><label>Nome</label><input type="text" id="n-nome" placeholder="Nome completo"></div>
+              <div class="fg" style="margin:0"><label>E-mail</label><input type="email" id="n-email" placeholder="usuario@ceneged.com.br"></div>
+              <div class="fg" style="margin:0"><label>Perfil</label><select id="n-role" onchange="togglePermsAnal()"><option value="viewer">Visualizador</option><option value="analyst">Analista</option><option value="admin">Administrador</option></select></div>
+            </div>
+            <div id="perms-anal" style="display:none;margin-top:12px;padding:12px;background:var(--az-cl);border-radius:var(--r2);border:1px solid #b5d4f4">
+              <p style="font-size:11px;font-weight:700;color:#185FA5;margin-bottom:8px">Permissões do analista</p>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;cursor:pointer"><input type="checkbox" id="n-pp" style="width:14px;height:14px;accent-color:var(--vm)">Lançar produção real</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer"><input type="checkbox" id="n-pb" style="width:14px;height:14px;accent-color:var(--vm)">Importar boletim</label>
+            </div>
+            <div class="btn-row" style="margin-top:14px"><button class="btn btn-p" onclick="convidarUsuario()"><i class="ti ti-mail" aria-hidden="true"></i>Enviar convite</button></div>
+          </div>
+          <div class="sec-row"><div class="sec">Usuários cadastrados</div><button class="btn btn-s btn-sm" onclick="carregarUsuarios()">↻ Atualizar</button></div>
+          <div class="tbox">
+            <table>
+              <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Último acesso</th><th>Status</th><th>Permissões</th></tr></thead>
+              <tbody id="lista-usuarios"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /con -->
+    </div><!-- /main -->
+  </div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- MODAL EXCEL -->
+<div class="modal-overlay" id="modal-excel">
+  <div class="modal">
+    <h3><i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Exportar dados em Excel</h3>
+    <div class="modal-grid">
+      <div class="fg"><label>Estado</label><select id="xl-est"><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option></select></div>
+      <div class="fg"><label>Regional</label><select id="xl-reg"><option value="">Todas</option></select></div>
+      <div class="fg"><label>Mês início</label><select id="xl-mes-ini"></select></div>
+      <div class="fg"><label>Ano início</label><select id="xl-ano-ini"></select></div>
+      <div class="fg"><label>Mês fim</label><select id="xl-mes-fim"></select></div>
+      <div class="fg"><label>Ano fim</label><select id="xl-ano-fim"></select></div>
     </div>
-    <div class="stit-row">
-      <div class="stit">Usuários cadastrados</div>
-      <button class="btn btn-s btn-sm" onclick="carregarUsuarios()">↻ Atualizar</button>
+    <div style="font-size:11px;color:var(--tx2);margin-bottom:1rem;padding:10px;background:var(--bg);border-radius:var(--r2)">
+      O arquivo exportado conterá: <strong>Eventos Previstos</strong>, <strong>Eventos Executados</strong> e <strong>Eventos Pagos</strong> por serviço, regional e mês.
     </div>
-    <div class="tbox">
-      <table><thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Permissões</th><th>Cadastrado em</th><th>Último acesso</th><th>Ação</th></tr></thead>
-      <tbody id="lista-usuarios"><tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Carregando...</td></tr></tbody></table>
+    <div class="btn-row">
+      <button class="btn btn-s" onclick="fecharModalExcel()">Cancelar</button>
+      <button class="btn btn-p" onclick="exportarExcel()"><i class="ti ti-download" aria-hidden="true"></i>Baixar Excel</button>
     </div>
-    <div class="alerta al-warn" style="margin-top:1rem"><span>⚠</span><span>Alterações têm efeito imediato no próximo acesso do usuário.</span></div>
   </div>
 </div>
 
@@ -429,14 +479,15 @@ const sb=createClient(SURL,SKEY);
 let perfil=null,role='',userEmail='';
 let chMensal=null,chPizza=null,chRegM=null,chRegPz=null;
 let dadosProd=[],dadosBol=[],dadosCad=[];
-let salvandoProd=false,salvandoBol=false,salvandoCad=false;
-
-// CACHE GLOBAL
+let svProd=false,svBol=false,svCad=false;
+let tabAtual='geral';
 let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
 
 const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['METROPOLITANA','NORTE','SUL']};
 const CS=['#BE2F3B','#378ADD','#1D9E75','#BA7517','#533AB7','#D4537E','#888780','#0F6E56','#7F77DD'];
+const TABS_LABELS={geral:'Visão Geral',servico:'Por Serviço',regional:'Por Regional',lancar:'Lançar Produção',boletim:'Importar Boletim',cadernos:'Cadernos de Serviço',usuarios:'Gestão de Usuários'};
+const TABS_EXPORT=['geral','servico','regional'];
 
 const fR=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fN=v=>Number(v||0).toLocaleString('pt-BR');
@@ -446,10 +497,9 @@ const mA=(m,a)=>String(m).padStart(2,'0')+'/'+a;
 async function fazerLogin(){
   const e=document.getElementById('li-email').value.trim();
   const s=document.getElementById('li-senha').value;
-  const er=document.getElementById('login-erro');
-  er.textContent='';
+  document.getElementById('login-erro').textContent='';
   const {data,error}=await sb.auth.signInWithPassword({email:e,password:s});
-  if(error){er.textContent='E-mail ou senha incorretos.';return;}
+  if(error){document.getElementById('login-erro').textContent='E-mail ou senha incorretos.';return;}
   await iniciarApp(data.user);
 }
 async function fazerLogout(){
@@ -463,58 +513,64 @@ async function iniciarApp(user){
   document.getElementById('app').style.display='block';
   userEmail=user.email;
   const {data}=await sb.from('usuarios_perfil_completo').select('*').eq('id',user.id).single();
-  perfil=data||{role:user.user_metadata?.role||'viewer',perm_producao:false,perm_boletim:false};
+  perfil=data||{role:user.user_metadata?.role||'viewer',perm_producao:false,perm_boletim:false,perm_exportar_pdf:false,perm_exportar_excel:false,abas_permitidas:['geral','servico','regional']};
   role=perfil.role||'viewer';
-  document.getElementById('tb-user').textContent=userEmail;
-  document.getElementById('tb-role').textContent={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[role]||'Visualizador';
+  // Avatar
+  const partes=(perfil.nome||userEmail).split(' ');
+  const ini=(partes[0][0]+(partes[1]?partes[1][0]:'')).toUpperCase();
+  document.getElementById('sb-avatar').textContent=ini;
+  document.getElementById('sb-uname').textContent=perfil.nome||userEmail.split('@')[0];
+  document.getElementById('sb-urole').textContent={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[role]||'Visualizador';
   aplicarPermissoes();
   preencherPeriodos();
+  preencherModalExcel();
   syncRegsGeral();syncRegsServ();syncRegsReg();
   await carregarCache();
   carregarGeral();
 }
 function aplicarPermissoes(){
-  document.querySelectorAll('.tab-admin').forEach(b=>b.style.display='none');
+  const abas=perfil?.abas_permitidas||['geral','servico','regional'];
   const pp=perfil?.perm_producao||false;
   const pb=perfil?.perm_boletim||false;
-  if(role==='admin'||(role==='analyst'&&pp)) document.querySelector('[onclick*="lancar"]').style.display='block';
-  if(role==='admin'||(role==='analyst'&&pb)) document.querySelector('[onclick*="boletim"]').style.display='block';
-  if(role==='admin'){
-    document.querySelector('[onclick*="cadernos"]').style.display='block';
-    document.querySelector('[onclick*="usuarios"]').style.display='block';
-  }
+  // Sidebar
+  ['geral','servico','regional','lancar','boletim','cadernos','usuarios'].forEach(id=>{
+    const el=document.getElementById('nav-'+id);
+    if(!el) return;
+    let visivel=abas.includes(id);
+    if(id==='lancar') visivel=visivel&&(role==='admin'||(role==='analyst'&&pp));
+    if(id==='boletim') visivel=visivel&&(role==='admin'||(role==='analyst'&&pb));
+    if(id==='cadernos'||id==='usuarios') visivel=visivel&&role==='admin';
+    el.style.display=visivel?'flex':'none';
+  });
+}
+function atualizarHeaderActions(){
+  const pdfOk=(perfil?.perm_exportar_pdf||role==='admin')&&TABS_EXPORT.includes(tabAtual);
+  const xlsOk=(perfil?.perm_exportar_excel||role==='admin');
+  document.getElementById('btn-pdf').style.display=pdfOk?'flex':'none';
+  document.getElementById('btn-xls').style.display=xlsOk?'flex':'none';
 }
 sb.auth.getSession().then(({data:{session}})=>{if(session) iniciarApp(session.user);});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('tela-login').style.display!=='none') fazerLogin();});
 
-// ═══ CACHE — BUSCA TUDO DE UMA VEZ ═══
+// ═══ CACHE ═══
 async function carregarCache(){
-  // 1. Cadernos confirmados
   const {data:cads}=await sb.from('cadernos').select('*').eq('confirmado',true).order('id');
   C.cads=cads||[];
-
-  // 2. Tarifas de todos os cadernos de uma só vez
   if(C.cads.length){
-    const ids=C.cads.map(c=>c.id);
-    const {data:tars}=await sb.from('caderno_tarifas').select('*').in('caderno_id',ids);
+    const {data:tars}=await sb.from('caderno_tarifas').select('*').in('caderno_id',C.cads.map(c=>c.id));
     C.tars=tars||[];
   } else C.tars=[];
-
-  // 3. Produção real
   const {data:prod}=await sb.from('producao_real').select('*').eq('ativo',true);
   C.prod=prod||[];
-
-  // 4. Boletins e itens
   const {data:bols}=await sb.from('boletins').select('*').eq('ativo',true);
   C.bols=bols||[];
   if(C.bols.length){
-    const bids=C.bols.map(b=>b.id);
-    const {data:itens}=await sb.from('boletim_itens').select('*').in('boletim_id',bids);
+    const {data:itens}=await sb.from('boletim_itens').select('*').in('boletim_id',C.bols.map(b=>b.id));
     C.itens=itens||[];
   } else C.itens=[];
 }
 
-// ═══ HELPERS DE CÁLCULO ═══
+// ═══ HELPERS ═══
 function getCadAtivo(estado,mes,ano){
   const mn=ano*100+mes;
   return C.cads.filter(c=>{
@@ -524,72 +580,51 @@ function getCadAtivo(estado,mes,ano){
     return mn>=ini&&mn<=fim;
   });
 }
-function getTarifas(estado,mes,ano,regional=''){
-  const cads=getCadAtivo(estado,mes,ano);
-  const ids=new Set(cads.map(c=>c.id));
-  return C.tars.filter(t=>{
-    if(!ids.has(t.caderno_id)) return false;
-    if(estado!=='TODOS'&&t.estado!==estado) return false;
-    if(regional&&t.regional!==regional) return false;
-    return true;
-  });
+function getTarifas(estado,mes,ano,reg=''){
+  const ids=new Set(getCadAtivo(estado,mes,ano).map(c=>c.id));
+  return C.tars.filter(t=>ids.has(t.caderno_id)&&(estado==='TODOS'||t.estado===estado)&&(!reg||t.regional===reg));
 }
-function getProd(estado,mes,ano,regional=''){
-  return C.prod.filter(r=>{
-    if(r.mes!==mes||r.ano!==ano) return false;
-    if(estado!=='TODOS'&&r.estado!==estado) return false;
-    if(regional&&r.regional!==regional) return false;
-    return true;
-  });
+function getProd(estado,mes,ano,reg=''){
+  return C.prod.filter(r=>r.mes===mes&&r.ano===ano&&(estado==='TODOS'||r.estado===estado)&&(!reg||r.regional===reg));
 }
-function getItens(estado,mes,ano,regional=''){
+function getItens(estado,mes,ano,reg=''){
   const bids=new Set(C.bols.filter(b=>b.mes===mes&&b.ano===ano&&(estado==='TODOS'||b.estado===estado)).map(b=>b.id));
-  return C.itens.filter(i=>{
-    if(!bids.has(i.boletim_id)) return false;
-    if(regional&&i.regional!==regional) return false;
-    return true;
-  });
+  return C.itens.filter(i=>bids.has(i.boletim_id)&&(!reg||i.regional===reg));
 }
-function calcPrevisto(estado,mes,ano,regional=''){
-  const tars=getTarifas(estado,mes,ano,regional);
-  return tars.reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||0),0);
-}
-function calcPrevEvt(estado,mes,ano,regional=''){
-  const tars=getTarifas(estado,mes,ano,regional);
-  return tars.reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);
-}
-function calcExec(estado,mes,ano,regional=''){
-  const prod=getProd(estado,mes,ano,regional);
-  const tars=getTarifas(estado,mes,ano,regional);
-  const tarMap={};
-  tars.forEach(t=>tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
+function calcPrevisto(est,m,a,r=''){return getTarifas(est,m,a,r).reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||0),0);}
+function calcPrevEvt(est,m,a,r=''){return getTarifas(est,m,a,r).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);}
+function calcExec(est,m,a,r=''){
+  const tars=getTarifas(est,m,a,r);
+  const tarMap={};tars.forEach(t=>tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
   let val=0,evt=0;
-  prod.forEach(r=>{
-    const tar=tarMap[r.estado+'|'+r.regional+'|'+r.cod_servico]||0;
-    val+=r.qde_executada*tar;
-    evt+=r.qde_executada;
-  });
+  getProd(est,m,a,r).forEach(p=>{const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=p.qde_executada*tar;evt+=p.qde_executada;});
   return {val,evt};
 }
-function calcPago(estado,mes,ano,regional=''){
-  const itens=getItens(estado,mes,ano,regional);
-  let val=0,evt=0;
-  itens.forEach(i=>{val+=parseFloat(i.valor_pago)||0;evt+=i.qde_paga||0;});
-  return {val,evt};
-}
+function calcPago(est,m,a,r=''){let val=0,evt=0;getItens(est,m,a,r).forEach(i=>{val+=parseFloat(i.valor_pago)||0;evt+=i.qde_paga||0;});return {val,evt};}
 
 // ═══ NAVEGAÇÃO ═══
-function setTab(id,btn){
-  document.querySelectorAll('.con').forEach(t=>t.style.display='none');
+function setTab(id,el){
+  document.querySelectorAll('[id^="tab-"]').forEach(t=>t.style.display='none');
   document.getElementById('tab-'+id).style.display='block';
-  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  tabAtual=id;
+  document.getElementById('page-title').textContent=TABS_LABELS[id]||id;
+  atualizarPageSub();
+  atualizarHeaderActions();
   if(id==='servico') carregarServico();
   if(id==='regional') carregarRegional();
   if(id==='cadernos') carregarCadernos();
   if(id==='usuarios') carregarUsuarios();
   if(id==='lancar') carregarHistProd();
   if(id==='boletim') carregarHistBol();
+}
+function atualizarPageSub(){
+  const est=document.getElementById('g-est')?.value||'MA';
+  const mes=parseInt(document.getElementById('g-mes')?.value||0);
+  const ano=parseInt(document.getElementById('g-ano')?.value||0);
+  const nomes={MA:'Maranhão',PI:'Piauí',TODOS:'Consolidado'};
+  document.getElementById('page-sub').textContent=(nomes[est]||est)+' · '+(mes?MN[mes]+'/'+ano:'—');
 }
 
 // ═══ FILTROS ═══
@@ -606,36 +641,35 @@ function preencherPeriodos(){
 function syncRegsGeral(){
   const e=document.getElementById('g-est')?.value||'MA';
   const s=document.getElementById('g-reg-pz');
-  if(s) s.innerHTML='<option value="">Todas regionais</option>'+(REGS[e]||REGS.MA).map(r=>`<option value="${r}">${r}</option>`).join('');
+  if(s) s.innerHTML='<option value="">Todas regionais</option>'+(REGS[e]||REGS.MA).map(r=>`<option>${r}</option>`).join('');
 }
 function syncRegsServ(){
   const e=document.getElementById('s-est')?.value||'MA';
   const s=document.getElementById('s-reg');
-  if(s) s.innerHTML='<option value="">Todas</option>'+(REGS[e]||REGS.MA).map(r=>`<option value="${r}">${r}</option>`).join('');
+  if(s) s.innerHTML='<option value="">Todas</option>'+(REGS[e]||REGS.MA).map(r=>`<option>${r}</option>`).join('');
 }
 function syncRegsReg(){
   const e=document.getElementById('r-est')?.value||'MA';
   const s=document.getElementById('r-reg');
-  if(s) s.innerHTML=(REGS[e]||REGS.MA).map(r=>`<option value="${r}">${r}</option>`).join('');
+  if(s) s.innerHTML=(REGS[e]||REGS.MA).map(r=>`<option>${r}</option>`).join('');
 }
 
 // ═══ VISÃO GERAL ═══
 function carregarGeral(){
-  const estado=document.getElementById('g-est').value;
+  const est=document.getElementById('g-est').value;
   const mes=parseInt(document.getElementById('g-mes').value);
   const ano=parseInt(document.getElementById('g-ano').value);
-  syncRegsGeral();
+  syncRegsGeral();atualizarPageSub();
 
-  const prev=calcPrevisto(estado,mes,ano);
-  const prevEvt=calcPrevEvt(estado,mes,ano);
-  const exec=calcExec(estado,mes,ano);
-  const pago=calcPago(estado,mes,ano);
+  const prev=calcPrevisto(est,mes,ano),prevE=calcPrevEvt(est,mes,ano);
+  const exec=calcExec(est,mes,ano),pago=calcPago(est,mes,ano);
   const pct=prev>0?(pago.val/prev*100):0;
 
   document.getElementById('g-prev').textContent=fR(prev);
   document.getElementById('g-exec').textContent=fR(exec.val);
   document.getElementById('g-pago').textContent=fR(pago.val);
   document.getElementById('g-pct').textContent=pct.toFixed(1)+'%';
+
   const dEP=exec.val-prev,dPE=pago.val-exec.val;
   const se=document.getElementById('g-exec-s');
   se.className='cs '+(dEP>=0?'cp':'cw');
@@ -651,21 +685,17 @@ function carregarGeral(){
     al.style.display='flex';
   } else al.style.display='none';
 
-  renderGraficoMensal(estado,ano);
+  renderGraficoMensal(est,ano);
   renderPizza();
-  renderTabelaEvtReg(estado,mes,ano);
-  renderTabelaFatReg(estado,mes,ano);
-  renderTabelaTarifas(estado,mes,ano);
-  renderTabelaProporcao(estado,mes,ano);
+  renderTbEvtReg(est,mes,ano);
+  renderTbFatReg(est,mes,ano);
+  renderTbTar(est,mes,ano);
+  renderTbProp(est,mes,ano);
 }
 
-function renderGraficoMensal(estado,ano){
+function renderGraficoMensal(est,ano){
   const prev=[],exec=[],pago=[];
-  for(let m=1;m<=12;m++){
-    prev.push(calcPrevisto(estado,m,ano));
-    exec.push(calcExec(estado,m,ano).val);
-    pago.push(calcPago(estado,m,ano).val);
-  }
+  for(let m=1;m<=12;m++){prev.push(calcPrevisto(est,m,ano));exec.push(calcExec(est,m,ano).val);pago.push(calcPago(est,m,ano).val);}
   if(chMensal) chMensal.destroy();
   chMensal=new Chart(document.getElementById('ch-mensal'),{type:'bar',data:{labels:MN.slice(1),datasets:[
     {label:'Previsto',data:prev,type:'line',borderColor:'#BE2F3B',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2,borderDash:[5,3]},
@@ -675,146 +705,110 @@ function renderGraficoMensal(estado,ano){
 }
 
 function renderPizza(){
-  const estado=document.getElementById('g-est')?.value||'MA';
+  const est=document.getElementById('g-est')?.value||'MA';
   const reg=document.getElementById('g-reg-pz')?.value||'';
   const mes=parseInt(document.getElementById('g-mes')?.value)||new Date().getMonth()+1;
   const ano=parseInt(document.getElementById('g-ano')?.value)||new Date().getFullYear();
-  const itens=getItens(estado,mes,ano,reg);
   const map={};
-  itens.forEach(i=>{if(!map[i.cod_servico]) map[i.cod_servico]={desc:i.descricao_servico,val:0};map[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
+  getItens(est,mes,ano,reg).forEach(i=>{if(!map[i.cod_servico]) map[i.cod_servico]={desc:i.descricao_servico,val:0};map[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
   const svcs=Object.entries(map).sort((a,b)=>b[1].val-a[1].val);
-  document.getElementById('leg-pz').innerHTML=svcs.map((s,i)=>`<span><i style="background:${CS[i%CS.length]};width:10px;height:10px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,20)}</span>`).join('');
+  document.getElementById('leg-pz').innerHTML=svcs.map((s,i)=>`<span><i style="background:${CS[i%CS.length]};width:9px;height:9px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,18)}</span>`).join('');
   if(chPizza) chPizza.destroy();
   if(!svcs.length) return;
   chPizza=new Chart(document.getElementById('ch-pizza'),{type:'doughnut',data:{labels:svcs.map(s=>s[1].desc),datasets:[{data:svcs.map(s=>s[1].val),backgroundColor:CS,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fR(c.raw)}}}}});
 }
 
-function renderTabelaEvtReg(estado,mes,ano){
-  const regs=estado==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[estado]||[]);
-  const tb=document.getElementById('tb-evt-reg');
-  tb.innerHTML='';
-  regs.forEach(reg=>{
-    const prevE=calcPrevEvt(estado,mes,ano,reg);
-    const exec=calcExec(estado,mes,ano,reg);
-    const pago=calcPago(estado,mes,ano,reg);
-    const diff=pago.evt-exec.evt;
-    const pct=exec.evt>0?((exec.evt-pago.evt)/exec.evt*100):0;
-    const bc=Math.abs(pct)<2?'#1D9E75':pct>5?'#E24B4A':'#EF9F27';
+function renderTbEvtReg(est,mes,ano){
+  const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
+  document.getElementById('tb-evt-reg').innerHTML=regs.map(reg=>{
+    const pE=calcPrevEvt(est,mes,ano,reg),ex=calcExec(est,mes,ano,reg),pg=calcPago(est,mes,ano,reg);
+    const df=pg.evt-ex.evt,pct=ex.evt>0?((ex.evt-pg.evt)/ex.evt*100):0;
+    const bc=Math.abs(pct)<2?'#1D9E75':pct>5?'#BE2F3B':'#BA7517';
     const st=Math.abs(pct)<2?'<span class="pill p-ok">Normal</span>':pct>5?'<span class="pill p-danger">Crítico</span>':'<span class="pill p-warn">Atenção</span>';
-    tb.innerHTML+=`<tr><td><strong>${reg}</strong></td><td>${fN(prevE)}</td><td>${fN(exec.evt)}</td><td>${fN(pago.evt)}</td><td style="color:${diff>=0?'#1D9E75':'#BE2F3B'}">${diff>=0?'+':''}${fN(diff)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${bc}"></div></div><span style="font-size:11px;color:${bc};font-weight:700">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;
-  });
+    return `<tr><td><strong>${reg}</strong></td><td>${fN(pE)}</td><td>${fN(ex.evt)}</td><td>${fN(pg.evt)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fN(df)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${bc}"></div></div><span style="font-size:10px;color:${bc};font-weight:700">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;
+  }).join('');
 }
 
-function renderTabelaFatReg(estado,mes,ano){
-  const regs=estado==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[estado]||[]);
-  const tb=document.getElementById('tb-fat-reg');
-  tb.innerHTML='';
-  regs.forEach(reg=>{
-    const prev=calcPrevisto(estado,mes,ano,reg);
-    const exec=calcExec(estado,mes,ano,reg);
-    const pago=calcPago(estado,mes,ano,reg);
-    const div=pago.val-exec.val;
-    const pct=prev>0?(pago.val/prev*100):0;
-    const cor=div>=0?'#1D9E75':'#BE2F3B';
-    tb.innerHTML+=`<tr><td><strong>${reg}</strong></td><td>${fR(prev)}</td><td>${fR(exec.val)}</td><td>${fR(pago.val)}</td><td style="color:${cor}">${div>=0?'+':''}${fR(div)}</td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;
-  });
+function renderTbFatReg(est,mes,ano){
+  const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
+  document.getElementById('tb-fat-reg').innerHTML=regs.map(reg=>{
+    const prev=calcPrevisto(est,mes,ano,reg),ex=calcExec(est,mes,ano,reg),pg=calcPago(est,mes,ano,reg);
+    const dv=pg.val-ex.val,pct=prev>0?(pg.val/prev*100):0;
+    return `<tr><td><strong>${reg}</strong></td><td>${fR(prev)}</td><td>${fR(ex.val)}</td><td>${fR(pg.val)}</td><td style="color:${dv>=0?'#1D9E75':'#BE2F3B'}">${dv>=0?'+':''}${fR(dv)}</td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;
+  }).join('');
 }
 
-function renderTabelaTarifas(estado,mes,ano){
-  const tb=document.getElementById('tb-tar');
-  tb.innerHTML='';
-  const tars=getTarifas(estado,mes,ano);
-  const itMap={};
-  getItens(estado,mes,ano).forEach(i=>{itMap[i.regional+'|'+i.cod_servico]=parseFloat(i.preco_unitario)||0;});
-  tars.forEach(t=>{
-    const tarPaga=itMap[t.regional+'|'+t.cod_servico]||0;
-    const diff=tarPaga-parseFloat(t.preco_unitario);
-    const div=Math.abs(diff)>0.01;
-    tb.innerHTML+=`<tr><td style="font-size:11px">${t.descricao_servico}</td><td>${t.regional}</td><td>${fR(t.preco_unitario)}</td><td style="color:${div?'#BE2F3B':'inherit'}">${tarPaga>0?fR(tarPaga):'—'}</td><td style="color:${div?'#BE2F3B':'#1D9E75'}">${tarPaga>0?(diff>=0?'+':'')+fR(diff):'—'}</td><td>${tarPaga>0?(div?'<span class="pill p-danger">⚠ Diverge</span>':'<span class="pill p-ok">Ok</span>'):'<span class="pill p-cinza">Sem dados</span>'}</td></tr>`;
-  });
+function renderTbTar(est,mes,ano){
+  const tars=getTarifas(est,mes,ano);
+  const itMap={};getItens(est,mes,ano).forEach(i=>{itMap[i.regional+'|'+i.cod_servico]=parseFloat(i.preco_unitario)||0;});
+  document.getElementById('tb-tar').innerHTML=tars.map(t=>{
+    const tp=itMap[t.regional+'|'+t.cod_servico]||0,dv=tp-parseFloat(t.preco_unitario),div=Math.abs(dv)>0.01&&tp>0;
+    return `<tr><td style="font-size:11px">${t.descricao_servico}</td><td>${t.regional}</td><td>${fR(t.preco_unitario)}</td><td style="color:${div?'#BE2F3B':'inherit'}">${tp>0?fR(tp):'—'}</td><td style="color:${div?'#BE2F3B':'#1D9E75'}">${tp>0?(dv>=0?'+':'')+fR(dv):'—'}</td><td>${tp>0?(div?'<span class="pill p-danger">⚠ Diverge</span>':'<span class="pill p-ok">Ok</span>'):'<span class="pill p-cinza">Sem dados</span>'}</td></tr>`;
+  }).join('');
 }
 
-function renderTabelaProporcao(estado,mes,ano){
-  const tb=document.getElementById('tb-prop');
-  tb.innerHTML='';
-  const tars=getTarifas(estado,mes,ano);
-  const svcMap={};
-  tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
-  const prodRows=getProd(estado,mes,ano);
-  const execMap={};
-  prodRows.forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
-  const itens=getItens(estado,mes,ano);
-  const pagoMap={};
-  itens.forEach(i=>pagoMap[i.cod_servico]=(pagoMap[i.cod_servico]||0)+(i.qde_paga||0));
-  const totP=Object.values(svcMap).reduce((s,v)=>s+v.prev,0);
-  const totE=Object.values(execMap).reduce((s,v)=>s+v,0);
-  const totG=Object.values(pagoMap).reduce((s,v)=>s+v,0);
-  Object.entries(svcMap).forEach(([cod,s])=>{
-    const pP=totP>0?(s.prev/totP*100):0;
-    const pE=totE>0?((execMap[cod]||0)/totE*100):0;
-    const pG=totG>0?((pagoMap[cod]||0)/totG*100):0;
-    const dev=Math.abs(pP-pG);
-    const st=dev>2?'<span class="pill p-danger">Desvio</span>':dev>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>';
-    tb.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${pP.toFixed(1)}%</td><td>${pE.toFixed(1)}%</td><td>${pG.toFixed(1)}%</td><td style="color:${dev>2?'#BE2F3B':dev>.5?'#BA7517':'#1D9E75'}">${dev.toFixed(1)}pp</td><td>${st}</td></tr>`;
-  });
+function renderTbProp(est,mes,ano){
+  const tars=getTarifas(est,mes,ano);
+  const svcMap={};tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
+  const execMap={};getProd(est,mes,ano).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
+  const pagoMap={};getItens(est,mes,ano).forEach(i=>pagoMap[i.cod_servico]=(pagoMap[i.cod_servico]||0)+(i.qde_paga||0));
+  const tP=Object.values(svcMap).reduce((s,v)=>s+v.prev,0);
+  const tE=Object.values(execMap).reduce((s,v)=>s+v,0);
+  const tG=Object.values(pagoMap).reduce((s,v)=>s+v,0);
+  document.getElementById('tb-prop').innerHTML=Object.entries(svcMap).map(([cod,s])=>{
+    const pP=tP>0?(s.prev/tP*100):0,pE=tE>0?((execMap[cod]||0)/tE*100):0,pG=tG>0?((pagoMap[cod]||0)/tG*100):0;
+    const dv=Math.abs(pP-pG);
+    const st=dv>2?'<span class="pill p-danger">Desvio</span>':dv>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>';
+    return `<tr><td style="font-size:11px">${s.desc}</td><td>${pP.toFixed(1)}%</td><td>${pE.toFixed(1)}%</td><td>${pG.toFixed(1)}%</td><td style="color:${dv>2?'#BE2F3B':dv>.5?'#BA7517':'#1D9E75'}">${dv.toFixed(1)}pp</td><td>${st}</td></tr>`;
+  }).join('');
 }
 
 // ═══ POR SERVIÇO ═══
 function carregarServico(){
-  const estado=document.getElementById('s-est').value;
-  const reg=document.getElementById('s-reg').value;
-  const mes=parseInt(document.getElementById('s-mes').value);
-  const ano=parseInt(document.getElementById('s-ano').value);
+  const est=document.getElementById('s-est').value,reg=document.getElementById('s-reg').value;
+  const mes=parseInt(document.getElementById('s-mes').value),ano=parseInt(document.getElementById('s-ano').value);
   syncRegsServ();
-  const tars=getTarifas(estado,mes,ano,reg);
-  const svcMap={};
-  tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0,tarifa:parseFloat(t.preco_unitario)||0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
-  const execMap={};
-  getProd(estado,mes,ano,reg).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
-  const pagoMap={};
-  getItens(estado,mes,ano,reg).forEach(i=>{if(!pagoMap[i.cod_servico]) pagoMap[i.cod_servico]={qde:0,val:0};pagoMap[i.cod_servico].qde+=i.qde_paga||0;pagoMap[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
-  const totP=Object.values(svcMap).reduce((s,v)=>s+v.prev,0);
-  const totE=Object.values(execMap).reduce((s,v)=>s+v,0);
-  const totG=Object.values(pagoMap).reduce((s,v)=>s+v.qde,0);
+  const tars=getTarifas(est,mes,ano,reg);
+  const svcMap={};tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0,tarifa:parseFloat(t.preco_unitario)||0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
+  const execMap={};getProd(est,mes,ano,reg).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
+  const pagoMap={};getItens(est,mes,ano,reg).forEach(i=>{if(!pagoMap[i.cod_servico]) pagoMap[i.cod_servico]={qde:0,val:0};pagoMap[i.cod_servico].qde+=i.qde_paga||0;pagoMap[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
+  const tP=Object.values(svcMap).reduce((s,v)=>s+v.prev,0);
+  const tE=Object.values(execMap).reduce((s,v)=>s+v,0);
+  const tG=Object.values(pagoMap).reduce((s,v)=>s+v.qde,0);
   const tb=document.getElementById('tb-svc'),db=document.getElementById('dist-bars');
   tb.innerHTML='';db.innerHTML='';
   Object.entries(svcMap).forEach(([cod,s])=>{
-    const exec=execMap[cod]||0,pago=pagoMap[cod]?.qde||0,valP=pagoMap[cod]?.val||0;
-    const pP=totP>0?(s.prev/totP*100):0,pE=totE>0?(exec/totE*100):0,pG=totG>0?(pago/totG*100):0;
-    const dev=Math.abs(pP-pG);
-    const al=dev>2?'<span class="pill p-danger">Desvio</span>':dev>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>';
-    tb.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fR(s.tarifa)}</td><td>${fN(s.prev)}</td><td>${pP.toFixed(1)}%</td><td>${fN(exec)}</td><td>${pE.toFixed(1)}%</td><td>${fN(pago)}</td><td>${pG.toFixed(1)}%</td><td>${fR(valP)}</td><td>${al}</td></tr>`;
-    db.innerHTML+=`<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;margin-bottom:5px">${s.desc} <span style="font-size:10px;color:var(--tx2);font-weight:400">· R$ ${s.tarifa.toFixed(2)}/evento</span>${dev>2?`<span style="font-size:10px;color:var(--vm);margin-left:6px">⚠ Desvio ${dev.toFixed(1)}pp</span>`:''}</div>${[['Caderno','#BE2F3B',pP],['Executado','#1D9E75',pE],['Pago','#378ADD',pG]].map(([l,c,p])=>`<div style="display:grid;grid-template-columns:70px 1fr 45px;gap:6px;align-items:center;margin-bottom:3px"><span style="font-size:11px;color:var(--tx2)">${l}</span><div style="background:#f0f0ee;border-radius:3px;height:10px;overflow:hidden"><div style="width:${p*2}%;height:100%;background:${c};border-radius:3px"></div></div><span style="font-size:11px;color:var(--tx2);text-align:right">${p.toFixed(1)}%</span></div>`).join('')}</div>`;
+    const ex=execMap[cod]||0,pg=pagoMap[cod]?.qde||0,vP=pagoMap[cod]?.val||0;
+    const pP=tP>0?(s.prev/tP*100):0,pE=tE>0?(ex/tE*100):0,pG=tG>0?(pg/tG*100):0;
+    const dv=Math.abs(pP-pG);
+    const al=dv>2?'<span class="pill p-danger">Desvio</span>':dv>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>';
+    tb.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fR(s.tarifa)}</td><td>${fN(s.prev)}</td><td>${pP.toFixed(1)}%</td><td>${fN(ex)}</td><td>${pE.toFixed(1)}%</td><td>${fN(pg)}</td><td>${pG.toFixed(1)}%</td><td>${fR(vP)}</td><td>${al}</td></tr>`;
+    db.innerHTML+=`<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;margin-bottom:5px">${s.desc} <span style="font-size:10px;color:var(--tx2);font-weight:400">· R$ ${s.tarifa.toFixed(2)}/evento</span>${dv>2?`<span style="font-size:10px;color:var(--vm);margin-left:6px">⚠ Desvio ${dv.toFixed(1)}pp</span>`:''}</div>${[['Caderno','#BE2F3B',pP],['Executado','#1D9E75',pE],['Pago','#378ADD',pG]].map(([l,c,p])=>`<div style="display:grid;grid-template-columns:70px 1fr 45px;gap:6px;align-items:center;margin-bottom:3px"><span style="font-size:10px;color:var(--tx2)">${l}</span><div style="background:#f0f0ee;border-radius:3px;height:8px;overflow:hidden"><div style="width:${p*2}%;height:100%;background:${c};border-radius:3px"></div></div><span style="font-size:10px;color:var(--tx2);text-align:right">${p.toFixed(1)}%</span></div>`).join('')}</div>`;
   });
 }
 
 // ═══ POR REGIONAL ═══
 function carregarRegional(){
-  const estado=document.getElementById('r-est').value;
-  const reg=document.getElementById('r-reg').value;
-  const mes=parseInt(document.getElementById('r-mes').value);
-  const ano=parseInt(document.getElementById('r-ano').value);
+  const est=document.getElementById('r-est').value,reg=document.getElementById('r-reg').value;
+  const mes=parseInt(document.getElementById('r-mes').value),ano=parseInt(document.getElementById('r-ano').value);
   document.getElementById('r-ch-tit').textContent=`Evolução mensal — ${reg}`;
 
-  const prev=calcPrevisto(estado,mes,ano,reg);
-  const prevE=calcPrevEvt(estado,mes,ano,reg);
-  const exec=calcExec(estado,mes,ano,reg);
-  const pago=calcPago(estado,mes,ano,reg);
-  const pct=prev>0?(pago.val/prev*100):0,diff=pago.val-exec.val;
+  const prev=calcPrevisto(est,mes,ano,reg),prevE=calcPrevEvt(est,mes,ano,reg);
+  const exec=calcExec(est,mes,ano,reg),pago=calcPago(est,mes,ano,reg);
+  const pct=prev>0?(pago.val/prev*100):0,dv=pago.val-exec.val;
 
   document.getElementById('r-cards').innerHTML=`
-    <div class="card"><div class="cl">Faturamento previsto (caderno)</div><div class="cv">${fR(prev)}</div><div class="cs cm">Meta da regional</div></div>
-    <div class="card"><div class="cl">Faturamento executado (campo)</div><div class="cv">${fR(exec.val)}</div><div class="cs ${exec.val>=prev?'cp':'cw'}">${exec.val>=prev?'▲ Acima':'▼ Abaixo'} da meta</div></div>
-    <div class="card"><div class="cl">Faturamento pago (Equatorial)</div><div class="cv">${fR(pago.val)}</div><div class="cs ${diff>=0?'cp':'cn'}">${fR(Math.abs(diff))} ${diff>=0?'acima':'abaixo'} do executado · ${pct.toFixed(1)}% meta</div></div>`;
+    <div class="card"><div class="cl">Previsto (caderno)</div><div class="cv">${fR(prev)}</div><div class="cs cm">Meta da regional</div></div>
+    <div class="card"><div class="cl">Executado (campo)</div><div class="cv">${fR(exec.val)}</div><div class="cs ${exec.val>=prev?'cp':'cw'}">${exec.val>=prev?'▲ Acima':'▼ Abaixo'} da meta</div></div>
+    <div class="card vd"><div class="cl">Pago (Equatorial)</div><div class="cv">${fR(pago.val)}</div><div class="cs ${dv>=0?'cp':'cn'}">${fR(Math.abs(dv))} ${dv>=0?'acima':'abaixo'} do exec. · ${pct.toFixed(1)}%</div></div>`;
 
   const pDiv=exec.evt>0?((exec.evt-pago.evt)/exec.evt*100):0;
   const rAl=document.getElementById('r-alerta');
-  if(Math.abs(pDiv)>2){document.getElementById('r-alerta-txt').innerHTML=`Regional ${reg}: Equatorial pagou <strong>${(100-pDiv).toFixed(1)}%</strong> da produção. Diferença de <strong>${fR(Math.abs(diff))}</strong>.`;rAl.style.display='flex';}
+  if(Math.abs(pDiv)>2){document.getElementById('r-alerta-txt').innerHTML=`Regional ${reg}: Equatorial pagou <strong>${(100-pDiv).toFixed(1)}%</strong> da produção. Diferença de <strong>${fR(Math.abs(dv))}</strong>.`;rAl.style.display='flex';}
   else rAl.style.display='none';
 
-  // Gráfico evolução
   const sP=[],sE=[],sG=[];
-  for(let m=1;m<=12;m++){sP.push(calcPrevisto(estado,m,ano,reg));sE.push(calcExec(estado,m,ano,reg).val);sG.push(calcPago(estado,m,ano,reg).val);}
+  for(let m=1;m<=12;m++){sP.push(calcPrevisto(est,m,ano,reg));sE.push(calcExec(est,m,ano,reg).val);sG.push(calcPago(est,m,ano,reg).val);}
   if(chRegM) chRegM.destroy();
   chRegM=new Chart(document.getElementById('ch-reg-m'),{type:'bar',data:{labels:MN.slice(1),datasets:[
     {label:'Previsto',data:sP,type:'line',borderColor:'#BE2F3B',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2,borderDash:[5,3]},
@@ -822,26 +816,19 @@ function carregarRegional(){
     {label:'Pago',data:sG,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+(v/1e3).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}});
 
-  // Pizza
-  const pm={};
-  getItens(estado,mes,ano,reg).forEach(i=>{if(!pm[i.cod_servico]) pm[i.cod_servico]={desc:i.descricao_servico,val:0};pm[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
+  const pm={};getItens(est,mes,ano,reg).forEach(i=>{if(!pm[i.cod_servico]) pm[i.cod_servico]={desc:i.descricao_servico,val:0};pm[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
   const sv=Object.entries(pm).sort((a,b)=>b[1].val-a[1].val);
-  document.getElementById('leg-reg-pz').innerHTML=sv.map((s,i)=>`<span><i style="background:${CS[i%CS.length]};width:10px;height:10px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,18)}</span>`).join('');
+  document.getElementById('leg-reg-pz').innerHTML=sv.map((s,i)=>`<span><i style="background:${CS[i%CS.length]};width:9px;height:9px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,16)}</span>`).join('');
   if(chRegPz) chRegPz.destroy();
   if(sv.length) chRegPz=new Chart(document.getElementById('ch-reg-pz'),{type:'doughnut',data:{labels:sv.map(s=>s[1].desc),datasets:[{data:sv.map(s=>s[1].val),backgroundColor:CS,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fR(c.raw)}}}}});
 
-  // Tabelas por serviço
-  const tars=getTarifas(estado,mes,ano,reg);
-  const tarMap={};
-  tars.forEach(t=>tarMap[t.cod_servico]={desc:t.descricao_servico,tarifa:parseFloat(t.preco_unitario)||0,prev:parseFloat(t.eventos_previstos)||0,fat:parseFloat(t.faturamento_previsto)||0});
-  const execByS={};
-  getProd(estado,mes,ano,reg).forEach(r=>execByS[r.cod_servico]=(execByS[r.cod_servico]||0)+r.qde_executada);
-  const pagoByS={};const itarByS={};
-  getItens(estado,mes,ano,reg).forEach(i=>{pagoByS[i.cod_servico]=(pagoByS[i.cod_servico]||0)+(i.qde_paga||0);itarByS[i.cod_servico]=parseFloat(i.preco_unitario)||0;});
-
-  const totPE=Object.values(tarMap).reduce((s,v)=>s+v.prev,0);
-  const totEE=Object.values(execByS).reduce((s,v)=>s+v,0);
-  const totGE=Object.values(pagoByS).reduce((s,v)=>s+v,0);
+  const tars=getTarifas(est,mes,ano,reg);
+  const tarMap={};tars.forEach(t=>tarMap[t.cod_servico]={desc:t.descricao_servico,tarifa:parseFloat(t.preco_unitario)||0,prev:parseFloat(t.eventos_previstos)||0,fat:parseFloat(t.faturamento_previsto)||0});
+  const execByS={};getProd(est,mes,ano,reg).forEach(r=>execByS[r.cod_servico]=(execByS[r.cod_servico]||0)+r.qde_executada);
+  const pagoByS={};const itarByS={};getItens(est,mes,ano,reg).forEach(i=>{pagoByS[i.cod_servico]=(pagoByS[i.cod_servico]||0)+(i.qde_paga||0);itarByS[i.cod_servico]=parseFloat(i.preco_unitario)||0;});
+  const tPE=Object.values(tarMap).reduce((s,v)=>s+v.prev,0);
+  const tEE=Object.values(execByS).reduce((s,v)=>s+v,0);
+  const tGE=Object.values(pagoByS).reduce((s,v)=>s+v,0);
 
   const tbE=document.getElementById('tb-reg-evt'),tbF=document.getElementById('tb-reg-fat'),tbT=document.getElementById('tb-reg-tar'),tbP=document.getElementById('tb-reg-prop');
   tbE.innerHTML='';tbF.innerHTML='';tbT.innerHTML='';tbP.innerHTML='';
@@ -849,19 +836,16 @@ function carregarRegional(){
   Object.entries(tarMap).forEach(([cod,s])=>{
     const ex=execByS[cod]||0,pg=pagoByS[cod]||0;
     const df=pg-ex,pct2=ex>0?((ex-pg)/ex*100):0;
-    const bc=Math.abs(pct2)<2?'#1D9E75':pct2>5?'#E24B4A':'#EF9F27';
+    const bc=Math.abs(pct2)<2?'#1D9E75':pct2>5?'#BE2F3B':'#BA7517';
     const st=Math.abs(pct2)<2?'<span class="pill p-ok">Ok</span>':pct2>5?'<span class="pill p-danger">Crítico</span>':'<span class="pill p-warn">Atenção</span>';
-    tbE.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fN(s.prev)}</td><td>${fN(ex)}</td><td>${fN(pg)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fN(df)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct2)*10,100)}%;background:${bc}"></div></div><span style="font-size:11px;color:${bc};font-weight:700">${pct2.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;
-
-    const fatE=ex*s.tarifa,fatP=pg*s.tarifa,fatDiff=fatP-fatE,pctM=s.fat>0?(fatP/s.fat*100):0;
-    tbF.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fR(s.fat)}</td><td>${fR(fatE)}</td><td>${fR(fatP)}</td><td style="color:${fatDiff>=0?'#1D9E75':'#BE2F3B'}">${fatDiff>=0?'+':''}${fR(fatDiff)}</td><td><span class="pill ${pctM>=95?'p-ok':pctM>=85?'p-warn':'p-danger'}">${pctM.toFixed(1)}%</span></td></tr>`;
-
-    const tarP=itarByS[cod]||0,tarDiff=tarP-s.tarifa,tarDiv=Math.abs(tarDiff)>0.01;
-    tbT.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fR(s.tarifa)}</td><td style="color:${tarDiv?'#BE2F3B':'inherit'}">${tarP>0?fR(tarP):'—'}</td><td style="color:${tarDiv?'#BE2F3B':'#1D9E75'}">${tarP>0?(tarDiff>=0?'+':'')+fR(tarDiff):'—'}</td><td>${tarP>0?(tarDiv?'<span class="pill p-danger">⚠ Diverge</span>':'<span class="pill p-ok">Ok</span>'):'<span class="pill p-cinza">Sem dados</span>'}</td></tr>`;
-
-    const pP2=totPE>0?(s.prev/totPE*100):0,pE2=totEE>0?(ex/totEE*100):0,pG2=totGE>0?(pg/totGE*100):0;
-    const dev=Math.abs(pP2-pG2);
-    tbP.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${pP2.toFixed(1)}%</td><td>${pE2.toFixed(1)}%</td><td>${pG2.toFixed(1)}%</td><td style="color:${dev>2?'#BE2F3B':dev>.5?'#BA7517':'#1D9E75'}">${dev.toFixed(1)}pp</td><td>${dev>2?'<span class="pill p-danger">Desvio</span>':dev>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
+    tbE.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fN(s.prev)}</td><td>${fN(ex)}</td><td>${fN(pg)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fN(df)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct2)*10,100)}%;background:${bc}"></div></div><span style="font-size:10px;color:${bc};font-weight:700">${pct2.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;
+    const fE=ex*s.tarifa,fP=pg*s.tarifa,fD=fP-fE,pM=s.fat>0?(fP/s.fat*100):0;
+    tbF.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fR(s.fat)}</td><td>${fR(fE)}</td><td>${fR(fP)}</td><td style="color:${fD>=0?'#1D9E75':'#BE2F3B'}">${fD>=0?'+':''}${fR(fD)}</td><td><span class="pill ${pM>=95?'p-ok':pM>=85?'p-warn':'p-danger'}">${pM.toFixed(1)}%</span></td></tr>`;
+    const tp=itarByS[cod]||0,td=tp-s.tarifa,tdv=Math.abs(td)>0.01&&tp>0;
+    tbT.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fR(s.tarifa)}</td><td style="color:${tdv?'#BE2F3B':'inherit'}">${tp>0?fR(tp):'—'}</td><td style="color:${tdv?'#BE2F3B':'#1D9E75'}">${tp>0?(td>=0?'+':'')+fR(td):'—'}</td><td>${tp>0?(tdv?'<span class="pill p-danger">⚠ Diverge</span>':'<span class="pill p-ok">Ok</span>'):'<span class="pill p-cinza">Sem dados</span>'}</td></tr>`;
+    const pP2=tPE>0?(s.prev/tPE*100):0,pE2=tEE>0?(ex/tEE*100):0,pG2=tGE>0?(pg/tGE*100):0;
+    const dv2=Math.abs(pP2-pG2);
+    tbP.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${pP2.toFixed(1)}%</td><td>${pE2.toFixed(1)}%</td><td>${pG2.toFixed(1)}%</td><td style="color:${dv2>2?'#BE2F3B':dv2>.5?'#BA7517':'#1D9E75'}">${dv2.toFixed(1)}pp</td><td>${dv2>2?'<span class="pill p-danger">Desvio</span>':dv2>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
   });
 }
 
@@ -871,7 +855,6 @@ function dragLeave(id){document.getElementById(id).classList.remove('drag')}
 function dropFile(e,tipo){e.preventDefault();dragLeave('ua-'+tipo);const f=e.dataTransfer.files[0];if(f)processarUpload(f,tipo);}
 async function processarUpload(file,tipo){
   if(!file||!file.name.endsWith('.xlsx')){alert('Selecione um arquivo .xlsx válido.');return;}
-  // Reset input para evitar múltiplos disparos
   document.getElementById('uf-'+tipo).value='';
   const buf=await file.arrayBuffer();
   const wb=XLSX.read(buf,{type:'array'});
@@ -879,29 +862,24 @@ async function processarUpload(file,tipo){
   if(tipo==='bol')  parsearBoletim(wb);
   if(tipo==='cad')  parsearCaderno(wb);
 }
-
 function lerAbas(wb){
   let rows=[];
   ['MA','PI'].forEach(est=>{
-    const ws=wb.Sheets[est];
-    if(!ws) return;
+    const ws=wb.Sheets[est];if(!ws) return;
     const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:2});
     r.forEach(row=>{if(!row.ESTADO) row.ESTADO=est;});
     rows=[...rows,...r];
   });
   return rows;
 }
-
 function parsearProducao(wb){
-  dadosProd=[];
-  let erros=0,dups=[];
-  const rows=lerAbas(wb);
-  rows.forEach(r=>{
+  dadosProd=[];let erros=0,dups=[];
+  lerAbas(wb).forEach(r=>{
     if(!r.MES||!r.ANO||!r.REGIONAL||!r.COD_SERVICO||r.QTD_EXECUTADA===''){erros++;return;}
     const mes=parseInt(r.MES),ano=parseInt(r.ANO),est=String(r.ESTADO).trim(),reg=String(r.REGIONAL).trim(),cod=String(r.COD_SERVICO).trim();
-    const jaExiste=C.prod.find(p=>p.mes===mes&&p.ano===ano&&p.estado===est&&p.regional===reg&&p.cod_servico===cod);
-    if(jaExiste){const dk=`${mA(mes,ano)} — ${est} — ${reg}`;if(!dups.includes(dk)) dups.push(dk);}
-    dadosProd.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),qde_executada:parseInt(r.QTD_EXECUTADA)||0,_dup:!!jaExiste});
+    const ja=C.prod.find(p=>p.mes===mes&&p.ano===ano&&p.estado===est&&p.regional===reg&&p.cod_servico===cod);
+    if(ja){const dk=`${mA(mes,ano)} — ${est} — ${reg}`;if(!dups.includes(dk)) dups.push(dk);}
+    dadosProd.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),qde_executada:parseInt(r.QTD_EXECUTADA)||0,_dup:!!ja});
   });
   if(!dadosProd.length){alert('Nenhum dado encontrado.');return;}
   document.getElementById('prod-st-txt').textContent=`${dadosProd.length} registros carregados${erros?` (${erros} ignorados)`:''}`;
@@ -910,40 +888,32 @@ function parsearProducao(wb){
   document.getElementById('tb-pv-prod').innerHTML=dadosProd.map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;font-weight:700">${fN(r.qde_executada)}</td><td>${r._dup?'<span class="pill p-warn">Substituirá</span>':'<span class="pill p-ok">Novo</span>'}</td></tr>`).join('');
   document.getElementById('pv-prod').style.display='block';
 }
-
 function parsearBoletim(wb){
-  dadosBol=[];
-  let erros=0,dups=[];
-  const rows=lerAbas(wb);
-  const tarMap={};
-  C.tars.forEach(t=>tarMap[t.cod_servico+'|'+t.regional]=parseFloat(t.preco_unitario)||0);
-  rows.forEach(r=>{
+  dadosBol=[];let erros=0,dups=[];
+  const tarMap={};C.tars.forEach(t=>tarMap[t.cod_servico+'|'+t.regional]=parseFloat(t.preco_unitario)||0);
+  lerAbas(wb).forEach(r=>{
     if(!r.MES||!r.ANO||!r.REGIONAL||!r.COD_SERVICO){erros++;return;}
     const mes=parseInt(r.MES),ano=parseInt(r.ANO),est=String(r.ESTADO).trim(),reg=String(r.REGIONAL).trim(),cod=String(r.COD_SERVICO).trim();
-    const bolExiste=C.bols.find(b=>b.mes===mes&&b.ano===ano&&b.estado===est);
-    if(bolExiste){const dk=`${mA(mes,ano)} — ${est}`;if(!dups.includes(dk)) dups.push(dk);}
-    dadosBol.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO||'0').replace(',','.'))||0,qde_paga:parseInt(r.QDE_PAGA)||0,_dup:!!bolExiste});
+    const ja=C.bols.find(b=>b.mes===mes&&b.ano===ano&&b.estado===est);
+    if(ja){const dk=`${mA(mes,ano)} — ${est}`;if(!dups.includes(dk)) dups.push(dk);}
+    dadosBol.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO||'0').replace(',','.'))||0,qde_paga:parseInt(r.QDE_PAGA)||0,_dup:!!ja});
   });
   if(!dadosBol.length){alert('Nenhum dado encontrado.');return;}
-  const alertaTar=[];
-  dadosBol.forEach(r=>{const tc=tarMap[r.cod_servico+'|'+r.regional];if(tc&&Math.abs(tc-r.preco_unitario)>0.01) alertaTar.push(`${r.regional}: ${r.descricao_servico}`);});
+  const aT=[];dadosBol.forEach(r=>{const tc=tarMap[r.cod_servico+'|'+r.regional];if(tc&&Math.abs(tc-r.preco_unitario)>0.01) aT.push(`${r.regional}: ${r.descricao_servico}`);});
   const ta=document.getElementById('bol-tar-al');
-  if(alertaTar.length){document.getElementById('bol-tar-txt').innerHTML=`<strong>Tarifas divergentes do caderno:</strong> ${alertaTar.slice(0,3).join(', ')}`;ta.style.display='flex';}else ta.style.display='none';
+  if(aT.length){document.getElementById('bol-tar-txt').innerHTML=`<strong>Tarifas divergentes:</strong> ${aT.slice(0,3).join(', ')}`;ta.style.display='flex';}else ta.style.display='none';
   document.getElementById('bol-st-txt').textContent=`${dadosBol.length} registros carregados${erros?` (${erros} ignorados)`:''}`;
   const da=document.getElementById('bol-dup-al');
   if(dups.length){document.getElementById('bol-dup-txt').textContent=`Período já importado — será substituído: ${dups.join(', ')}`;da.style.display='flex';}else da.style.display='none';
   document.getElementById('tb-pv-bol').innerHTML=dadosBol.map(r=>{
-    const tc=tarMap[r.cod_servico+'|'+r.regional],div=tc&&Math.abs(tc-r.preco_unitario)>0.01;
-    return `<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;color:${div?'#BE2F3B':'inherit'}">${fR(r.preco_unitario)}</td><td style="text-align:right;font-weight:700">${fN(r.qde_paga)}</td><td style="text-align:right">${fR(r.preco_unitario*r.qde_paga)}</td><td>${div?'<span class="pill p-danger">⚠ Diverge</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
+    const tc=tarMap[r.cod_servico+'|'+r.regional],dv=tc&&Math.abs(tc-r.preco_unitario)>0.01;
+    return `<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;color:${dv?'#BE2F3B':'inherit'}">${fR(r.preco_unitario)}</td><td style="text-align:right;font-weight:700">${fN(r.qde_paga)}</td><td style="text-align:right">${fR(r.preco_unitario*r.qde_paga)}</td><td>${dv?'<span class="pill p-danger">⚠</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
   }).join('');
   document.getElementById('pv-bol').style.display='block';
 }
-
 function parsearCaderno(wb){
-  dadosCad=[];
-  let erros=0;
-  const rows=lerAbas(wb);
-  rows.forEach(r=>{
+  dadosCad=[];let erros=0;
+  lerAbas(wb).forEach(r=>{
     if(!r.REGIONAL||!r.COD_SERVICO||!r.VIGENCIA_INICIO||r.PRECO_UNITARIO===''||r.EVENTOS_PREVISTOS===''){erros++;return;}
     dadosCad.push({estado:String(r.ESTADO||'').trim(),regional:String(r.REGIONAL).trim(),cod_servico:String(r.COD_SERVICO).trim(),descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),vigencia_inicio:String(r.VIGENCIA_INICIO).trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO).replace(',','.'))||0,eventos_previstos:parseFloat(String(r.EVENTOS_PREVISTOS).replace(',','.'))||0});
   });
@@ -953,7 +923,6 @@ function parsearCaderno(wb){
   document.getElementById('tb-pv-cad').innerHTML=dadosCad.map(r=>`<tr><td style="font-weight:700;color:var(--vm)">${r.vigencia_inicio}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right">${fR(r.preco_unitario)}</td><td style="text-align:right">${fN(r.eventos_previstos)}</td><td style="text-align:right;font-weight:700">${fR(r.preco_unitario*r.eventos_previstos)}</td></tr>`).join('');
   document.getElementById('pv-cad').style.display='block';
 }
-
 function cancelarUpload(tipo){
   document.getElementById('pv-'+tipo).style.display='none';
   if(tipo==='prod') dadosProd=[];
@@ -963,60 +932,43 @@ function cancelarUpload(tipo){
 
 // ═══ SALVAR ═══
 async function salvarProducao(){
-  if(salvandoProd||!dadosProd.length) return;
-  salvandoProd=true;
-  const btn=document.getElementById('btn-salvar-prod');
-  btn.textContent='Salvando...';btn.disabled=true;
+  if(svProd||!dadosProd.length) return;svProd=true;
+  const btn=document.getElementById('btn-sv-prod');btn.textContent='Salvando...';btn.disabled=true;
   const user=(await sb.auth.getUser()).data.user;
-  // Upsert em lote
-  const {error}=await sb.from('producao_real').upsert(
-    dadosProd.map(r=>({mes:r.mes,ano:r.ano,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,qde_executada:r.qde_executada,ativo:true,importado_por:user.id})),
-    {onConflict:'mes,ano,estado,regional,cod_servico'}
-  );
-  if(error){alert('Erro ao salvar: '+error.message);}
+  const {error}=await sb.from('producao_real').upsert(dadosProd.map(r=>({mes:r.mes,ano:r.ano,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,qde_executada:r.qde_executada,ativo:true,importado_por:user.id})),{onConflict:'mes,ano,estado,regional,cod_servico'});
+  if(error) alert('Erro: '+error.message);
   else{alert(`✓ ${dadosProd.length} registros salvos!`);cancelarUpload('prod');await carregarCache();carregarHistProd();}
-  btn.textContent='✓ Confirmar e salvar';btn.disabled=false;salvandoProd=false;
+  btn.textContent='✓ Confirmar e salvar';btn.disabled=false;svProd=false;
 }
-
 async function salvarBoletim(){
-  if(salvandoBol||!dadosBol.length) return;
-  salvandoBol=true;
-  const btn=document.getElementById('btn-salvar-bol');
-  btn.textContent='Salvando...';btn.disabled=true;
+  if(svBol||!dadosBol.length) return;svBol=true;
+  const btn=document.getElementById('btn-sv-bol');btn.textContent='Salvando...';btn.disabled=true;
   const user=(await sb.auth.getUser()).data.user;
   const {mes,ano,estado}=dadosBol[0];
-  // Remove boletim existente
-  const bolExiste=C.bols.find(b=>b.mes===mes&&b.ano===ano&&b.estado===estado);
-  if(bolExiste) await sb.from('boletins').delete().eq('id',bolExiste.id);
+  const ja=C.bols.find(b=>b.mes===mes&&b.ano===ano&&b.estado===estado);
+  if(ja) await sb.from('boletins').delete().eq('id',ja.id);
   const {data:bol,error:e1}=await sb.from('boletins').insert({mes,ano,estado,ativo:true,importado_por:user.id}).select().single();
-  if(e1||!bol){alert('Erro ao criar boletim.');btn.textContent='✓ Confirmar e salvar';btn.disabled=false;salvandoBol=false;return;}
+  if(e1||!bol){alert('Erro ao criar boletim.');btn.textContent='✓ Confirmar e salvar';btn.disabled=false;svBol=false;return;}
   const {error:e2}=await sb.from('boletim_itens').insert(dadosBol.map(r=>({boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga})));
-  if(e2){alert('Erro ao salvar itens: '+e2.message);}
+  if(e2) alert('Erro: '+e2.message);
   else{alert(`✓ Boletim ${MN[mes]}/${ano} — ${estado} salvo!`);cancelarUpload('bol');await carregarCache();carregarHistBol();}
-  btn.textContent='✓ Confirmar e salvar';btn.disabled=false;salvandoBol=false;
+  btn.textContent='✓ Confirmar e salvar';btn.disabled=false;svBol=false;
 }
-
 async function salvarCaderno(){
-  if(salvandoCad) return;
+  if(svCad) return;
   if(!document.getElementById('cad-conf').checked){alert('Confirme os dados marcando a caixa.');return;}
-  if(!dadosCad.length) return;
-  salvandoCad=true;
-  const btn=document.getElementById('btn-salvar-cad');
-  btn.textContent='Salvando...';btn.disabled=true;
+  if(!dadosCad.length) return;svCad=true;
+  const btn=document.getElementById('btn-sv-cad');btn.textContent='Salvando...';btn.disabled=true;
   const user=(await sb.auth.getUser()).data.user;
   const {estado,vigencia_inicio}=dadosCad[0];
-  // Encerra cadernos ativos do mesmo estado
   const ativos=C.cads.filter(c=>c.estado===estado&&c.ativo);
   for(const c of ativos) await sb.from('cadernos').update({ativo:false,data_fim:vigencia_inicio}).eq('id',c.id);
-  // Cria novo caderno
   const {data:cad,error:e1}=await sb.from('cadernos').insert({estado,nome:`Caderno ${estado} — vigência ${vigencia_inicio}`,vigencia_inicio,ativo:true,confirmado:true,importado_por:user.id}).select().single();
-  if(e1||!cad){alert('Erro ao criar caderno: '+(e1?.message||''));btn.textContent='✓ Ativar caderno';btn.disabled=false;salvandoCad=false;return;}
-  // Insere tarifas em lote
-  const tarifas=dadosCad.map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos}));
-  const {error:e2}=await sb.from('caderno_tarifas').insert(tarifas);
-  if(e2){alert('Erro ao salvar tarifas: '+e2.message);await sb.from('cadernos').delete().eq('id',cad.id);}
-  else{alert(`✓ Caderno ativado com ${tarifas.length} tarifas! Vigência: ${vigencia_inicio}`);document.getElementById('cad-conf').checked=false;cancelarUpload('cad');document.getElementById('upload-cad-box').style.display='none';await carregarCache();carregarCadernos();}
-  btn.textContent='✓ Ativar caderno';btn.disabled=false;salvandoCad=false;
+  if(e1||!cad){alert('Erro: '+(e1?.message||''));btn.textContent='✓ Ativar caderno';btn.disabled=false;svCad=false;return;}
+  const {error:e2}=await sb.from('caderno_tarifas').insert(dadosCad.map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos})));
+  if(e2){alert('Erro nas tarifas: '+e2.message);await sb.from('cadernos').delete().eq('id',cad.id);}
+  else{alert(`✓ Caderno ativado com ${dadosCad.length} tarifas!`);document.getElementById('cad-conf').checked=false;cancelarUpload('cad');document.getElementById('upload-cad-box').style.display='none';await carregarCache();carregarCadernos();}
+  btn.textContent='✓ Ativar caderno';btn.disabled=false;svCad=false;
 }
 
 // ═══ HISTÓRICOS ═══
@@ -1024,23 +976,12 @@ async function carregarHistProd(){
   const {data:prod}=await sb.from('producao_real').select('mes,ano,estado,qde_executada,importado_em,ativo').order('ano',{ascending:false}).order('mes',{ascending:false});
   const tb=document.getElementById('tb-hist-prod');
   if(!prod?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum lançamento.</td></tr>';return;}
-  const agrup={};
-  prod.forEach(r=>{
-    const k=`${r.mes}|${r.ano}|${r.estado}`;
-    if(!agrup[k]) agrup[k]={mes:r.mes,ano:r.ano,estado:r.estado,total:0,em:r.importado_em,ativo:r.ativo!==false};
-    agrup[k].total+=r.qde_executada;
-  });
-  tb.innerHTML=Object.values(agrup).map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${fN(r.total)}</td><td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'—'}</td><td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',${r.ativo})">${r.ativo?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}')">Excluir</button></td></tr>`).join('');
+  const ag={};
+  prod.forEach(r=>{const k=`${r.mes}|${r.ano}|${r.estado}`;if(!ag[k]) ag[k]={mes:r.mes,ano:r.ano,estado:r.estado,total:0,em:r.importado_em,ativo:r.ativo!==false};ag[k].total+=r.qde_executada;});
+  tb.innerHTML=Object.values(ag).map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${fN(r.total)}</td><td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'—'}</td><td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',${r.ativo})">${r.ativo?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}')">Excluir</button></td></tr>`).join('');
 }
-async function inativarProd(mes,ano,est,ativo){
-  await sb.from('producao_real').update({ativo:!ativo}).eq('mes',mes).eq('ano',ano).eq('estado',est);
-  await carregarCache();carregarHistProd();
-}
-async function excluirProd(mes,ano,est){
-  if(!confirm(`Excluir ${mA(mes,ano)} — ${est}?`)) return;
-  await sb.from('producao_real').delete().eq('mes',mes).eq('ano',ano).eq('estado',est);
-  await carregarCache();carregarHistProd();
-}
+async function inativarProd(mes,ano,est,ativo){await sb.from('producao_real').update({ativo:!ativo}).eq('mes',mes).eq('ano',ano).eq('estado',est);await carregarCache();carregarHistProd();}
+async function excluirProd(mes,ano,est){if(!confirm(`Excluir ${mA(mes,ano)} — ${est}?`)) return;await sb.from('producao_real').delete().eq('mes',mes).eq('ano',ano).eq('estado',est);await carregarCache();carregarHistProd();}
 
 async function carregarHistBol(){
   const {data:bols}=await sb.from('boletins').select('*').order('ano',{ascending:false}).order('mes',{ascending:false});
@@ -1048,59 +989,46 @@ async function carregarHistBol(){
   if(!bols?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum boletim.</td></tr>';return;}
   tb.innerHTML='';
   for(const b of bols){
-    const itens=C.itens.filter(i=>i.boletim_id===b.id);
-    const totE=itens.reduce((s,i)=>s+(i.qde_paga||0),0);
-    const totV=itens.reduce((s,i)=>s+(parseFloat(i.valor_pago)||0),0);
-    tb.innerHTML+=`<tr><td>${mA(b.mes,b.ano)}</td><td>${b.estado}</td><td>${fN(totE)}</td><td>${fR(totV)}</td><td>${b.importado_em?new Date(b.importado_em).toLocaleDateString('pt-BR'):'—'}</td><td>${b.ativo!==false?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarBol(${b.id},${b.ativo!==false})">${b.ativo!==false?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirBol(${b.id},'${mA(b.mes,b.ano)}','${b.estado}')">Excluir</button></td></tr>`;
+    const it=C.itens.filter(i=>i.boletim_id===b.id);
+    const tE=it.reduce((s,i)=>s+(i.qde_paga||0),0),tV=it.reduce((s,i)=>s+(parseFloat(i.valor_pago)||0),0);
+    tb.innerHTML+=`<tr><td>${mA(b.mes,b.ano)}</td><td>${b.estado}</td><td>${fN(tE)}</td><td>${fR(tV)}</td><td>${b.importado_em?new Date(b.importado_em).toLocaleDateString('pt-BR'):'—'}</td><td>${b.ativo!==false?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarBol(${b.id},${b.ativo!==false})">${b.ativo!==false?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirBol(${b.id},'${mA(b.mes,b.ano)}','${b.estado}')">Excluir</button></td></tr>`;
   }
 }
-async function inativarBol(id,ativo){
-  await sb.from('boletins').update({ativo:!ativo}).eq('id',id);
-  await carregarCache();carregarHistBol();
-}
-async function excluirBol(id,periodo,est){
-  if(!confirm(`Excluir boletim ${periodo} — ${est}?`)) return;
-  await sb.from('boletins').delete().eq('id',id);
-  await carregarCache();carregarHistBol();
-}
+async function inativarBol(id,ativo){await sb.from('boletins').update({ativo:!ativo}).eq('id',id);await carregarCache();carregarHistBol();}
+async function excluirBol(id,p,e){if(!confirm(`Excluir boletim ${p} — ${e}?`)) return;await sb.from('boletins').delete().eq('id',id);await carregarCache();carregarHistBol();}
 
 // ═══ CADERNOS ═══
 function toggleUploadCad(){const b=document.getElementById('upload-cad-box');b.style.display=b.style.display==='none'?'block':'none';}
-
 function carregarCadernos(){
   const el=document.getElementById('lista-cadernos');
   if(!C.cads.length){el.innerHTML='<div class="loader">Nenhum caderno cadastrado ainda.</div>';return;}
-  let html='';
-  [...C.cads].reverse().forEach(c=>{
+  el.innerHTML=[...C.cads].reverse().map(c=>{
     const tars=C.tars.filter(t=>t.caderno_id===c.id);
-    const totalMeta=tars.reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||0),0);
-    const regsCount=new Set(tars.map(t=>t.regional)).size;
-    const svcsCount=regsCount>0?tars.length/regsCount:0;
-    const status=c.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Encerrado</span>';
+    const meta=tars.reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||0),0);
+    const regs=new Set(tars.map(t=>t.regional)).size;
+    const svcs=regs>0?tars.length/regs:0;
+    const st=c.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Encerrado</span>';
     const conf=c.confirmado?'<span style="color:var(--vd);font-weight:700">✓ Sim</span>':'<span style="color:var(--am);font-weight:700">⚠ Pendente</span>';
-    html+=`<div class="ccard ${c.ativo?'ativo':''}">
+    return `<div class="ccard ${c.ativo?'ativo':''}">
       <div class="ccard-h">
-        <div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span class="ccard-t">${c.nome}</span>${status}</div>
-          <div class="ccard-m">${c.estado} · Importado em ${c.importado_em?new Date(c.importado_em).toLocaleDateString('pt-BR'):'—'}</div>
-        </div>
+        <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="ccard-t">${c.nome}</span>${st}</div><div class="ccard-m">${c.estado} · Importado em ${c.importado_em?new Date(c.importado_em).toLocaleDateString('pt-BR'):'—'}</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-s btn-sm" onclick="toggleTarifas(${c.id})">▼ Ver tarifas</button>
-          <button class="btn btn-s btn-sm" onclick="salvarVigencia(${c.id})">💾 Salvar vigência</button>
-          <button class="btn btn-s btn-sm" onclick="inativarCaderno(${c.id},${c.ativo})">${c.ativo?'Inativar':'Ativar'}</button>
-          <button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirCaderno(${c.id},'${c.nome}')">Excluir</button>
+          <button class="btn btn-s btn-sm" onclick="toggleTar(${c.id})"><i class="ti ti-chevron-down" aria-hidden="true"></i> Tarifas</button>
+          <button class="btn btn-s btn-sm" onclick="salvarVig(${c.id})"><i class="ti ti-device-floppy" aria-hidden="true"></i> Salvar</button>
+          <button class="btn btn-s btn-sm" onclick="inativarCad(${c.id},${c.ativo})">${c.ativo?'Inativar':'Ativar'}</button>
+          <button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirCad(${c.id},'${c.nome}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
         </div>
       </div>
       <div class="ccard-st">
-        <div class="ccard-s"><div class="sl">Meta mensal total</div><div class="sv">${fR(totalMeta)}</div></div>
-        <div class="ccard-s"><div class="sl">Regionais</div><div class="sv">${regsCount}</div></div>
-        <div class="ccard-s"><div class="sl">Serviços</div><div class="sv">${Math.round(svcsCount)}</div></div>
+        <div class="ccard-s"><div class="sl">Meta mensal</div><div class="sv">${fR(meta)}</div></div>
+        <div class="ccard-s"><div class="sl">Regionais</div><div class="sv">${regs}</div></div>
+        <div class="ccard-s"><div class="sl">Serviços</div><div class="sv">${Math.round(svcs)}</div></div>
         <div class="ccard-s"><div class="sl">Confirmado</div><div class="sv">${conf}</div></div>
       </div>
       <div class="ccard-vig">
         <div><label>Mês/Ano inicial</label><input type="text" id="vi-${c.id}" value="${c.vigencia_inicio||''}" placeholder="MM/AAAA"></div>
         <div><label>Mês/Ano final</label><input type="text" id="vf-${c.id}" value="${c.data_fim||''}" placeholder="MM/AAAA"></div>
-        <div><label>Ativo</label><div class="ckbox"><input type="checkbox" id="va-${c.id}" ${c.ativo?'checked':''} style="width:16px;height:16px;accent-color:var(--vm)"><span>Sim</span></div></div>
+        <div><label>Ativo</label><div class="ckbox"><input type="checkbox" id="va-${c.id}" ${c.ativo?'checked':''} style="width:15px;height:15px;accent-color:var(--vm)"><span>Sim</span></div></div>
       </div>
       <div class="tar-box" id="tar-${c.id}">
         <table><thead><tr><th>Regional</th><th>Serviço</th><th style="text-align:right">Tarifa</th><th style="text-align:right">Eventos prev.</th><th style="text-align:right">Fat. previsto</th></tr></thead>
@@ -1108,47 +1036,68 @@ function carregarCadernos(){
         </table>
       </div>
     </div>`;
-  });
-  el.innerHTML=html;
+  }).join('');
 }
-
-function toggleTarifas(id){const b=document.getElementById('tar-'+id);b.style.display=b.style.display==='block'?'none':'block';}
-
-async function salvarVigencia(id){
+function toggleTar(id){const b=document.getElementById('tar-'+id);b.style.display=b.style.display==='block'?'none':'block';}
+async function salvarVig(id){
   const ini=document.getElementById('vi-'+id).value.trim();
   const fim=document.getElementById('vf-'+id).value.trim();
   const atv=document.getElementById('va-'+id).checked;
   await sb.from('cadernos').update({vigencia_inicio:ini,data_fim:fim||null,ativo:atv}).eq('id',id);
-  await carregarCache();carregarCadernos();
-  alert('✓ Vigência atualizada!');
+  await carregarCache();carregarCadernos();alert('✓ Vigência atualizada!');
 }
-async function inativarCaderno(id,ativo){
-  await sb.from('cadernos').update({ativo:!ativo}).eq('id',id);
-  await carregarCache();carregarCadernos();
-}
-async function excluirCaderno(id,nome){
-  if(!confirm(`Excluir permanentemente "${nome}"?`)) return;
-  await sb.from('cadernos').delete().eq('id',id);
-  await carregarCache();carregarCadernos();
-}
+async function inativarCad(id,ativo){await sb.from('cadernos').update({ativo:!ativo}).eq('id',id);await carregarCache();carregarCadernos();}
+async function excluirCad(id,nome){if(!confirm(`Excluir "${nome}"?`)) return;await sb.from('cadernos').delete().eq('id',id);await carregarCache();carregarCadernos();}
 
 // ═══ USUÁRIOS ═══
 async function carregarUsuarios(){
   const el=document.getElementById('lista-usuarios');
   const {data:users}=await sb.from('usuarios_perfil_completo').select('*').order('criado_em',{ascending:false});
-  if(!users?.length){el.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum usuário.</td></tr>';return;}
+  if(!users?.length){el.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum usuário.</td></tr>';return;}
   const rl={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'};
-  el.innerHTML=users.map(u=>`<tr>
-    <td>${u.nome||'—'}</td><td>${u.email}</td>
-    <td><select onchange="alterarRole('${u.id}',this.value)" style="font-size:12px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd)">${['admin','analyst','viewer'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${rl[r]}</option>`).join('')}</select></td>
-    <td>${u.role==='analyst'?`<label style="display:flex;align-items:center;gap:5px;font-size:12px;margin-bottom:4px"><input type="checkbox" ${u.perm_producao?'checked':''} onchange="alterarPerm('${u.id}','perm_producao',this.checked)" style="accent-color:var(--vm)">Produção</label><label style="display:flex;align-items:center;gap:5px;font-size:12px"><input type="checkbox" ${u.perm_boletim?'checked':''} onchange="alterarPerm('${u.id}','perm_boletim',this.checked)" style="accent-color:var(--vm)">Boletim</label>`:'<span style="font-size:11px;color:var(--tx2)">—</span>'}</td>
-    <td>${u.criado_em?new Date(u.criado_em).toLocaleDateString('pt-BR'):'—'}</td>
-    <td>${u.last_sign_in_at?new Date(u.last_sign_in_at).toLocaleString('pt-BR'):'<span style="color:var(--tx2);font-size:11px">Nunca</span>'}</td>
-    <td>${u.ativo?`<button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="desativarUser('${u.id}')">Desativar</button>`:'<span class="pill p-cinza">Inativo</span>'}</td>
-  </tr>`).join('');
+  const ABAS_DISP=[{id:'geral',label:'Visão Geral'},{id:'servico',label:'Por Serviço'},{id:'regional',label:'Por Regional'},{id:'lancar',label:'Lançar Produção'},{id:'boletim',label:'Importar Boletim'},{id:'cadernos',label:'Cadernos'},{id:'usuarios',label:'Usuários'}];
+  el.innerHTML=users.map(u=>{
+    const abas=u.abas_permitidas||['geral','servico','regional'];
+    return `<tr>
+      <td><strong>${u.nome||'—'}</strong></td>
+      <td style="font-size:11px;color:var(--tx2)">${u.email}</td>
+      <td><select onchange="alterarRole('${u.id}',this.value)" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd)">${['admin','analyst','viewer'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${rl[r]}</option>`).join('')}</select></td>
+      <td>${u.last_sign_in_at?new Date(u.last_sign_in_at).toLocaleString('pt-BR'):'<span style="color:var(--tx2);font-size:11px">Nunca</span>'}</td>
+      <td>${u.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td>
+      <td><button class="btn btn-s btn-sm" onclick="togglePerms('perms-${u.id}')"><i class="ti ti-settings" aria-hidden="true"></i> Permissões</button>${u.ativo?`<button class="btn btn-s btn-sm" style="color:var(--vm);margin-left:4px" onclick="desativarUser('${u.id}')">Desativar</button>`:''}</td>
+    </tr>
+    <tr id="perms-${u.id}" style="display:none"><td colspan="6" style="padding:0">
+      <div style="background:var(--bg);padding:12px 16px;border-top:1px solid var(--bd)">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+          <div>
+            <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Abas permitidas</p>
+            ${ABAS_DISP.map(a=>`<label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" ${abas.includes(a.id)?'checked':''} onchange="alterarAbas('${u.id}','${a.id}',this.checked)" style="accent-color:var(--vm);width:13px;height:13px">${a.label}</label>`).join('')}
+          </div>
+          <div>
+            <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Uploads (analista)</p>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" ${u.perm_producao?'checked':''} onchange="alterarPerm('${u.id}','perm_producao',this.checked)" style="accent-color:var(--vm);width:13px;height:13px">Lançar produção</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" ${u.perm_boletim?'checked':''} onchange="alterarPerm('${u.id}','perm_boletim',this.checked)" style="accent-color:var(--vm);width:13px;height:13px">Importar boletim</label>
+          </div>
+          <div>
+            <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Exportações</p>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" ${u.perm_exportar_pdf?'checked':''} onchange="alterarPerm('${u.id}','perm_exportar_pdf',this.checked)" style="accent-color:var(--vm);width:13px;height:13px">Exportar PDF</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" ${u.perm_exportar_excel?'checked':''} onchange="alterarPerm('${u.id}','perm_exportar_excel',this.checked)" style="accent-color:var(--vm);width:13px;height:13px">Exportar Excel</label>
+          </div>
+        </div>
+      </div>
+    </td></tr>`;
+  }).join('');
 }
-async function alterarRole(id,r){await sb.from('usuarios_perfil').update({role:r,perm_producao:r==='admin',perm_boletim:r==='admin',atualizado_em:new Date().toISOString()}).eq('id',id);carregarUsuarios();}
+function togglePerms(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none';}
+async function alterarRole(id,r){await sb.from('usuarios_perfil').update({role:r,perm_producao:r==='admin',perm_boletim:r==='admin',perm_exportar_pdf:r==='admin',perm_exportar_excel:r==='admin',atualizado_em:new Date().toISOString()}).eq('id',id);carregarUsuarios();}
 async function alterarPerm(id,campo,val){await sb.from('usuarios_perfil').update({[campo]:val,atualizado_em:new Date().toISOString()}).eq('id',id);}
+async function alterarAbas(id,aba,val){
+  const {data:u}=await sb.from('usuarios_perfil').select('abas_permitidas').eq('id',id).single();
+  let abas=u?.abas_permitidas||['geral','servico','regional'];
+  if(val){if(!abas.includes(aba)) abas=[...abas,aba];}
+  else abas=abas.filter(a=>a!==aba);
+  await sb.from('usuarios_perfil').update({abas_permitidas:abas,atualizado_em:new Date().toISOString()}).eq('id',id);
+}
 async function desativarUser(id){if(!confirm('Desativar?')) return;await sb.from('usuarios_perfil').update({ativo:false}).eq('id',id);carregarUsuarios();}
 async function convidarUsuario(){
   const nome=document.getElementById('n-nome').value.trim(),email=document.getElementById('n-email').value.trim(),r=document.getElementById('n-role').value;
@@ -1158,6 +1107,131 @@ async function convidarUsuario(){
   document.getElementById('n-nome').value='';document.getElementById('n-email').value='';document.getElementById('n-role').value='viewer';togglePermsAnal();
 }
 function togglePermsAnal(){const r=document.getElementById('n-role')?.value;const b=document.getElementById('perms-anal');if(b) b.style.display=r==='analyst'?'block':'none';}
+
+// ═══ EXPORTAR PDF ═══
+async function exportarPDF(){
+  const {jsPDF}=window.jspdf;
+  const tab=document.getElementById('tab-'+tabAtual);
+  const est=document.getElementById('g-est')?.value||'';
+  const mes=parseInt(document.getElementById('g-mes')?.value||0);
+  const ano=parseInt(document.getElementById('g-ano')?.value||0);
+  const titulo=TABS_LABELS[tabAtual]||tabAtual;
+  const subtitulo=`${est==='MA'?'Maranhão':est==='PI'?'Piauí':'Consolidado'} · ${mes?MN[mes]+'/'+ano:''}`;
+
+  const canvas=await html2canvas(tab,{scale:1.5,useCORS:true,backgroundColor:'#f5f4f1'});
+  const img=canvas.toDataURL('image/png');
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,H=297,margin=12;
+
+  // Cabeçalho
+  pdf.setFillColor(26,26,46);
+  pdf.rect(0,0,W,28,'F');
+  pdf.setFillColor(190,47,59);
+  pdf.rect(0,28,W,2,'F');
+
+  // Logo como texto (fallback)
+  pdf.setTextColor(255,255,255);
+  pdf.setFontSize(16);pdf.setFont('helvetica','bold');
+  pdf.text('CENEGED',margin,18);
+  pdf.setFontSize(9);pdf.setFont('helvetica','normal');
+  pdf.text('energia positiva',margin,23);
+
+  // Título da aba
+  pdf.setFontSize(11);pdf.setFont('helvetica','bold');
+  pdf.text(titulo,W/2,14,{align:'center'});
+  pdf.setFontSize(9);pdf.setFont('helvetica','normal');
+  pdf.text(subtitulo,W/2,20,{align:'center'});
+
+  // Data de geração
+  pdf.setFontSize(8);
+  pdf.text('Gerado em '+new Date().toLocaleString('pt-BR'),W-margin,23,{align:'right'});
+
+  // Conteúdo
+  const imgW=W-margin*2;
+  const imgH=(canvas.height/canvas.width)*imgW;
+  let y=34;
+  if(imgH<H-y-10){
+    pdf.addImage(img,'PNG',margin,y,imgW,imgH);
+  } else {
+    // Múltiplas páginas
+    const pxPerMm=canvas.width/imgW;
+    const mmPerPage=H-y-10;
+    const pxPerPage=mmPerPage*pxPerMm;
+    let srcY=0;
+    while(srcY<canvas.height){
+      const sliceH=Math.min(pxPerPage,canvas.height-srcY);
+      const sliceCanvas=document.createElement('canvas');
+      sliceCanvas.width=canvas.width;sliceCanvas.height=sliceH;
+      sliceCanvas.getContext('2d').drawImage(canvas,0,srcY,canvas.width,sliceH,0,0,canvas.width,sliceH);
+      const sliceImg=sliceCanvas.toDataURL('image/png');
+      pdf.addImage(sliceImg,'PNG',margin,y,imgW,sliceH/pxPerMm);
+      srcY+=sliceH;
+      if(srcY<canvas.height){pdf.addPage();y=10;}
+    }
+  }
+
+  // Rodapé
+  const totalPags=pdf.internal.getNumberOfPages();
+  for(let i=1;i<=totalPags;i++){
+    pdf.setPage(i);
+    pdf.setFillColor(245,244,241);pdf.rect(0,H-8,W,8,'F');
+    pdf.setTextColor(123,123,123);pdf.setFontSize(7);
+    pdf.text('CENEGED — Painel de Faturamento · Confidencial',margin,H-3);
+    pdf.text(`Página ${i} de ${totalPags}`,W-margin,H-3,{align:'right'});
+  }
+
+  pdf.save(`CENEGED_${titulo.replace(/ /g,'_')}_${mA(mes,ano).replace('/','_')}.pdf`);
+}
+
+// ═══ EXPORTAR EXCEL ═══
+function preencherModalExcel(){
+  const ano=new Date().getFullYear(),mes=new Date().getMonth()+1;
+  ['xl-mes-ini','xl-mes-fim'].forEach(id=>{
+    document.getElementById(id).innerHTML=MN.slice(1).map((n,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${n}</option>`).join('');
+  });
+  ['xl-ano-ini','xl-ano-fim'].forEach(id=>{
+    document.getElementById(id).innerHTML=[ano-1,ano,ano+1].map(a=>`<option value="${a}" ${a===ano?'selected':''}>${a}</option>`).join('');
+  });
+  const est=document.getElementById('xl-est');
+  est.addEventListener('change',()=>{
+    const e=est.value;
+    document.getElementById('xl-reg').innerHTML='<option value="">Todas</option>'+(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');
+  });
+}
+function abrirModalExcel(){document.getElementById('modal-excel').classList.add('open');}
+function fecharModalExcel(){document.getElementById('modal-excel').classList.remove('open');}
+
+function exportarExcel(){
+  const est=document.getElementById('xl-est').value;
+  const reg=document.getElementById('xl-reg').value;
+  const mesIni=parseInt(document.getElementById('xl-mes-ini').value);
+  const anoIni=parseInt(document.getElementById('xl-ano-ini').value);
+  const mesFim=parseInt(document.getElementById('xl-mes-fim').value);
+  const anoFim=parseInt(document.getElementById('xl-ano-fim').value);
+
+  const rows=[['Mês/Ano','Estado','Regional','Serviço','Eventos Previstos','Eventos Executados','Eventos Pagos']];
+
+  let ano=anoIni,mes=mesIni;
+  while(ano<anoFim||(ano===anoFim&&mes<=mesFim)){
+    const tars=getTarifas(est,mes,ano,reg);
+    const svcMap={};tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
+    const execMap={};getProd(est,mes,ano,reg).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
+    const pagoMap={};getItens(est,mes,ano,reg).forEach(i=>pagoMap[i.cod_servico]=(pagoMap[i.cod_servico]||0)+(i.qde_paga||0));
+    const svcs=new Set([...Object.keys(svcMap),...Object.keys(execMap),...Object.keys(pagoMap)]);
+    svcs.forEach(cod=>{
+      const desc=svcMap[cod]?.desc||execMap[cod]||cod;
+      rows.push([mA(mes,ano),est,reg||'Todas',desc,svcMap[cod]?.prev||0,execMap[cod]||0,pagoMap[cod]||0]);
+    });
+    mes++;if(mes>12){mes=1;ano++;}
+  }
+
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:10},{wch:12},{wch:16},{wch:45},{wch:18},{wch:18},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws,'Eventos');
+  XLSX.writeFile(wb,`CENEGED_Eventos_${est}_${mA(mesIni,anoIni).replace('/','_')}_${mA(mesFim,anoFim).replace('/','_')}.xlsx`);
+  fecharModalExcel();
+}
 </script>
 </body>
 </html>

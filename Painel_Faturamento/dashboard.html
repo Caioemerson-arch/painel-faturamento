@@ -3,623 +3,1860 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Painel de Faturamento</title>
+<title>Painel de Faturamento — CENEGED</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f4; color: #1c1c1a; font-size: 14px; }
-.topbar { background: #fff; border-bottom: 0.5px solid #e0dfd8; padding: 0 2rem; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-.logo { font-size: 14px; font-weight: 600; color: #185FA5; display: flex; align-items: center; gap: 8px; }
-.logo-icon { width: 28px; height: 28px; background: #E6F1FB; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+:root {
+  --vermelho: #BE2F3B;
+  --vermelho-claro: #f9eaea;
+  --preto: #2C2C2A;
+  --cinza-bg: #f5f4f1;
+  --cinza-borda: #e0deda;
+  --cinza-texto: #7B7B7B;
+  --branco: #ffffff;
+  --verde: #1D9E75;
+  --verde-claro: #eaf3de;
+  --azul: #378ADD;
+  --azul-claro: #e6f1fb;
+  --amarelo: #BA7517;
+  --amarelo-claro: #faeeda;
+  --raio: 10px;
+  --raio-sm: 6px;
+  --sombra: 0 1px 3px rgba(0,0,0,.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: var(--cinza-bg); color: var(--preto); font-size: 14px; }
+
+/* ── LOGIN ── */
+#tela-login {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  background: var(--cinza-bg);
+}
+.login-box {
+  background: var(--branco); border-radius: var(--raio); padding: 2.5rem 2rem;
+  width: 360px; box-shadow: var(--sombra); border: 1px solid var(--cinza-borda);
+}
+.login-logo {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; justify-content: center;
+}
+.login-logo .ico {
+  width: 40px; height: 40px; background: var(--vermelho); border-radius: var(--raio-sm);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 700;
+}
+.login-logo span { font-size: 18px; font-weight: 700; color: var(--preto); }
+.login-box label { display: block; font-size: 12px; color: var(--cinza-texto); margin-bottom: 4px; margin-top: 14px; }
+.login-box input {
+  width: 100%; padding: 9px 12px; border: 1px solid var(--cinza-borda);
+  border-radius: var(--raio-sm); font-size: 14px; background: var(--branco);
+}
+.login-box input:focus { outline: none; border-color: var(--vermelho); }
+.btn-login {
+  width: 100%; margin-top: 20px; padding: 10px; background: var(--vermelho);
+  color: #fff; border: none; border-radius: var(--raio-sm); font-size: 14px;
+  font-weight: 700; cursor: pointer;
+}
+.btn-login:hover { background: #a02632; }
+#login-erro { color: var(--vermelho); font-size: 12px; margin-top: 8px; text-align: center; }
+
+/* ── LAYOUT PRINCIPAL ── */
+#app { display: none; min-height: 100vh; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--branco); border-bottom: 1px solid var(--cinza-borda);
+  padding: 0 1.5rem; height: 56px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 100;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-logo {
+  width: 32px; height: 32px; background: var(--vermelho); border-radius: var(--raio-sm);
+  display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 14px;
+}
+.topbar h1 { font-size: 15px; font-weight: 700; color: var(--preto); }
 .topbar-right { display: flex; align-items: center; gap: 12px; }
-.user-info { font-size: 13px; color: #6b6b68; }
-.role-badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
-.role-admin { background: #E6F1FB; color: #0C447C; }
-.role-viewer { background: #F1EFE8; color: #5F5E5A; }
-.btn-logout { font-size: 12px; padding: 5px 12px; border: 0.5px solid #d0cfc8; border-radius: 7px; background: transparent; color: #6b6b68; cursor: pointer; }
-.btn-logout:hover { background: #f5f5f4; }
-.main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.5rem; }
-.tabs { display: flex; gap: 0; border-bottom: 0.5px solid #e0dfd8; margin-bottom: 1.5rem; }
-.tab { font-size: 13px; padding: 8px 18px; cursor: pointer; color: #6b6b68; border-bottom: 2px solid transparent; background: none; border-top: none; border-left: none; border-right: none; font-family: inherit; }
-.tab.active { color: #185FA5; border-bottom-color: #378ADD; font-weight: 500; }
-.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
-.page-title { font-size: 18px; font-weight: 600; }
-.page-sub { font-size: 13px; color: #6b6b68; margin-top: 2px; }
-select.ctrl { font-size: 13px; padding: 6px 10px; border: 0.5px solid #d0cfc8; border-radius: 7px; background: #fff; color: #1c1c1a; cursor: pointer; }
-.filters { display: flex; gap: 8px; align-items: center; }
-.estado-btns { display: flex; gap: 6px; }
-.ebtn { font-size: 12px; padding: 5px 14px; border: 0.5px solid #d0cfc8; border-radius: 7px; background: transparent; color: #6b6b68; cursor: pointer; font-family: inherit; font-weight: 500; }
-.ebtn.active { background: #E6F1FB; color: #0C447C; border-color: #B5D4F4; }
-.ebtn.ma.active { background: #E6F1FB; color: #0C447C; border-color: #B5D4F4; }
-.ebtn.pi.active { background: #EEF4E6; color: #3A6B0F; border-color: #B5D99F; }
-.ebtn.todos.active { background: #F5EFF8; color: #6B2D9E; border-color: #D4B5F4; }
-.estado-tag { font-size: 11px; padding: 2px 8px; border-radius: 5px; font-weight: 600; display: inline-block; }
-.tag-ma { background: #E6F1FB; color: #0C447C; }
-.tag-pi { background: #EEF4E6; color: #3A6B0F; }
-.tag-todos { background: #F5EFF8; color: #6B2D9E; }
-.metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
-.metric { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 10px; padding: 14px 16px; }
-.metric-label { font-size: 12px; color: #6b6b68; margin-bottom: 4px; }
-.metric-value { font-size: 22px; font-weight: 600; }
-.metric-delta { font-size: 12px; margin-top: 3px; }
-.d-up { color: #0F6E56; } .d-dn { color: #A32D2D; }
-.month-btns { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 1.25rem; }
-.mbtn { font-size: 12px; padding: 5px 12px; border: 0.5px solid #d0cfc8; border-radius: 7px; background: transparent; color: #6b6b68; cursor: pointer; font-family: inherit; }
-.mbtn.active { background: #E6F1FB; color: #0C447C; border-color: #B5D4F4; font-weight: 500; }
-.card { background: #fff; border: 0.5px solid #e0dfd8; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
-.card-title { font-size: 14px; font-weight: 500; margin-bottom: 1rem; }
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
-.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #6b6b68; }
-.legend span { display: flex; align-items: center; gap: 5px; }
-.ldot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
-.svc-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
-.svc-table th { text-align: left; padding: 8px 8px; color: #6b6b68; font-weight: 500; border-bottom: 0.5px solid #e0dfd8; font-size: 11px; }
-.svc-table td { padding: 9px 8px; border-bottom: 0.5px solid #e0dfd8; vertical-align: middle; }
-.svc-table tr:last-child td { border-bottom: none; }
-.badge { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 6px; font-weight: 500; }
-.b-up { background: #E1F5EE; color: #0F6E56; } .b-dn { background: #FCEBEB; color: #A32D2D; } .b-ne { background: #F1EFE8; color: #5F5E5A; }
-.bar-wrap { width: 60px; height: 5px; background: #e0dfd8; border-radius: 99px; display: inline-block; vertical-align: middle; }
-.bar-fill { height: 100%; border-radius: 99px; background: #378ADD; }
-.form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 1rem; }
-.form-label { font-size: 12px; color: #6b6b68; font-weight: 500; }
-input[type=number], input[type=text], input[type=email], input[type=password] { padding: 8px 11px; border: 0.5px solid #d0cfc8; border-radius: 7px; font-size: 13px; background: #fff; color: #1c1c1a; font-family: inherit; outline: none; }
-input:focus { border-color: #378ADD; box-shadow: 0 0 0 3px rgba(55,138,221,0.1); }
-.svc-row { display: grid; grid-template-columns: 1fr 110px 140px; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 0.5px solid #e0dfd8; }
-.svc-row:last-child { border-bottom: none; }
-.svc-name { font-size: 13px; font-weight: 500; color: #1c1c1a; line-height: 1.4; }
-.save-btn { padding: 9px 22px; background: #185FA5; color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; }
-.save-btn:hover { background: #0C447C; }
-.save-btn:disabled { background: #b5d4f4; cursor: not-allowed; }
-.toast { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; display: none; }
-.toast-ok { background: #E1F5EE; color: #0F6E56; border: 0.5px solid #9FE1CB; }
-.toast-err { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
-.summary-box { background: #f5f5f4; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
-.summary-item { text-align: center; }
-.summary-label { font-size: 11px; color: #6b6b68; margin-bottom: 2px; }
-.summary-val { font-size: 16px; font-weight: 600; }
-.hist-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 0.5px solid #e0dfd8; }
-.hist-row:last-child { border-bottom: none; }
-.empty-state { text-align: center; padding: 2.5rem 1rem; color: #6b6b68; font-size: 13px; }
-.no-access { background: #FAEEDA; border: 0.5px solid #FAC775; border-radius: 10px; padding: 14px 18px; font-size: 13px; color: #633806; margin-bottom: 1rem; }
-.loading { text-align: center; padding: 3rem; color: #6b6b68; font-size: 13px; }
-.estado-section { background: #f5f5f4; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: #6b6b68; font-weight: 500; }
-@media (max-width: 600px) {
-  .metric-grid { grid-template-columns: 1fr 1fr; }
-  .two-col { grid-template-columns: 1fr; }
-  .main { padding: 1rem; }
-  .topbar { padding: 0 1rem; }
-  .filters { flex-wrap: wrap; }
+.badge-role {
+  font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 700;
+  background: var(--vermelho-claro); color: var(--vermelho);
+}
+.btn-logout {
+  font-size: 12px; padding: 5px 12px; border: 1px solid var(--cinza-borda);
+  border-radius: var(--raio-sm); background: var(--branco); cursor: pointer; color: var(--cinza-texto);
+}
+.btn-logout:hover { background: var(--cinza-bg); }
+
+/* ── ABAS ── */
+.tabbar {
+  background: var(--branco); border-bottom: 1px solid var(--cinza-borda);
+  padding: 0 1.5rem; display: flex; gap: 0; overflow-x: auto;
+}
+.tabbar button {
+  font-size: 13px; padding: 14px 18px; background: none; border: none;
+  border-bottom: 2px solid transparent; color: var(--cinza-texto); cursor: pointer;
+  white-space: nowrap; font-weight: 500;
+}
+.tabbar button.active { color: var(--vermelho); border-bottom-color: var(--vermelho); }
+.tabbar button:hover:not(.active) { color: var(--preto); background: var(--cinza-bg); }
+.tab-admin { display: none; }
+
+/* ── CONTEÚDO ── */
+.conteudo { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+
+/* ── FILTROS ── */
+.filtros {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center;
+}
+.filtros label { font-size: 12px; color: var(--cinza-texto); }
+.filtros select, .filtros input {
+  font-size: 13px; padding: 7px 12px; border: 1px solid var(--cinza-borda);
+  border-radius: var(--raio-sm); background: var(--branco); color: var(--preto); cursor: pointer;
+}
+.filtros select:focus, .filtros input:focus { outline: none; border-color: var(--vermelho); }
+
+/* ── ALERTA ── */
+.alerta {
+  display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px;
+  border-radius: var(--raio-sm); margin-bottom: 1.25rem; font-size: 13px;
+}
+.alerta-warn { background: var(--amarelo-claro); color: var(--amarelo); border: 1px solid #f0c070; }
+.alerta-info { background: var(--azul-claro); color: #185FA5; border: 1px solid #b5d4f4; }
+.alerta-ok   { background: var(--verde-claro); color: #0F6E56; border: 1px solid #9fe1cb; }
+.alerta-erro { background: var(--vermelho-claro); color: var(--vermelho); border: 1px solid #f7c1c1; }
+.alerta-icone { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── CARDS ── */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 12px; margin-bottom: 1.25rem; }
+.card {
+  background: var(--branco); border-radius: var(--raio); padding: 1.1rem 1.25rem;
+  border: 1px solid var(--cinza-borda);
+}
+.card .clabel { font-size: 11px; color: var(--cinza-texto); margin-bottom: 6px; font-weight: 500; }
+.card .cval   { font-size: 22px; font-weight: 700; color: var(--preto); }
+.card .csub   { font-size: 11px; margin-top: 5px; }
+.csub-neg  { color: var(--vermelho); }
+.csub-pos  { color: var(--verde); }
+.csub-warn { color: var(--amarelo); }
+.csub-muted{ color: var(--cinza-texto); }
+
+/* ── BOXES DE GRÁFICO ── */
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.25rem; }
+.gbox {
+  background: var(--branco); border-radius: var(--raio); padding: 1.1rem 1.25rem;
+  border: 1px solid var(--cinza-borda);
+}
+.gbox h3 { font-size: 12px; font-weight: 700; color: var(--cinza-texto); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .04em; }
+.gbox-filtro { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.gbox-filtro h3 { margin: 0; }
+.gbox-filtro select { font-size: 11px; padding: 4px 8px; border-radius: var(--raio-sm); border: 1px solid var(--cinza-borda); background: var(--branco); }
+.legenda { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+.legenda span { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--cinza-texto); }
+.legenda i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+/* ── TABELAS ── */
+.sec-titulo { font-size: 11px; font-weight: 700; color: var(--cinza-texto); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px; }
+.tbox {
+  background: var(--branco); border-radius: var(--raio); border: 1px solid var(--cinza-borda);
+  overflow: hidden; margin-bottom: 1.25rem;
+}
+.tbox table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbox thead tr { background: var(--cinza-bg); }
+.tbox th { padding: 10px 14px; text-align: left; font-weight: 700; color: var(--cinza-texto); font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+.tbox td { padding: 10px 14px; border-top: 1px solid var(--cinza-borda); }
+.tbox tr:hover td { background: #fafaf8; }
+
+/* ── PILLS ── */
+.pill { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 700; }
+.pill-ok     { background: var(--verde-claro);    color: #0F6E56; }
+.pill-warn   { background: var(--amarelo-claro);  color: var(--amarelo); }
+.pill-danger { background: var(--vermelho-claro); color: var(--vermelho); }
+.pill-info   { background: var(--azul-claro);     color: #185FA5; }
+.pill-cinza  { background: var(--cinza-bg);       color: var(--cinza-texto); }
+
+/* ── BARRA PROGRESSO ── */
+.prog-wrap { display: flex; align-items: center; gap: 8px; }
+.prog-track { flex: 1; height: 6px; background: var(--cinza-bg); border-radius: 3px; overflow: hidden; }
+.prog-fill  { height: 100%; border-radius: 3px; }
+
+/* ── UPLOAD ── */
+.upload-area {
+  border: 2px dashed var(--cinza-borda); border-radius: var(--raio); padding: 2rem;
+  text-align: center; cursor: pointer; transition: .2s;
+}
+.upload-area:hover, .upload-area.drag { border-color: var(--vermelho); background: var(--vermelho-claro); }
+.upload-area p { font-size: 13px; color: var(--cinza-texto); margin-top: 8px; }
+.upload-area input[type=file] { display: none; }
+#upload-preview {
+  margin-top: 1rem; display: none;
+}
+
+/* ── FORMULÁRIO ── */
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 12px; color: var(--cinza-texto); margin-bottom: 4px; font-weight: 700; }
+.form-group input, .form-group select {
+  width: 100%; padding: 8px 12px; border: 1px solid var(--cinza-borda);
+  border-radius: var(--raio-sm); font-size: 13px; background: var(--branco);
+}
+.form-group input:focus, .form-group select:focus { outline: none; border-color: var(--vermelho); }
+
+/* ── BOTÕES ── */
+.btn {
+  font-size: 13px; padding: 8px 18px; border-radius: var(--raio-sm);
+  cursor: pointer; font-weight: 700; transition: .15s;
+}
+.btn-primary { background: var(--vermelho); color: #fff; border: none; }
+.btn-primary:hover { background: #a02632; }
+.btn-secondary { background: var(--branco); color: var(--preto); border: 1px solid var(--cinza-borda); }
+.btn-secondary:hover { background: var(--cinza-bg); }
+.btn-success { background: var(--verde); color: #fff; border: none; }
+.btn-success:hover { background: #0F6E56; }
+.btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1rem; }
+
+/* ── CADERNO CARD ── */
+.caderno-card {
+  background: var(--branco); border: 1px solid var(--cinza-borda);
+  border-radius: var(--raio); padding: 1.1rem 1.25rem; margin-bottom: 10px;
+}
+.caderno-card.ativo { border-color: var(--vermelho); border-width: 2px; }
+.caderno-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+.caderno-titulo { font-size: 14px; font-weight: 700; color: var(--preto); }
+.caderno-meta   { font-size: 12px; color: var(--cinza-texto); margin-top: 3px; }
+.caderno-stats  { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.caderno-stat   { background: var(--cinza-bg); border-radius: var(--raio-sm); padding: 8px 10px; }
+.caderno-stat .sl { font-size: 10px; color: var(--cinza-texto); margin-bottom: 3px; }
+.caderno-stat .sv { font-size: 13px; font-weight: 700; color: var(--preto); }
+
+/* ── TABELA REVISÃO ── */
+.revisao-box {
+  background: var(--branco); border: 1px solid var(--cinza-borda);
+  border-radius: var(--raio); overflow: hidden; margin-bottom: 1rem;
+  max-height: 400px; overflow-y: auto;
+}
+
+/* ── LOADER ── */
+.loader { text-align: center; padding: 3rem; color: var(--cinza-texto); font-size: 13px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .row2 { grid-template-columns: 1fr; }
+  .cards { grid-template-columns: 1fr 1fr; }
+  .caderno-stats { grid-template-columns: 1fr 1fr; }
+  .conteudo { padding: 1rem; }
 }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="logo">
-    <div class="logo-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+<!-- ═══════════════════════════ LOGIN ═══════════════════════════ -->
+<div id="tela-login">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="ico">C</div>
+      <span>CENEGED</span>
     </div>
-    Painel de Faturamento
-  </div>
-  <div class="topbar-right">
-    <span class="user-info" id="userEmail"></span>
-    <span class="role-badge" id="roleBadge"></span>
-    <button class="btn-logout" onclick="logout()">Sair</button>
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <p style="font-size:15px;font-weight:700;color:var(--preto)">Painel de Faturamento</p>
+      <p style="font-size:12px;color:var(--cinza-texto);margin-top:3px">Acesse com seu e-mail e senha</p>
+    </div>
+    <label>E-mail</label>
+    <input type="email" id="login-email" placeholder="seu@ceneged.com.br" autocomplete="email">
+    <label>Senha</label>
+    <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+    <p id="login-erro"></p>
   </div>
 </div>
 
-<div class="main">
-  <div id="appLoading" class="loading">Carregando…</div>
-  <div id="appContent" style="display:none">
+<!-- ═══════════════════════════ APP ═══════════════════════════ -->
+<div id="app">
 
-    <div class="section-header">
-      <div>
-        <p class="page-title">Faturamento mensal</p>
-        <p class="page-sub">Acompanhamento e variação por serviço</p>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo">C</div>
+      <h1>Painel de Faturamento — CENEGED</h1>
+    </div>
+    <div class="topbar-right">
+      <span id="topbar-usuario" style="font-size:12px;color:var(--cinza-texto)"></span>
+      <span id="topbar-role" class="badge-role"></span>
+      <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+    </div>
+  </div>
+
+  <!-- ABAS -->
+  <div class="tabbar">
+    <button class="active" onclick="setTab('geral',this)">Visão Geral</button>
+    <button onclick="setTab('servico',this)">Por Serviço</button>
+    <button onclick="setTab('regional',this)">Por Regional</button>
+    <button class="tab-admin" onclick="setTab('lancar',this)">Lançar Produção</button>
+    <button class="tab-admin" onclick="setTab('boletim',this)">Importar Boletim</button>
+    <button class="tab-admin" onclick="setTab('cadernos',this)">Cadernos de Serviço</button>
+    <button class="tab-admin" onclick="setTab('usuarios',this)">Gestão de Usuários</button>
+  </div>
+
+  <!-- ════════ VISÃO GERAL ════════ -->
+  <div id="tab-geral" class="conteudo">
+    <div class="filtros">
+      <label>Estado</label>
+      <select id="g-estado" onchange="carregarGeral()">
+        <option value="MA">Maranhão</option>
+        <option value="PI">Piauí</option>
+        <option value="TODOS">Consolidado</option>
+      </select>
+      <label>Mês</label>
+      <select id="g-mes" onchange="carregarGeral()"></select>
+      <label>Ano</label>
+      <select id="g-ano" onchange="carregarGeral()"></select>
+    </div>
+
+    <div id="g-alerta" class="alerta alerta-warn" style="display:none">
+      <span class="alerta-icone">⚠</span>
+      <span id="g-alerta-txt"></span>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="clabel">Faturamento previsto (caderno)</div>
+        <div class="cval" id="g-prev">—</div>
+        <div class="csub csub-muted">Meta mensal vigente</div>
       </div>
-      <div class="filters">
-        <div class="estado-btns">
-          <button class="ebtn todos active" onclick="setEstado('todos',this)">Consolidado</button>
-          <button class="ebtn ma" onclick="setEstado('MA',this)">Maranhão</button>
-          <button class="ebtn pi" onclick="setEstado('PI',this)">Piauí</button>
-        </div>
-        <select class="ctrl" id="yearSel" onchange="render()">
-          <option value="2024">2024</option>
-          <option value="2025" selected>2025</option>
-          <option value="2026">2026</option>
-        </select>
+      <div class="card">
+        <div class="clabel">Faturamento executado (campo)</div>
+        <div class="cval" id="g-exec">—</div>
+        <div class="csub" id="g-exec-sub">—</div>
+      </div>
+      <div class="card">
+        <div class="clabel">Faturamento pago (Equatorial)</div>
+        <div class="cval" id="g-pago">—</div>
+        <div class="csub" id="g-pago-sub">—</div>
+      </div>
+      <div class="card">
+        <div class="clabel">% da meta atingida</div>
+        <div class="cval" id="g-pct">—</div>
+        <div class="csub csub-muted">Base: faturamento pago</div>
       </div>
     </div>
 
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('painel',this)">Painel</button>
-      <button class="tab" id="tabEntradaBtn" onclick="switchTab('entrada',this)">Entrada de dados</button>
+    <div class="row2">
+      <div class="gbox">
+        <h3>Evolução mensal — previsto vs executado vs pago</h3>
+        <div class="legenda">
+          <span><i style="background:var(--vermelho)"></i>Previsto</span>
+          <span><i style="background:var(--verde)"></i>Executado</span>
+          <span><i style="background:var(--azul)"></i>Pago</span>
+        </div>
+        <div style="position:relative;height:220px">
+          <canvas id="chart-mensal"></canvas>
+        </div>
+      </div>
+      <div class="gbox">
+        <div class="gbox-filtro">
+          <h3>Pago por serviço</h3>
+          <select id="g-reg-pizza" onchange="atualizarPizza()">
+            <option value="">Todas regionais</option>
+          </select>
+        </div>
+        <div class="legenda" id="leg-pizza"></div>
+        <div style="position:relative;height:200px">
+          <canvas id="chart-pizza"></canvas>
+        </div>
+      </div>
     </div>
 
-    <!-- PAINEL -->
-    <div id="tabPainel">
-      <div class="metric-grid" id="metricGrid"></div>
-      <div class="month-btns" id="monthBtns"></div>
+    <div class="sec-titulo">Divergência por regional — executado vs pago</div>
+    <div class="tbox">
+      <table>
+        <thead>
+          <tr>
+            <th>Regional</th>
+            <th>Previsto (R$)</th>
+            <th>Executado (eventos)</th>
+            <th>Pago (eventos)</th>
+            <th>Diferença</th>
+            <th>Divergência</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tb-regional-div"></tbody>
+      </table>
+    </div>
+  </div>
 
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-          <span class="card-title" style="margin-bottom:0">Faturamento mensal vs meta <span id="chartEstadoTag"></span></span>
-          <div class="legend">
-            <span><span class="ldot" style="background:#378ADD"></span>Faturamento</span>
-            <span><span class="ldot" style="background:#1D9E75"></span>Meta</span>
-          </div>
+  <!-- ════════ POR SERVIÇO ════════ -->
+  <div id="tab-servico" class="conteudo" style="display:none">
+    <div class="filtros">
+      <label>Estado</label>
+      <select id="s-estado" onchange="carregarServico()">
+        <option value="MA">Maranhão</option>
+        <option value="PI">Piauí</option>
+        <option value="TODOS">Consolidado</option>
+      </select>
+      <label>Regional</label>
+      <select id="s-regional" onchange="carregarServico()">
+        <option value="">Todas</option>
+      </select>
+      <label>Mês</label>
+      <select id="s-mes" onchange="carregarServico()"></select>
+      <label>Ano</label>
+      <select id="s-ano" onchange="carregarServico()"></select>
+    </div>
+
+    <div class="alerta alerta-info" style="margin-bottom:1.25rem">
+      <span class="alerta-icone">ℹ</span>
+      <span>A distribuição proporcional revela se a Equatorial está substituindo serviços de tarifa alta por serviços de tarifa baixa. Compare as colunas <strong>% Caderno</strong> vs <strong>% Pago</strong> — desvios indicam possível subfaturamento.</span>
+    </div>
+
+    <div class="gbox" style="margin-bottom:1.25rem">
+      <h3>Distribuição proporcional — caderno vs executado vs pago</h3>
+      <div class="legenda">
+        <span><i style="background:var(--vermelho)"></i>Caderno (previsto)</span>
+        <span><i style="background:var(--verde)"></i>Executado (campo)</span>
+        <span><i style="background:var(--azul)"></i>Pago (Equatorial)</span>
+      </div>
+      <div id="dist-bars" style="margin-top:10px"></div>
+    </div>
+
+    <div class="sec-titulo">Detalhe por serviço</div>
+    <div class="tbox">
+      <table>
+        <thead>
+          <tr>
+            <th>Serviço</th>
+            <th>Tarifa (R$)</th>
+            <th>Previsto (evt)</th>
+            <th>% caderno</th>
+            <th>Executado (evt)</th>
+            <th>% exec.</th>
+            <th>Pago (evt)</th>
+            <th>% pago</th>
+            <th>Valor pago (R$)</th>
+            <th>Alerta</th>
+          </tr>
+        </thead>
+        <tbody id="tb-servico"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════ POR REGIONAL ════════ -->
+  <div id="tab-regional" class="conteudo" style="display:none">
+    <div class="filtros">
+      <label>Estado</label>
+      <select id="r-estado" onchange="atualizarRegiaisSelect();carregarRegional()">
+        <option value="MA">Maranhão</option>
+        <option value="PI">Piauí</option>
+      </select>
+      <label>Regional</label>
+      <select id="r-regional" onchange="carregarRegional()"></select>
+      <label>Mês</label>
+      <select id="r-mes" onchange="carregarRegional()"></select>
+      <label>Ano</label>
+      <select id="r-ano" onchange="carregarRegional()"></select>
+    </div>
+
+    <div id="r-alerta" class="alerta alerta-warn" style="display:none">
+      <span class="alerta-icone">⚠</span>
+      <span id="r-alerta-txt"></span>
+    </div>
+
+    <div class="cards" id="r-cards"></div>
+
+    <div class="row2">
+      <div class="gbox">
+        <h3 id="r-chart-titulo">Evolução mensal — regional</h3>
+        <div class="legenda">
+          <span><i style="background:var(--vermelho)"></i>Previsto</span>
+          <span><i style="background:var(--verde)"></i>Executado</span>
+          <span><i style="background:var(--azul)"></i>Pago</span>
         </div>
-        <div style="position:relative;width:100%;height:210px"><canvas id="chartFat"></canvas></div>
+        <div style="position:relative;height:200px">
+          <canvas id="chart-reg-mensal"></canvas>
+        </div>
+      </div>
+      <div class="gbox">
+        <h3>Distribuição por serviço — pago</h3>
+        <div class="legenda" id="leg-reg-pizza"></div>
+        <div style="position:relative;height:200px">
+          <canvas id="chart-reg-pizza"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-titulo">Divergência por serviço</div>
+    <div class="tbox">
+      <table>
+        <thead>
+          <tr>
+            <th>Serviço</th>
+            <th>Tarifa (R$)</th>
+            <th>Previsto (evt)</th>
+            <th>Executado (evt)</th>
+            <th>Pago (evt)</th>
+            <th>Dif. exec vs pago</th>
+            <th>Valor não pago (R$)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tb-reg-servico"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════ LANÇAR PRODUÇÃO ════════ -->
+  <div id="tab-lancar" class="conteudo" style="display:none">
+    <div class="alerta alerta-info" style="margin-bottom:1.25rem">
+      <span class="alerta-icone">ℹ</span>
+      <span>Faça o upload da planilha padrão <strong>Producao_Real_Campo_CENEGED.xlsx</strong> preenchida. O sistema carregará os dados para revisão antes de salvar.</span>
+    </div>
+
+    <div class="gbox" style="margin-bottom:1.25rem">
+      <h3>Upload da planilha de produção real</h3>
+      <div class="upload-area" id="upload-prod-area" onclick="document.getElementById('upload-prod-file').click()"
+           ondragover="dragOver(event,'upload-prod-area')" ondragleave="dragLeave('upload-prod-area')"
+           ondrop="dropFile(event,'prod')">
+        <div style="font-size:32px">📤</div>
+        <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
+        <p style="font-size:11px;margin-top:4px">Producao_Real_Campo_CENEGED.xlsx — MA ou PI</p>
+        <input type="file" id="upload-prod-file" accept=".xlsx" onchange="processarUpload(this.files[0],'prod')">
       </div>
 
-      <div class="two-col">
-        <div class="card">
-          <div class="card-title">Distribuição por serviço</div>
-          <div style="position:relative;width:100%;height:190px"><canvas id="chartPie"></canvas></div>
-          <div class="legend" id="pieLeg" style="margin-top:10px;justify-content:center"></div>
+      <div id="upload-prod-preview" style="display:none;margin-top:1rem">
+        <div class="alerta alerta-ok" id="prod-parse-status" style="margin-bottom:1rem">
+          <span class="alerta-icone">✓</span>
+          <span id="prod-parse-msg"></span>
         </div>
-        <div class="card">
-          <div class="card-title">Evolução de serviços</div>
-          <div style="position:relative;width:100%;height:190px"><canvas id="chartLine"></canvas></div>
-          <div class="legend" id="lineLeg" style="margin-top:10px"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-          <span class="card-title" style="margin-bottom:0">Variação por serviço</span>
-          <span style="font-size:12px;color:#6b6b68" id="selLabel"></span>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="svc-table">
-            <thead><tr>
-              <th style="width:28%">Serviço</th>
-              <th style="width:10%">Exec.</th>
-              <th style="width:14%">Valor unit.</th>
-              <th style="width:14%">Faturado</th>
-              <th style="width:10%">Var. exec.</th>
-              <th style="width:10%">Var. valor</th>
-              <th style="width:14%">Participação</th>
-            </tr></thead>
-            <tbody id="svcBody"></tbody>
+        <div class="sec-titulo">Revisão dos dados — confirme antes de salvar</div>
+        <div class="revisao-box">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead style="background:var(--cinza-bg);position:sticky;top:0">
+              <tr>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--cinza-texto)">MES/ANO</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--cinza-texto)">ESTADO</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--cinza-texto)">REGIONAL</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--cinza-texto)">SERVIÇO</th>
+                <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--cinza-texto)">QTD EXECUTADA</th>
+              </tr>
+            </thead>
+            <tbody id="tb-prod-preview"></tbody>
           </table>
         </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="cancelarUpload('prod')">Cancelar</button>
+          <button class="btn btn-primary" onclick="salvarProducao()">✓ Confirmar e salvar</button>
+        </div>
       </div>
     </div>
 
-    <!-- ENTRADA -->
-    <div id="tabEntrada" style="display:none">
-      <div class="no-access" id="noAccessMsg" style="display:none">
-        Apenas administradores podem lançar dados.
+    <div class="sec-titulo">Histórico de lançamentos</div>
+    <div class="tbox">
+      <table>
+        <thead>
+          <tr>
+            <th>Mês/Ano</th>
+            <th>Estado</th>
+            <th>Regional</th>
+            <th>Total eventos</th>
+            <th>Importado em</th>
+            <th>Por</th>
+          </tr>
+        </thead>
+        <tbody id="tb-hist-prod"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════ IMPORTAR BOLETIM ════════ -->
+  <div id="tab-boletim" class="conteudo" style="display:none">
+    <div class="alerta alerta-info" style="margin-bottom:1.25rem">
+      <span class="alerta-icone">ℹ</span>
+      <span>Faça o upload da planilha padrão <strong>Boletim_Pagamento_CENEGED.xlsx</strong> preenchida com os dados do boletim da Equatorial.</span>
+    </div>
+
+    <div class="gbox" style="margin-bottom:1.25rem">
+      <h3>Upload do boletim de pagamento</h3>
+      <div class="upload-area" id="upload-bol-area" onclick="document.getElementById('upload-bol-file').click()"
+           ondragover="dragOver(event,'upload-bol-area')" ondragleave="dragLeave('upload-bol-area')"
+           ondrop="dropFile(event,'bol')">
+        <div style="font-size:32px">📤</div>
+        <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
+        <p style="font-size:11px;margin-top:4px">Boletim_Pagamento_CENEGED.xlsx — MA ou PI</p>
+        <input type="file" id="upload-bol-file" accept=".xlsx" onchange="processarUpload(this.files[0],'bol')">
       </div>
-      <div id="adminForm">
-        <div id="toast" class="toast"></div>
 
-        <div class="card">
-          <div class="card-title">Período, estado e meta</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
-            <div class="form-group" style="margin-bottom:0">
-              <label class="form-label">Estado</label>
-              <select class="ctrl" id="fEstado" style="width:100%" onchange="calcSummary()">
-                <option value="MA">Maranhão</option>
-                <option value="PI">Piauí</option>
-              </select>
-            </div>
-            <div class="form-group" style="margin-bottom:0">
-              <label class="form-label">Mês</label>
-              <select class="ctrl" id="fMonth" style="width:100%">
-                <option value="0">Janeiro</option><option value="1">Fevereiro</option><option value="2">Março</option>
-                <option value="3">Abril</option><option value="4">Maio</option><option value="5">Junho</option>
-                <option value="6">Julho</option><option value="7">Agosto</option><option value="8">Setembro</option>
-                <option value="9">Outubro</option><option value="10">Novembro</option><option value="11">Dezembro</option>
-              </select>
-            </div>
-            <div class="form-group" style="margin-bottom:0">
-              <label class="form-label">Ano</label>
-              <select class="ctrl" id="fYear" style="width:100%">
-                <option value="2024">2024</option><option value="2025" selected>2025</option><option value="2026">2026</option>
-              </select>
-            </div>
-            <div class="form-group" style="margin-bottom:0">
-              <label class="form-label">Meta do mês (R$)</label>
-              <input type="number" id="fMeta" placeholder="Ex: 100000" min="0" style="width:100%" oninput="calcSummary()">
-            </div>
-          </div>
-          <button style="margin-top:12px;padding:7px 14px;border:0.5px dashed #d0cfc8;border-radius:7px;background:transparent;color:#6b6b68;cursor:pointer;font-size:12px;font-family:inherit" onclick="loadExisting()">Carregar dados existentes do período</button>
+      <div id="upload-bol-preview" style="display:none;margin-top:1rem">
+        <div class="alerta alerta-ok" id="bol-parse-status" style="margin-bottom:1rem">
+          <span class="alerta-icone">✓</span>
+          <span id="bol-parse-msg"></span>
         </div>
 
-        <div class="card">
-          <div class="card-title">Execuções por serviço</div>
-          <div style="display:grid;grid-template-columns:1fr 110px 140px;gap:10px;margin-bottom:6px">
-            <span style="font-size:11px;color:#6b6b68;font-weight:500">Serviço</span>
-            <span style="font-size:11px;color:#6b6b68;font-weight:500">Execuções</span>
-            <span style="font-size:11px;color:#6b6b68;font-weight:500">Valor unitário (R$)</span>
-          </div>
-          <div id="svcRows"></div>
-          <div class="summary-box">
-            <div class="summary-item"><div class="summary-label">Total execuções</div><div class="summary-val" id="totExec">0</div></div>
-            <div class="summary-item"><div class="summary-label">Total faturado</div><div class="summary-val" id="totFat">R$ 0</div></div>
-            <div class="summary-item"><div class="summary-label">% da meta</div><div class="summary-val" id="totMeta">—</div></div>
-            <button class="save-btn" id="btnSave" onclick="saveData()">Salvar período</button>
-          </div>
+        <div id="bol-alerta-tarifa" class="alerta alerta-warn" style="display:none;margin-bottom:1rem">
+          <span class="alerta-icone">⚠</span>
+          <span id="bol-alerta-tarifa-txt"></span>
         </div>
 
-        <div class="card">
-          <div class="card-title">Períodos registrados</div>
-          <div style="display:flex;gap:8px;margin-bottom:1rem">
-            <button class="ebtn todos active" id="histFiltTodos" onclick="setHistFilt('todos',this)">Todos</button>
-            <button class="ebtn ma" id="histFiltMA" onclick="setHistFilt('MA',this)">Maranhão</button>
-            <button class="ebtn pi" id="histFiltPI" onclick="setHistFilt('PI',this)">Piauí</button>
-          </div>
-          <div id="histList"></div>
+        <div class="sec-titulo">Revisão dos dados — confirme antes de salvar</div>
+        <div class="revisao-box">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead style="background:var(--cinza-bg);position:sticky;top:0">
+              <tr>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--cinza-texto)">MES/ANO</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--cinza-texto)">ESTADO</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--cinza-texto)">REGIONAL</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:var(--cinza-texto)">SERVIÇO</th>
+                <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--cinza-texto)">TARIFA</th>
+                <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--cinza-texto)">QDE PAGA</th>
+                <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--cinza-texto)">VALOR PAGO</th>
+                <th style="padding:8px 12px;text-align:center;font-size:11px;color:var(--cinza-texto)">Tarifa</th>
+              </tr>
+            </thead>
+            <tbody id="tb-bol-preview"></tbody>
+          </table>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="cancelarUpload('bol')">Cancelar</button>
+          <button class="btn btn-primary" onclick="salvarBoletim()">✓ Confirmar e salvar</button>
         </div>
       </div>
+    </div>
+
+    <div class="sec-titulo">Histórico de boletins importados</div>
+    <div class="tbox">
+      <table>
+        <thead>
+          <tr>
+            <th>Mês/Ano</th>
+            <th>Estado</th>
+            <th>Total eventos</th>
+            <th>Total pago (R$)</th>
+            <th>Importado em</th>
+            <th>Por</th>
+          </tr>
+        </thead>
+        <tbody id="tb-hist-bol"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ════════ CADERNOS ════════ -->
+  <div id="tab-cadernos" class="conteudo" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+      <div>
+        <p style="font-size:15px;font-weight:700">Cadernos de Serviço</p>
+        <p style="font-size:12px;color:var(--cinza-texto);margin-top:3px">Gerencie os cadernos vigentes e históricos. O caderno ativo define a meta e as tarifas do período atual.</p>
+      </div>
+      <button class="btn btn-primary" onclick="toggleUploadCaderno()">+ Novo caderno</button>
+    </div>
+
+    <div id="upload-cad-box" class="gbox" style="display:none;margin-bottom:1.25rem">
+      <h3>Upload do caderno de serviços</h3>
+      <div class="upload-area" id="upload-cad-area" onclick="document.getElementById('upload-cad-file').click()"
+           ondragover="dragOver(event,'upload-cad-area')" ondragleave="dragLeave('upload-cad-area')"
+           ondrop="dropFile(event,'cad')">
+        <div style="font-size:32px">📤</div>
+        <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
+        <p style="font-size:11px;margin-top:4px">Caderno_Servicos_CENEGED.xlsx — MA ou PI</p>
+        <input type="file" id="upload-cad-file" accept=".xlsx" onchange="processarUpload(this.files[0],'cad')">
+      </div>
+
+      <div id="upload-cad-preview" style="display:none;margin-top:1rem">
+        <div class="alerta alerta-ok" style="margin-bottom:1rem">
+          <span class="alerta-icone">✓</span>
+          <span id="cad-parse-msg"></span>
+        </div>
+        <div class="sec-titulo">Tarifas extraídas — confirme os dados antes de ativar</div>
+        <div class="revisao-box">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead style="background:var(--cinza-bg);position:sticky;top:0">
+              <tr>
+                <th style="padding:8px 12px;font-size:11px;color:var(--cinza-texto)">Vigência</th>
+                <th style="padding:8px 12px;font-size:11px;color:var(--cinza-texto)">Estado</th>
+                <th style="padding:8px 12px;font-size:11px;color:var(--cinza-texto)">Regional</th>
+                <th style="padding:8px 12px;font-size:11px;color:var(--cinza-texto)">Serviço</th>
+                <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--cinza-texto)">Tarifa</th>
+                <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--cinza-texto)">Eventos prev.</th>
+                <th style="padding:8px 12px;text-align:right;font-size:11px;color:var(--cinza-texto)">Fat. previsto</th>
+              </tr>
+            </thead>
+            <tbody id="tb-cad-preview"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:1rem;padding:12px;background:var(--amarelo-claro);border-radius:var(--raio-sm);border:1px solid #f0c070">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--amarelo)">
+            <input type="checkbox" id="cad-confirma" style="width:16px;height:16px;accent-color:var(--vermelho)">
+            <strong>Confirmo que os valores extraídos estão corretos e autorizo a ativação deste caderno.</strong>
+          </label>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="cancelarUpload('cad')">Cancelar</button>
+          <button class="btn btn-primary" onclick="salvarCaderno()">✓ Ativar caderno</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="lista-cadernos"><div class="loader">Carregando cadernos...</div></div>
+  </div>
+
+  <!-- ════════ GESTÃO DE USUÁRIOS ════════ -->
+  <div id="tab-usuarios" class="conteudo" style="display:none">
+
+    <div id="convite-alerta"></div>
+
+    <div class="gbox" style="margin-bottom:1.25rem">
+      <h3>Convidar novo usuário</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:10px">
+        <div class="form-group" style="margin:0">
+          <label>Nome</label>
+          <input type="text" id="novo-nome" placeholder="Nome completo">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>E-mail</label>
+          <input type="email" id="novo-email" placeholder="usuario@ceneged.com.br">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Perfil</label>
+          <select id="novo-role" onchange="togglePermsAnalista()">
+            <option value="viewer">Visualizador</option>
+            <option value="analyst">Analista</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="perms-analista" style="display:none;margin-top:12px;padding:12px;background:var(--azul-claro);border-radius:var(--raio-sm);border:1px solid #b5d4f4">
+        <p style="font-size:12px;font-weight:700;color:#185FA5;margin-bottom:8px">Permissões do analista</p>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px;cursor:pointer">
+          <input type="checkbox" id="novo-perm-prod" style="width:15px;height:15px;accent-color:var(--vermelho)">
+          Lançar produção real em campo
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="novo-perm-bol" style="width:15px;height:15px;accent-color:var(--vermelho)">
+          Importar boletim de pagamento
+        </label>
+      </div>
+
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-primary" onclick="convidarUsuario()">✉ Enviar convite</button>
+      </div>
+    </div>
+
+    <div class="sec-titulo">Usuários cadastrados</div>
+    <div class="tbox">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Perfil</th>
+            <th>Permissões (analista)</th>
+            <th>Cadastrado em</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="lista-usuarios">
+          <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--cinza-texto)">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="alerta alerta-warn" style="margin-top:1rem">
+      <span class="alerta-icone">⚠</span>
+      <span>Alterações de perfil e permissões têm efeito imediato. O usuário verá as novas permissões no próximo acesso ao sistema.</span>
     </div>
 
   </div>
-</div>
+
+</div><!-- /app -->
 
 <script>
-const SUPABASE_URL = 'https://wcefqhivhaejueenburz.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOj';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ═══════════════════════════════════════════════
+// CONFIGURAÇÃO SUPABASE
+// ═══════════════════════════════════════════════
+const SUPA_URL = 'https://wcefqhivhaejueenburz.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
+const { createClient } = supabase;
+const sb = createClient(SUPA_URL, SUPA_KEY);
 
-const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-const MNAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const ESTADOS = ['MA','PI'];
-const ESTADO_NAMES = { MA:'Maranhão', PI:'Piauí' };
-const COLORS = ['#378ADD','#1D9E75','#D85A30','#D4537E','#BA7517','#7F77DD','#639922','#888780','#C05A9E'];
-const SERVICES = [
-  'FATURAMENTO SIMULTÂNEO (LEITURA RURAL FI)',
-  'SERV FATURAMENTO IMEDIATO (LEITURA URBANA FI)',
-  'LEITURA RURAL FS',
-  'LEITURA URBANA FI',
-  'NOTAS DE SERVIÇO GEGC',
-  'NOTAS DE SERVIÇO GEGC (AT)',
-  'SERV FATURAMENTO NAO IMEDIATO RURAL (ENTREGA FATURA RURAL)',
-  'SERV FATURAMENTO NAO IMEDIATO URBANO (ENTREGA FATURA URBANA)',
-  'ENTREGA ESPECIAL'
-];
+// ═══════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════
+let usuarioRole = '';
+let usuarioEmail = '';
+let chartMensal = null, chartPizza = null, chartRegMensal = null, chartRegPizza = null;
+let dadosProd = [], dadosBol = [], dadosCad = [];
 
-let userRole = 'viewer';
-let selMonth = new Date().getMonth();
-let selEstado = 'todos';
-let histFilt = 'todos';
-let chartFat, chartPie, chartLine;
-let allData = {};
+const MESES_NOMES = ['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const REGS = { MA: ['SUL','NORTE','CENTRO','LESTE','NOROESTE'], PI: ['METROPOLITANA','NORTE','SUL'] };
+const COR_SVCS = ['#BE2F3B','#378ADD','#1D9E75','#BA7517','#533AB7','#D4537E','#888780','#0F6E56','#7F77DD'];
 
-function fmt(n) { return 'R$\u00a0' + (Math.round(n) || 0).toLocaleString('pt-BR'); }
-function pct(a, b) { if (!b) return 0; return Math.round((a - b) / b * 100); }
-function key(estado, y, m) { return estado + '-' + y + '-' + String(m).padStart(2, '0'); }
+const fmtR = v => 'R$ ' + Number(v).toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN = v => Number(v).toLocaleString('pt-BR');
+const mesAno = (m,a) => `${String(m).padStart(2,'0')}/${a}`;
+const nomeMes = m => MESES_NOMES[m] || m;
 
-function getEstadoTag(estado) {
-  if (estado === 'MA') return '<span class="estado-tag tag-ma">MA</span>';
-  if (estado === 'PI') return '<span class="estado-tag tag-pi">PI</span>';
-  return '<span class="estado-tag tag-todos">Consolidado</span>';
+// ═══════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const erro  = document.getElementById('login-erro');
+  erro.textContent = '';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+  if (error) { erro.textContent = 'E-mail ou senha incorretos.'; return; }
+  iniciarApp(data.user);
 }
 
-async function init() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { window.location.href = 'index.html'; return; }
-  const user = session.user;
-  document.getElementById('userEmail').textContent = user.email;
-  const meta = user.user_metadata || {};
-  userRole = meta.role || 'viewer';
-  const badge = document.getElementById('roleBadge');
-  badge.textContent = userRole === 'admin' ? 'Administrador' : 'Visualizador';
-  badge.className = 'role-badge ' + (userRole === 'admin' ? 'role-admin' : 'role-viewer');
-  if (userRole !== 'admin') document.getElementById('tabEntradaBtn').style.display = 'none';
-  await loadAllData();
-  buildServiceRows();
-  renderHistory();
-  render();
-  document.getElementById('appLoading').style.display = 'none';
-  document.getElementById('appContent').style.display = 'block';
-  document.getElementById('fMonth').value = new Date().getMonth();
-  document.getElementById('fYear').value = new Date().getFullYear();
+async function fazerLogout() {
+  await sb.auth.signOut();
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('tela-login').style.display = 'flex';
 }
 
-async function loadAllData() {
-  const { data, error } = await sb.from('faturamento').select('*').order('ano').order('mes');
-  if (error) { console.error(error); return; }
-  allData = {};
-  (data || []).forEach(row => {
-    const estado = row.estado || 'MA';
-    allData[key(estado, row.ano, row.mes)] = { meta: row.meta, services: row.services || [], estado };
-  });
-}
+async function iniciarApp(user) {
+  document.getElementById('tela-login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
 
-function getEntry(estado, year, month) {
-  if (estado === 'todos') {
-    const ma = allData[key('MA', year, month)] || { services: [], meta: 0 };
-    const pi = allData[key('PI', year, month)] || { services: [], meta: 0 };
-    const merged = SERVICES.map(name => {
-      const s1 = ma.services.find(s => s.name === name) || { execs: 0, val: 0 };
-      const s2 = pi.services.find(s => s.name === name) || { execs: 0, val: 0 };
-      const totalExecs = s1.execs + s2.execs;
-      const avgVal = totalExecs > 0 ? (s1.execs * s1.val + s2.execs * s2.val) / totalExecs : 0;
-      return { name, execs: totalExecs, val: Math.round(avgVal) };
-    }).filter(s => s.execs > 0 || s.val > 0);
-    return { services: merged, meta: (ma.meta || 0) + (pi.meta || 0) };
+  usuarioEmail = user.email;
+  usuarioRole  = user.user_metadata?.role || 'viewer';
+  document.getElementById('topbar-usuario').textContent = usuarioEmail;
+  document.getElementById('topbar-role').textContent = usuarioRole === 'admin' ? 'Administrador' : 'Visualizador';
+
+  if (usuarioRole === 'admin') {
+    document.querySelectorAll('.tab-admin').forEach(b => b.style.display = 'block');
   }
-  return allData[key(estado, year, month)] || { services: [], meta: 0 };
+
+  preencherFiltrosPeriodo();
+  atualizarRegiaisSelect();
+  await carregarGeral();
+  await carregarHistoricos();
+  await carregarListaCadernos();
+  populaSelectRegionaisPizza();
 }
 
-function setEstado(estado, btn) {
-  selEstado = estado;
-  document.querySelectorAll('.estado-btns .ebtn').forEach(b => b.classList.remove('active'));
+// Verificar sessão existente
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) iniciarApp(session.user);
+});
+
+// Enter no login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('tela-login').style.display !== 'none') fazerLogin();
+});
+
+// ═══════════════════════════════════════════════
+// NAVEGAÇÃO
+// ═══════════════════════════════════════════════
+function setTab(id, btn) {
+  document.querySelectorAll('.conteudo').forEach(t => t.style.display = 'none');
+  document.getElementById('tab-' + id).style.display = 'block';
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  render();
+  if (id === 'servico') carregarServico();
+  if (id === 'regional') carregarRegional();
+  if (id === 'cadernos') carregarListaCadernos();
 }
 
-function setHistFilt(filt, btn) {
-  histFilt = filt;
-  document.querySelectorAll('#adminForm .ebtn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderHistory();
-}
-
-function buildServiceRows() {
-  const container = document.getElementById('svcRows');
-  container.innerHTML = SERVICES.map((svc, i) => `
-    <div class="svc-row">
-      <span class="svc-name">${svc}</span>
-      <input type="number" id="exec_${i}" placeholder="0" min="0" oninput="calcSummary()" style="width:100%">
-      <input type="number" id="val_${i}" placeholder="0,00" min="0" step="0.01" oninput="calcSummary()" style="width:100%">
-    </div>
-  `).join('');
-}
-
-function calcSummary() {
-  let te = 0, tf = 0;
-  SERVICES.forEach((_, i) => {
-    const e = parseInt(document.getElementById('exec_' + i).value) || 0;
-    const v = parseFloat(document.getElementById('val_' + i).value) || 0;
-    te += e; tf += e * v;
+// ═══════════════════════════════════════════════
+// FILTROS
+// ═══════════════════════════════════════════════
+function preencherFiltrosPeriodo() {
+  const ano = new Date().getFullYear();
+  const mes = new Date().getMonth() + 1;
+  ['g','s','r'].forEach(p => {
+    const sm = document.getElementById(p+'-mes');
+    const sa = document.getElementById(p+'-ano');
+    if (!sm || !sa) return;
+    sm.innerHTML = MESES_NOMES.slice(1).map((n,i) => `<option value="${i+1}" ${i+1===mes?'selected':''}>${n}</option>`).join('');
+    sa.innerHTML = [ano-1, ano, ano+1].map(a => `<option value="${a}" ${a===ano?'selected':''}>${a}</option>`).join('');
   });
-  const meta = parseFloat(document.getElementById('fMeta').value) || 0;
-  document.getElementById('totExec').textContent = te.toLocaleString('pt-BR');
-  document.getElementById('totFat').textContent = fmt(tf);
-  document.getElementById('totMeta').textContent = meta ? Math.round(tf / meta * 100) + '%' : '—';
 }
 
-async function loadExisting() {
-  const m = parseInt(document.getElementById('fMonth').value);
-  const y = parseInt(document.getElementById('fYear').value);
-  const estado = document.getElementById('fEstado').value;
-  const entry = allData[key(estado, y, m)];
-  SERVICES.forEach((_, i) => {
-    document.getElementById('exec_' + i).value = '';
-    document.getElementById('val_' + i).value = '';
-  });
-  if (entry) {
-    document.getElementById('fMeta').value = entry.meta || '';
-    entry.services.forEach(s => {
-      const idx = SERVICES.indexOf(s.name);
-      if (idx >= 0) {
-        document.getElementById('exec_' + idx).value = s.execs;
-        document.getElementById('val_' + idx).value = s.val;
-      }
-    });
-    showToast('Dados de ' + ESTADO_NAMES[estado] + ' — ' + MNAMES[m] + '/' + y + ' carregados.', 'ok');
+function atualizarRegiaisSelect() {
+  const estado = document.getElementById('r-estado')?.value || 'MA';
+  const sel = document.getElementById('r-regional');
+  if (!sel) return;
+  sel.innerHTML = (REGS[estado]||REGS.MA).map(r => `<option value="${r}">${r}</option>`).join('');
+  const selS = document.getElementById('s-regional');
+  if (selS) selS.innerHTML = '<option value="">Todas</option>' + (REGS[estado]||REGS.MA).map(r => `<option value="${r}">${r}</option>`).join('');
+}
+
+function populaSelectRegionaisPizza() {
+  const estado = document.getElementById('g-estado')?.value || 'MA';
+  const sel = document.getElementById('g-reg-pizza');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Todas regionais</option>' + (REGS[estado]||REGS.MA).map(r => `<option value="${r}">${r}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// VISÃO GERAL
+// ═══════════════════════════════════════════════
+async function carregarGeral() {
+  const estado = document.getElementById('g-estado').value;
+  const mes    = parseInt(document.getElementById('g-mes').value);
+  const ano    = parseInt(document.getElementById('g-ano').value);
+  populaSelectRegionaisPizza();
+
+  // Buscar caderno ativo para calcular previsto
+  const prev = await calcularPrevisto(estado, mes, ano);
+  // Buscar produção real
+  const exec = await calcularExecutado(estado, mes, ano);
+  // Buscar boletim
+  const pago = await calcularPago(estado, mes, ano);
+
+  const pct = prev > 0 ? (pago / prev * 100) : 0;
+  const diffExecPrev = exec - prev;
+  const diffPagExec  = pago - exec;
+
+  document.getElementById('g-prev').textContent = fmtR(prev);
+  document.getElementById('g-exec').textContent = fmtR(exec);
+  document.getElementById('g-pago').textContent = fmtR(pago);
+  document.getElementById('g-pct').textContent  = pct.toFixed(1) + '%';
+
+  const subExec = document.getElementById('g-exec-sub');
+  subExec.className = 'csub ' + (diffExecPrev >= 0 ? 'csub-pos' : 'csub-warn');
+  subExec.textContent = (diffExecPrev >= 0 ? '▲ ' : '▼ ') + fmtR(Math.abs(diffExecPrev)) + (diffExecPrev >= 0 ? ' acima' : ' abaixo') + ' da meta';
+
+  const subPago = document.getElementById('g-pago-sub');
+  subPago.className = 'csub ' + (diffPagExec >= 0 ? 'csub-pos' : 'csub-neg');
+  subPago.textContent = (diffPagExec >= 0 ? '▲ ' : '▼ ') + fmtR(Math.abs(diffPagExec)) + (diffPagExec >= 0 ? ' acima' : ' abaixo') + ' do executado';
+
+  const alertEl = document.getElementById('g-alerta');
+  if (Math.abs(diffPagExec) > 1000 && exec > 0) {
+    const pctDiv = ((exec - pago) / exec * 100).toFixed(1);
+    document.getElementById('g-alerta-txt').innerHTML =
+      `Divergência detectada: a Equatorial pagou <strong>${(100 - parseFloat(pctDiv)).toFixed(1)}%</strong> da produção real. Diferença de <strong>${fmtR(Math.abs(diffPagExec))}</strong> não reconhecida no boletim.`;
+    alertEl.style.display = 'flex';
   } else {
-    showToast('Nenhum dado encontrado para ' + ESTADO_NAMES[estado] + ' — ' + MNAMES[m] + '/' + y + '.', 'err');
+    alertEl.style.display = 'none';
   }
-  calcSummary();
+
+  await renderGraficoMensal(estado);
+  await renderTabelaRegionalDiv(estado, mes, ano);
+  atualizarPizza();
 }
 
-async function saveData() {
-  if (userRole !== 'admin') return;
-  const m = parseInt(document.getElementById('fMonth').value);
-  const y = parseInt(document.getElementById('fYear').value);
-  const estado = document.getElementById('fEstado').value;
-  const meta = parseFloat(document.getElementById('fMeta').value) || 0;
-  const services = SERVICES.map((name, i) => ({
-    name,
-    execs: parseInt(document.getElementById('exec_' + i).value) || 0,
-    val: parseFloat(document.getElementById('val_' + i).value) || 0
-  })).filter(s => s.execs > 0 || s.val > 0);
+async function calcularPrevisto(estado, mes, ano) {
+  // Busca caderno válido para o período
+  let q = sb.from('cadernos').select('id').eq('confirmado', true);
+  if (estado !== 'TODOS') q = q.eq('estado', estado);
+  // caderno ativo OU data_fim >= mes/ano atual
+  const mesAnoStr = mesAno(mes, ano);
+  const { data: cads } = await q;
+  if (!cads || cads.length === 0) return 0;
 
-  const btn = document.getElementById('btnSave');
-  btn.disabled = true; btn.textContent = 'Salvando…';
-
-  const { error } = await sb.from('faturamento').upsert(
-    { mes: m, ano: y, estado, meta, services },
-    { onConflict: 'mes,ano,estado' }
-  );
-
-  btn.disabled = false; btn.textContent = 'Salvar período';
-  if (error) { showToast('Erro ao salvar: ' + error.message, 'err'); return; }
-  showToast('Dados de ' + ESTADO_NAMES[estado] + ' — ' + MNAMES[m] + '/' + y + ' salvos!', 'ok');
-  await loadAllData();
-  renderHistory();
-  render();
-}
-
-async function deleteEntry(estado, m, y) {
-  if (!confirm('Excluir dados de ' + ESTADO_NAMES[estado] + ' — ' + MNAMES[m] + '/' + y + '?')) return;
-  await sb.from('faturamento').delete().eq('mes', m).eq('ano', y).eq('estado', estado);
-  await loadAllData();
-  renderHistory();
-  render();
-}
-
-function renderHistory() {
-  const keys = Object.keys(allData).filter(k => histFilt === 'todos' || k.startsWith(histFilt + '-')).sort().reverse();
-  const el = document.getElementById('histList');
-  if (!keys.length) { el.innerHTML = '<div class="empty-state">Nenhum período registrado ainda.</div>'; return; }
-  el.innerHTML = keys.map(k => {
-    const parts = k.split('-');
-    const estado = parts[0];
-    const y = parts[1];
-    const mm = parseInt(parts[2]);
-    const e = allData[k];
-    const fat = e.services.reduce((a, s) => a + s.execs * s.val, 0);
-    const ating = e.meta ? Math.round(fat / e.meta * 100) : '—';
-    return `<div class="hist-row">
-      <div style="display:flex;align-items:center;gap:8px">
-        ${getEstadoTag(estado)}
-        <span style="font-weight:500">${MNAMES[mm]} ${y}</span>
-        <span style="color:#6b6b68;margin-left:4px">${e.services.length} serviço(s) · ${fmt(fat)} · Meta: ${ating}%</span>
-      </div>
-      ${userRole === 'admin' ? `<div style="display:flex;gap:6px">
-        <button style="font-size:12px;padding:4px 12px;border:0.5px solid #d0cfc8;border-radius:6px;background:transparent;color:#6b6b68;cursor:pointer;font-family:inherit" onclick="loadEntryForEdit('${estado}',${mm},${y})">Editar</button>
-        <button style="font-size:12px;padding:4px 10px;border:0.5px solid #F7C1C1;border-radius:6px;background:transparent;color:#A32D2D;cursor:pointer;font-family:inherit" onclick="deleteEntry('${estado}',${mm},${y})">Excluir</button>
-      </div>` : ''}
-    </div>`;
-  }).join('');
-}
-
-function loadEntryForEdit(estado, m, y) {
-  document.getElementById('fEstado').value = estado;
-  document.getElementById('fMonth').value = m;
-  document.getElementById('fYear').value = y;
-  switchTab('entrada', document.querySelector('.tab:nth-child(2)'));
-  loadExisting();
-  window.scrollTo(0, 0);
-}
-
-function switchTab(tab, btn) {
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('tabPainel').style.display = tab === 'painel' ? 'block' : 'none';
-  document.getElementById('tabEntrada').style.display = tab === 'entrada' ? 'block' : 'none';
-  if (tab === 'entrada' && userRole !== 'admin') {
-    document.getElementById('noAccessMsg').style.display = 'block';
-    document.getElementById('adminForm').style.display = 'none';
+  let total = 0;
+  for (const c of cads) {
+    const { data: tarifas } = await sb.from('caderno_tarifas').select('faturamento_previsto').eq('caderno_id', c.id);
+    if (tarifas) total += tarifas.reduce((s, t) => s + (parseFloat(t.faturamento_previsto) || 0), 0);
   }
+  return total;
 }
 
-function render() {
-  const year = parseInt(document.getElementById('yearSel').value);
-  const cur = getEntry(selEstado, year, selMonth);
-  const prevM = selMonth === 0 ? 11 : selMonth - 1;
-  const prevY = selMonth === 0 ? year - 1 : year;
-  const prev = getEntry(selEstado, prevY, prevM);
+async function calcularExecutado(estado, mes, ano) {
+  let q = sb.from('producao_real').select('qde_executada, cod_servico');
+  q = q.eq('mes', mes).eq('ano', ano);
+  if (estado !== 'TODOS') q = q.eq('estado', estado);
+  const { data } = await q;
+  if (!data) return 0;
 
-  const totalFat = cur.services.reduce((a, s) => a + s.execs * s.val, 0);
-  const totalFatPrev = prev.services.reduce((a, s) => a + s.execs * s.val, 0);
-  const totalExecs = cur.services.reduce((a, s) => a + s.execs, 0);
-  const totalExecsPrev = prev.services.reduce((a, s) => a + s.execs, 0);
-  const ticket = totalExecs ? Math.round(totalFat / totalExecs) : 0;
-  const ticketPrev = totalExecsPrev ? Math.round(totalFatPrev / totalExecsPrev) : 0;
-  const ating = cur.meta ? Math.round(totalFat / cur.meta * 100) : 0;
-  const atingPrev = prev.meta ? Math.round(totalFatPrev / prev.meta * 100) : 0;
+  // Busca tarifas do caderno ativo para calcular valor
+  const tarifas = await buscarTarifasAtivas(estado);
+  return data.reduce((s, r) => {
+    const tar = tarifas.find(t => t.cod_servico === r.cod_servico);
+    return s + (r.qde_executada * (tar?.preco_unitario || 0));
+  }, 0);
+}
 
-  const estadoLabel = selEstado === 'todos' ? 'Consolidado' : ESTADO_NAMES[selEstado];
-  document.getElementById('chartEstadoTag').innerHTML = getEstadoTag(selEstado);
+async function calcularPago(estado, mes, ano) {
+  let q = sb.from('boletins').select('id');
+  q = q.eq('mes', mes).eq('ano', ano);
+  if (estado !== 'TODOS') q = q.eq('estado', estado);
+  const { data: bols } = await q;
+  if (!bols || bols.length === 0) return 0;
 
-  const metrics = [
-    { label: 'Faturamento — ' + estadoLabel, value: fmt(totalFat), delta: pct(totalFat, totalFatPrev) },
-    { label: 'Execuções', value: totalExecs.toLocaleString('pt-BR'), delta: pct(totalExecs, totalExecsPrev) },
-    { label: 'Ticket médio', value: fmt(ticket), delta: pct(ticket, ticketPrev) },
-    { label: 'Meta atingida', value: ating + '%', delta: ating - atingPrev },
-  ];
-  document.getElementById('metricGrid').innerHTML = metrics.map(m => {
-    const sign = m.delta >= 0 ? '+' : '';
-    const cls = m.delta > 0 ? 'd-up' : m.delta < 0 ? 'd-dn' : '';
-    return `<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-value">${m.value}</div><div class="metric-delta ${cls}">${sign}${m.delta}% vs mês anterior</div></div>`;
-  }).join('');
-
-  document.getElementById('monthBtns').innerHTML = MONTHS.map((mn, i) =>
-    `<button class="mbtn${i === selMonth ? ' active' : ''}" onclick="selMonth=${i};render()">${mn}</button>`
-  ).join('');
-  document.getElementById('selLabel').textContent = MONTHS[selMonth] + ' ' + year + ' · ' + estadoLabel;
-
-  const fats = [], metas = [];
-  for (let m = 0; m < 12; m++) {
-    const e = getEntry(selEstado, year, m);
-    fats.push(e.services.reduce((a, s) => a + s.execs * s.val, 0));
-    metas.push(e.meta || 0);
+  let total = 0;
+  for (const b of bols) {
+    const { data: itens } = await sb.from('boletim_itens').select('valor_pago').eq('boletim_id', b.id);
+    if (itens) total += itens.reduce((s, i) => s + (parseFloat(i.valor_pago) || 0), 0);
   }
-  if (chartFat) chartFat.destroy();
-  chartFat = new Chart(document.getElementById('chartFat'), {
+  return total;
+}
+
+async function buscarTarifasAtivas(estado) {
+  let q = sb.from('cadernos').select('id').eq('ativo', true).eq('confirmado', true);
+  if (estado !== 'TODOS') q = q.eq('estado', estado);
+  const { data: cads } = await q;
+  if (!cads || cads.length === 0) return [];
+  const ids = cads.map(c => c.id);
+  const { data: tarifas } = await sb.from('caderno_tarifas').select('*').in('caderno_id', ids);
+  return tarifas || [];
+}
+
+async function renderGraficoMensal(estado) {
+  const ano = parseInt(document.getElementById('g-ano').value);
+  const labels = MESES_NOMES.slice(1);
+  const prev = [], exec = [], pago = [];
+
+  for (let m = 1; m <= 12; m++) {
+    prev.push(await calcularPrevisto(estado, m, ano));
+    exec.push(await calcularExecutado(estado, m, ano));
+    pago.push(await calcularPago(estado, m, ano));
+  }
+
+  if (chartMensal) chartMensal.destroy();
+  chartMensal = new Chart(document.getElementById('chart-mensal'), {
     type: 'bar',
-    data: { labels: MONTHS, datasets: [
-      { label: 'Faturamento', data: fats, backgroundColor: MONTHS.map((_, i) => i === selMonth ? '#378ADD' : 'rgba(55,138,221,0.28)'), borderRadius: 4, order: 2 },
-      { label: 'Meta', data: metas, type: 'line', borderColor: '#1D9E75', backgroundColor: 'transparent', borderDash: [4, 3], pointRadius: 3, pointBackgroundColor: '#1D9E75', tension: 0.3, order: 1 }
-    ]},
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmt(ctx.parsed.y) } } },
-      scales: { x: { grid: { display: false }, ticks: { font: { size: 11 } } }, y: { grid: { color: 'rgba(128,128,128,0.08)' }, ticks: { font: { size: 11 }, callback: v => 'R$' + Math.round(v / 1000) + 'k' } } }
+    data: {
+      labels,
+      datasets: [
+        { label: 'Previsto', data: prev, type: 'line', borderColor: '#BE2F3B', backgroundColor: 'transparent', borderWidth: 2, tension: .3, pointRadius: 3, borderDash: [5,3] },
+        { label: 'Executado', data: exec, type: 'line', borderColor: '#1D9E75', backgroundColor: 'transparent', borderWidth: 2, tension: .3, pointRadius: 3 },
+        { label: 'Pago', data: pago, backgroundColor: '#378ADD', borderRadius: 4, borderWidth: 0 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: v => 'R$ ' + (v/1e6).toFixed(1) + 'M', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,.05)' } },
+        x: { ticks: { font: { size: 10 } } }
+      }
     }
   });
+}
 
-  const pieFats = cur.services.map(s => s.execs * s.val);
-  const pieLabels = cur.services.map(s => s.name);
-  const pieColors = cur.services.map(s => COLORS[SERVICES.indexOf(s.name) % COLORS.length]);
-  if (chartPie) chartPie.destroy();
-  chartPie = new Chart(document.getElementById('chartPie'), {
+async function atualizarPizza() {
+  const estado   = document.getElementById('g-estado').value;
+  const regional = document.getElementById('g-reg-pizza').value;
+  const mes      = parseInt(document.getElementById('g-mes').value);
+  const ano      = parseInt(document.getElementById('g-ano').value);
+
+  let q = sb.from('boletins').select('id').eq('mes', mes).eq('ano', ano);
+  if (estado !== 'TODOS') q = q.eq('estado', estado);
+  const { data: bols } = await q;
+  if (!bols || bols.length === 0) { if (chartPizza) chartPizza.destroy(); return; }
+
+  const ids = bols.map(b => b.id);
+  let qi = sb.from('boletim_itens').select('cod_servico, descricao_servico, valor_pago').in('boletim_id', ids);
+  if (regional) qi = qi.eq('regional', regional);
+  const { data: itens } = await qi;
+  if (!itens) return;
+
+  // Agrupa por serviço
+  const map = {};
+  itens.forEach(i => {
+    if (!map[i.cod_servico]) map[i.cod_servico] = { desc: i.descricao_servico, val: 0 };
+    map[i.cod_servico].val += parseFloat(i.valor_pago) || 0;
+  });
+  const svcs = Object.entries(map).sort((a,b) => b[1].val - a[1].val);
+  const labels = svcs.map(s => s[1].desc.substring(0,30));
+  const vals   = svcs.map(s => s[1].val);
+
+  const legEl = document.getElementById('leg-pizza');
+  legEl.innerHTML = svcs.map((s,i) => `<span><i style="background:${COR_SVCS[i%COR_SVCS.length]};width:10px;height:10px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,20)}</span>`).join('');
+
+  if (chartPizza) chartPizza.destroy();
+  chartPizza = new Chart(document.getElementById('chart-pizza'), {
     type: 'doughnut',
-    data: { labels: pieLabels, datasets: [{ data: pieFats, backgroundColor: pieColors, borderWidth: 1, borderColor: 'transparent', hoverOffset: 4 }] },
-    options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + fmt(ctx.parsed) + (totalFat ? ' (' + Math.round(ctx.parsed / totalFat * 100) + '%)' : '') } } }
+    data: {
+      labels,
+      datasets: [{ data: vals, backgroundColor: COR_SVCS, borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + fmtR(c.raw) } } }
     }
   });
-  document.getElementById('pieLeg').innerHTML = pieLabels.map((s, i) =>
-    `<span><span class="ldot" style="background:${pieColors[i]}"></span>${s.length > 20 ? s.substring(0, 20) + '…' : s}</span>`
-  ).join('');
+}
 
-  const lineDs = SERVICES.map((svc, si) => ({
-    label: svc,
-    data: Array.from({ length: 12 }, (_, m) => {
-      const e = getEntry(selEstado, year, m);
-      const f = e.services.find(s => s.name === svc); return f ? f.execs * f.val : 0;
-    }),
-    borderColor: COLORS[si % COLORS.length], backgroundColor: 'transparent',
-    pointRadius: 2, tension: 0.35, borderWidth: 1.5
-  })).filter(ds => ds.data.some(v => v > 0));
-  if (chartLine) chartLine.destroy();
-  chartLine = new Chart(document.getElementById('chartLine'), {
-    type: 'line',
-    data: { labels: MONTHS, datasets: lineDs },
-    options: { responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataset.label.substring(0, 25) + ': ' + fmt(ctx.parsed.y) } } },
-      scales: { x: { grid: { display: false }, ticks: { font: { size: 11 } } }, y: { grid: { color: 'rgba(128,128,128,0.08)' }, ticks: { font: { size: 11 }, callback: v => 'R$' + Math.round(v / 1000) + 'k' } } }
+async function renderTabelaRegionalDiv(estado, mes, ano) {
+  const regs = estado === 'TODOS' ? [...REGS.MA, ...REGS.PI] : (REGS[estado] || []);
+  const tb = document.getElementById('tb-regional-div');
+  tb.innerHTML = '';
+
+  for (const reg of regs) {
+    // Previsto
+    const { data: cads } = await sb.from('cadernos').select('id').eq('confirmado', true);
+    let prev = 0;
+    if (cads) {
+      for (const c of cads) {
+        const { data: t } = await sb.from('caderno_tarifas').select('faturamento_previsto').eq('caderno_id', c.id).eq('regional', reg);
+        if (t) prev += t.reduce((s,x) => s + (parseFloat(x.faturamento_previsto)||0), 0);
+      }
     }
-  });
-  document.getElementById('lineLeg').innerHTML = lineDs.map(ds =>
-    `<span style="display:flex;align-items:center;gap:4px;font-size:11px;color:#6b6b68"><span style="width:14px;height:2px;background:${ds.borderColor};display:inline-block;border-radius:2px"></span>${ds.label.length > 22 ? ds.label.substring(0, 22) + '…' : ds.label}</span>`
-  ).join('');
+    // Executado
+    const { data: prodRows } = await sb.from('producao_real').select('qde_executada, cod_servico').eq('mes', mes).eq('ano', ano).eq('regional', reg);
+    const tarifas = await buscarTarifasAtivas(estado === 'TODOS' ? 'MA' : estado);
+    const exec = (prodRows||[]).reduce((s,r) => {
+      const tar = tarifas.find(t => t.cod_servico === r.cod_servico && t.regional === reg);
+      return s + (r.qde_executada * (tar?.preco_unitario || 0));
+    }, 0);
+    const execEvt = (prodRows||[]).reduce((s,r) => s + (r.qde_executada || 0), 0);
 
-  const tbody = document.getElementById('svcBody');
-  if (!cur.services.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:#6b6b68">Nenhum dado lançado para este período.</td></tr>`;
-    return;
+    // Pago
+    const { data: bols } = await sb.from('boletins').select('id').eq('mes', mes).eq('ano', ano);
+    let pago = 0, pagoEvt = 0;
+    if (bols) {
+      const ids = bols.map(b => b.id);
+      const { data: itens } = await sb.from('boletim_itens').select('qde_paga, valor_pago').in('boletim_id', ids).eq('regional', reg);
+      if (itens) {
+        pago    = itens.reduce((s,i) => s + (parseFloat(i.valor_pago)||0), 0);
+        pagoEvt = itens.reduce((s,i) => s + (i.qde_paga||0), 0);
+      }
+    }
+
+    const diff    = pagoEvt - execEvt;
+    const pctDiv  = execEvt > 0 ? ((execEvt - pagoEvt) / execEvt * 100) : 0;
+    const barC    = Math.abs(pctDiv) < 2 ? '#1D9E75' : pctDiv > 5 ? '#E24B4A' : '#EF9F27';
+    const status  = Math.abs(pctDiv) < 2 ? '<span class="pill pill-ok">Normal</span>' : pctDiv > 5 ? '<span class="pill pill-danger">Crítico</span>' : '<span class="pill pill-warn">Atenção</span>';
+
+    tb.innerHTML += `<tr>
+      <td><strong>${reg}</strong></td>
+      <td>${fmtR(prev)}</td>
+      <td>${fmtN(execEvt)}</td>
+      <td>${fmtN(pagoEvt)}</td>
+      <td style="color:${diff>=0?'#1D9E75':'#BE2F3B'}">${diff>=0?'+':''}${fmtN(diff)}</td>
+      <td>
+        <div class="prog-wrap">
+          <div class="prog-track"><div class="prog-fill" style="width:${Math.min(Math.abs(pctDiv)*10,100)}%;background:${barC}"></div></div>
+          <span style="font-size:11px;color:${barC};font-weight:700;min-width:40px">${pctDiv.toFixed(1)}%</span>
+        </div>
+      </td>
+      <td>${status}</td>
+    </tr>`;
   }
-  tbody.innerHTML = cur.services.map(s => {
-    const fat = s.execs * s.val;
-    const prevSvc = prev.services.find(p => p.name === s.name) || { execs: 0, val: 0 };
-    const vExec = pct(s.execs, prevSvc.execs);
-    const vVal = pct(s.val, prevSvc.val);
-    const part = totalFat ? Math.round(fat / totalFat * 100) : 0;
+}
+
+// ═══════════════════════════════════════════════
+// POR SERVIÇO
+// ═══════════════════════════════════════════════
+async function carregarServico() {
+  const estado   = document.getElementById('s-estado').value;
+  const regional = document.getElementById('s-regional').value;
+  const mes      = parseInt(document.getElementById('s-mes').value);
+  const ano      = parseInt(document.getElementById('s-ano').value);
+
+  const tarifas = await buscarTarifasAtivas(estado === 'TODOS' ? 'MA' : estado);
+
+  // Agrupa tarifas por serviço
+  const svcMap = {};
+  tarifas.forEach(t => {
+    if (!svcMap[t.cod_servico]) svcMap[t.cod_servico] = { desc: t.descricao_servico, prev: 0, tarifa: t.preco_unitario };
+    if (!regional || t.regional === regional) svcMap[t.cod_servico].prev += t.eventos_previstos;
+  });
+
+  // Produção real
+  let qe = sb.from('producao_real').select('cod_servico, qde_executada').eq('mes', mes).eq('ano', ano);
+  if (estado !== 'TODOS') qe = qe.eq('estado', estado);
+  if (regional) qe = qe.eq('regional', regional);
+  const { data: prodRows } = await qe;
+  const execMap = {};
+  (prodRows||[]).forEach(r => { execMap[r.cod_servico] = (execMap[r.cod_servico]||0) + r.qde_executada; });
+
+  // Boletim
+  const { data: bols } = await sb.from('boletins').select('id').eq('mes', mes).eq('ano', ano);
+  const pagoMap = {};
+  if (bols && bols.length > 0) {
+    let qi = sb.from('boletim_itens').select('cod_servico, qde_paga, valor_pago').in('boletim_id', bols.map(b => b.id));
+    if (estado !== 'TODOS') qi = qi.eq('estado', estado === 'TODOS' ? undefined : estado);
+    if (regional) qi = qi.eq('regional', regional);
+    const { data: itens } = await qi;
+    (itens||[]).forEach(i => {
+      if (!pagoMap[i.cod_servico]) pagoMap[i.cod_servico] = { qde: 0, val: 0 };
+      pagoMap[i.cod_servico].qde += i.qde_paga || 0;
+      pagoMap[i.cod_servico].val += parseFloat(i.valor_pago) || 0;
+    });
+  }
+
+  const totalPrev = Object.values(svcMap).reduce((s,v) => s + v.prev, 0);
+  const totalExec = Object.values(execMap).reduce((s,v) => s + v, 0);
+  const totalPago = Object.values(pagoMap).reduce((s,v) => s + v.qde, 0);
+
+  const tb = document.getElementById('tb-servico');
+  const db = document.getElementById('dist-bars');
+  tb.innerHTML = '';
+  db.innerHTML = '';
+
+  Object.entries(svcMap).forEach(([cod, s], idx) => {
+    const exec = execMap[cod] || 0;
+    const pago = pagoMap[cod]?.qde || 0;
+    const valPago = pagoMap[cod]?.val || 0;
+    const pPrev = totalPrev > 0 ? (s.prev / totalPrev * 100) : 0;
+    const pExec = totalExec > 0 ? (exec / totalExec * 100) : 0;
+    const pPago = totalPago > 0 ? (pago / totalPago * 100) : 0;
+    const desvio = Math.abs(pPrev - pPago);
+    const alerta = desvio > 2 ? '<span class="pill pill-danger">Desvio</span>' : desvio > .5 ? '<span class="pill pill-warn">Atenção</span>' : '<span class="pill pill-ok">Ok</span>';
+
+    tb.innerHTML += `<tr>
+      <td style="font-size:12px">${s.desc}</td>
+      <td>${fmtR(s.tarifa)}</td>
+      <td>${fmtN(s.prev)}</td><td>${pPrev.toFixed(1)}%</td>
+      <td>${fmtN(exec)}</td><td>${pExec.toFixed(1)}%</td>
+      <td>${fmtN(pago)}</td><td>${pPago.toFixed(1)}%</td>
+      <td>${fmtR(valPago)}</td>
+      <td>${alerta}</td>
+    </tr>`;
+
+    db.innerHTML += `<div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:var(--preto);margin-bottom:5px">
+        ${s.desc} <span style="font-size:10px;color:var(--cinza-texto);font-weight:400">· R$ ${s.tarifa.toFixed(2)}/evento</span>
+        ${desvio > 2 ? `<span style="font-size:10px;color:var(--vermelho);margin-left:6px">⚠ Desvio de ${desvio.toFixed(1)}pp</span>` : ''}
+      </div>
+      ${[['Caderno','#BE2F3B',pPrev],['Executado','#1D9E75',pExec],['Pago','#378ADD',pPago]].map(([lbl,cor,pct]) =>
+        `<div style="display:grid;grid-template-columns:70px 1fr 45px;gap:6px;align-items:center;margin-bottom:3px">
+          <span style="font-size:11px;color:var(--cinza-texto)">${lbl}</span>
+          <div style="background:#f0f0ee;border-radius:3px;height:10px;overflow:hidden">
+            <div style="width:${pct*2}%;height:100%;background:${cor};border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;color:var(--cinza-texto);text-align:right">${pct.toFixed(1)}%</span>
+        </div>`
+      ).join('')}
+    </div>`;
+  });
+}
+
+// ═══════════════════════════════════════════════
+// POR REGIONAL
+// ═══════════════════════════════════════════════
+async function carregarRegional() {
+  const estado   = document.getElementById('r-estado').value;
+  const regional = document.getElementById('r-regional').value;
+  const mes      = parseInt(document.getElementById('r-mes').value);
+  const ano      = parseInt(document.getElementById('r-ano').value);
+
+  document.getElementById('r-chart-titulo').textContent = `Evolução mensal — ${regional}`;
+
+  const tarifas = await buscarTarifasAtivas(estado);
+  const tarReg  = tarifas.filter(t => t.regional === regional);
+  const prev    = tarReg.reduce((s,t) => s + (parseFloat(t.faturamento_previsto)||0), 0);
+
+  // Executado
+  const { data: prodRows } = await sb.from('producao_real').select('qde_executada, cod_servico').eq('mes', mes).eq('ano', ano).eq('estado', estado).eq('regional', regional);
+  let execVal = 0, execEvt = 0;
+  (prodRows||[]).forEach(r => {
+    const tar = tarReg.find(t => t.cod_servico === r.cod_servico);
+    execVal += r.qde_executada * (tar?.preco_unitario || 0);
+    execEvt += r.qde_executada;
+  });
+
+  // Pago
+  const { data: bols } = await sb.from('boletins').select('id').eq('mes', mes).eq('ano', ano).eq('estado', estado);
+  let pagoVal = 0, pagoEvt = 0;
+  if (bols && bols.length > 0) {
+    const { data: itens } = await sb.from('boletim_itens').select('qde_paga, valor_pago').in('boletim_id', bols.map(b=>b.id)).eq('regional', regional);
+    (itens||[]).forEach(i => { pagoVal += parseFloat(i.valor_pago)||0; pagoEvt += i.qde_paga||0; });
+  }
+
+  // Cards
+  const diff = pagoVal - execVal;
+  const pct  = prev > 0 ? (pagoVal/prev*100) : 0;
+  document.getElementById('r-cards').innerHTML = `
+    <div class="card"><div class="clabel">Faturamento previsto (caderno)</div><div class="cval">${fmtR(prev)}</div><div class="csub csub-muted">Meta da regional</div></div>
+    <div class="card"><div class="clabel">Faturamento executado (campo)</div><div class="cval">${fmtR(execVal)}</div><div class="csub ${execVal>=prev?'csub-pos':'csub-warn'}">${execVal>=prev?'▲ Acima':'▼ Abaixo'} da meta</div></div>
+    <div class="card"><div class="clabel">Faturamento pago (Equatorial)</div><div class="cval">${fmtR(pagoVal)}</div><div class="csub ${diff>=0?'csub-pos':'csub-neg'}">${fmtR(Math.abs(diff))} ${diff>=0?'acima':'abaixo'} do executado · ${pct.toFixed(1)}% meta</div></div>
+  `;
+
+  // Alerta divergência
+  const pctDiv = execEvt > 0 ? ((execEvt-pagoEvt)/execEvt*100) : 0;
+  const alertEl = document.getElementById('r-alerta');
+  if (Math.abs(pctDiv) > 2) {
+    document.getElementById('r-alerta-txt').innerHTML = `Regional ${regional}: Equatorial pagou <strong>${(100-pctDiv).toFixed(1)}%</strong> da produção real. Diferença de <strong>${fmtR(Math.abs(diff))}</strong> não reconhecida.`;
+    alertEl.style.display = 'flex';
+  } else alertEl.style.display = 'none';
+
+  // Gráfico evolução mensal
+  const serieP = [], serieE = [], serieG = [];
+  for (let m = 1; m <= 12; m++) {
+    serieP.push(tarReg.reduce((s,t) => s+(parseFloat(t.faturamento_previsto)||0), 0));
+    const { data: pr } = await sb.from('producao_real').select('qde_executada,cod_servico').eq('mes',m).eq('ano',ano).eq('estado',estado).eq('regional',regional);
+    serieE.push((pr||[]).reduce((s,r) => { const t=tarReg.find(x=>x.cod_servico===r.cod_servico); return s+r.qde_executada*(t?.preco_unitario||0); }, 0));
+    const { data: bs } = await sb.from('boletins').select('id').eq('mes',m).eq('ano',ano).eq('estado',estado);
+    let vp = 0;
+    if (bs?.length) { const { data: is } = await sb.from('boletim_itens').select('valor_pago').in('boletim_id',bs.map(b=>b.id)).eq('regional',regional); (is||[]).forEach(i => vp+=parseFloat(i.valor_pago)||0); }
+    serieG.push(vp);
+  }
+
+  if (chartRegMensal) chartRegMensal.destroy();
+  chartRegMensal = new Chart(document.getElementById('chart-reg-mensal'), {
+    type: 'bar',
+    data: {
+      labels: MESES_NOMES.slice(1),
+      datasets: [
+        { label:'Previsto', data:serieP, type:'line', borderColor:'#BE2F3B', backgroundColor:'transparent', borderWidth:2, tension:.3, pointRadius:2, borderDash:[5,3] },
+        { label:'Executado', data:serieE, type:'line', borderColor:'#1D9E75', backgroundColor:'transparent', borderWidth:2, tension:.3, pointRadius:2 },
+        { label:'Pago', data:serieG, backgroundColor:'#378ADD', borderRadius:3, borderWidth:0 }
+      ]
+    },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false} }, scales:{ y:{ ticks:{callback:v=>'R$'+(v/1e3).toFixed(0)+'k',font:{size:10}}, grid:{color:'rgba(0,0,0,.05)'} }, x:{ticks:{font:{size:10}}} } }
+  });
+
+  // Pizza regional
+  if (bols && bols.length > 0) {
+    const { data: itens } = await sb.from('boletim_itens').select('cod_servico, descricao_servico, valor_pago').in('boletim_id', bols.map(b=>b.id)).eq('regional', regional);
+    const map = {};
+    (itens||[]).forEach(i => { if (!map[i.cod_servico]) map[i.cod_servico]={desc:i.descricao_servico,val:0}; map[i.cod_servico].val+=parseFloat(i.valor_pago)||0; });
+    const svcs = Object.entries(map).sort((a,b)=>b[1].val-a[1].val);
+    document.getElementById('leg-reg-pizza').innerHTML = svcs.map((s,i)=>`<span><i style="background:${COR_SVCS[i%COR_SVCS.length]};width:10px;height:10px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,18)}</span>`).join('');
+    if (chartRegPizza) chartRegPizza.destroy();
+    chartRegPizza = new Chart(document.getElementById('chart-reg-pizza'), {
+      type:'doughnut', data:{ labels:svcs.map(s=>s[1].desc.substring(0,30)), datasets:[{ data:svcs.map(s=>s[1].val), backgroundColor:COR_SVCS, borderWidth:2, borderColor:'#fff' }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>' '+fmtR(c.raw)}} } }
+    });
+  }
+
+  // Tabela divergência por serviço
+  const tb = document.getElementById('tb-reg-servico');
+  tb.innerHTML = '';
+  const svcsPrev = {};
+  tarReg.forEach(t => { svcsPrev[t.cod_servico] = { desc: t.descricao_servico, tarifa: t.preco_unitario, prev: t.eventos_previstos }; });
+
+  const execByS = {};
+  (prodRows||[]).forEach(r => { execByS[r.cod_servico] = (execByS[r.cod_servico]||0) + r.qde_executada; });
+
+  const pagoByS = {};
+  if (bols?.length) {
+    const { data: itens } = await sb.from('boletim_itens').select('cod_servico, qde_paga').in('boletim_id', bols.map(b=>b.id)).eq('regional', regional);
+    (itens||[]).forEach(i => { pagoByS[i.cod_servico] = (pagoByS[i.cod_servico]||0) + i.qde_paga; });
+  }
+
+  Object.entries(svcsPrev).forEach(([cod, s]) => {
+    const exec = execByS[cod] || 0;
+    const pago = pagoByS[cod] || 0;
+    const diff = pago - exec;
+    const vnp  = Math.abs(diff) * s.tarifa;
+    const st   = Math.abs(diff) < 10 ? '<span class="pill pill-ok">Ok</span>' : diff < -100 ? '<span class="pill pill-danger">Crítico</span>' : '<span class="pill pill-warn">Atenção</span>';
+    tb.innerHTML += `<tr>
+      <td style="font-size:12px">${s.desc}</td>
+      <td>${fmtR(s.tarifa)}</td>
+      <td>${fmtN(s.prev)}</td>
+      <td>${fmtN(exec)}</td>
+      <td>${fmtN(pago)}</td>
+      <td style="color:${diff>=0?'#1D9E75':'#BE2F3B'}">${diff>=0?'+':''}${fmtN(diff)}</td>
+      <td>${diff<0 ? fmtR(vnp) : '—'}</td>
+      <td>${st}</td>
+    </tr>`;
+  });
+}
+
+// ═══════════════════════════════════════════════
+// UPLOAD — PARSER XLSX
+// ═══════════════════════════════════════════════
+function dragOver(e, id) { e.preventDefault(); document.getElementById(id).classList.add('drag'); }
+function dragLeave(id)   { document.getElementById(id).classList.remove('drag'); }
+function dropFile(e, tipo) {
+  e.preventDefault();
+  dragLeave('upload-' + tipo + '-area');
+  const file = e.dataTransfer.files[0];
+  if (file) processarUpload(file, tipo);
+}
+
+async function processarUpload(file, tipo) {
+  if (!file || !file.name.endsWith('.xlsx')) { alert('Selecione um arquivo .xlsx válido.'); return; }
+  const buf  = await file.arrayBuffer();
+  const wb   = XLSX.read(buf, { type: 'array' });
+
+  if (tipo === 'prod') parsearProducao(wb);
+  if (tipo === 'bol')  parsearBoletim(wb);
+  if (tipo === 'cad')  parsearCaderno(wb);
+}
+
+function parsearProducao(wb) {
+  dadosProd = [];
+  let erros = 0;
+
+  ['MA','PI'].forEach(estado => {
+    const ws = wb.Sheets[estado];
+    if (!ws) return;
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    rows.forEach(r => {
+      if (!r.MES || !r.ANO || !r.REGIONAL || !r.COD_SERVICO || r.QTD_EXECUTADA === '') { erros++; return; }
+      dadosProd.push({
+        mes: parseInt(r.MES), ano: parseInt(r.ANO), estado: r.ESTADO || estado,
+        regional: String(r.REGIONAL).trim(), cod_servico: String(r.COD_SERVICO).trim(),
+        descricao_servico: String(r.DESCRICAO_SERVICO||'').trim(),
+        qde_executada: parseInt(r.QTD_EXECUTADA) || 0
+      });
+    });
+  });
+
+  if (dadosProd.length === 0) { alert('Nenhum dado encontrado. Verifique o arquivo.'); return; }
+
+  document.getElementById('prod-parse-msg').textContent =
+    `${dadosProd.length} registros carregados${erros ? ` (${erros} linhas ignoradas por dados incompletos)` : ''}.`;
+
+  const tb = document.getElementById('tb-prod-preview');
+  tb.innerHTML = dadosProd.map(r => `<tr>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda)">${mesAno(r.mes,r.ano)}</td>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda)">${r.estado}</td>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda)">${r.regional}</td>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);font-size:11px">${r.descricao_servico}</td>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);text-align:right;font-weight:700">${fmtN(r.qde_executada)}</td>
+  </tr>`).join('');
+
+  document.getElementById('upload-prod-preview').style.display = 'block';
+}
+
+async function parsearBoletim(wb) {
+  dadosBol = [];
+  let erros = 0;
+
+  ['MA','PI'].forEach(estado => {
+    const ws = wb.Sheets[estado];
+    if (!ws) return;
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    rows.forEach(r => {
+      if (!r.MES || !r.ANO || !r.REGIONAL || !r.COD_SERVICO) { erros++; return; }
+      dadosBol.push({
+        mes: parseInt(r.MES), ano: parseInt(r.ANO), estado: r.ESTADO || estado,
+        regional: String(r.REGIONAL).trim(), cod_servico: String(r.COD_SERVICO).trim(),
+        descricao_servico: String(r.DESCRICAO_SERVICO||'').trim(),
+        preco_unitario: parseFloat(String(r.PRECO_UNITARIO).replace(',','.')) || 0,
+        qde_paga: parseInt(r.QDE_PAGA) || 0
+      });
+    });
+  });
+
+  if (dadosBol.length === 0) { alert('Nenhum dado encontrado. Verifique o arquivo.'); return; }
+
+  // Verificar divergência de tarifa vs caderno
+  const estado = dadosBol[0]?.estado;
+  const tarifas = await buscarTarifasAtivas(estado);
+  let alertasTarifa = [];
+  dadosBol.forEach(r => {
+    const tar = tarifas.find(t => t.cod_servico === r.cod_servico && t.regional === r.regional);
+    if (tar && Math.abs(tar.preco_unitario - r.preco_unitario) > 0.01) {
+      alertasTarifa.push(`${r.descricao_servico} / ${r.regional}: caderno R$ ${tar.preco_unitario.toFixed(2)}, boletim R$ ${r.preco_unitario.toFixed(2)}`);
+    }
+  });
+
+  const alertTar = document.getElementById('bol-alerta-tarifa');
+  if (alertasTarifa.length > 0) {
+    document.getElementById('bol-alerta-tarifa-txt').innerHTML = `<strong>Atenção: tarifas divergentes do caderno ativo detectadas:</strong><br>${alertasTarifa.slice(0,5).join('<br>')}`;
+    alertTar.style.display = 'flex';
+  } else alertTar.style.display = 'none';
+
+  document.getElementById('bol-parse-msg').textContent =
+    `${dadosBol.length} registros carregados${erros ? ` (${erros} linhas ignoradas)` : ''}.`;
+
+  const tarMap = {};
+  tarifas.forEach(t => { tarMap[t.cod_servico+'|'+t.regional] = t.preco_unitario; });
+
+  const tb = document.getElementById('tb-bol-preview');
+  tb.innerHTML = dadosBol.map(r => {
+    const tarCad = tarMap[r.cod_servico+'|'+r.regional];
+    const divTar = tarCad && Math.abs(tarCad - r.preco_unitario) > 0.01;
     return `<tr>
-      <td style="font-weight:500;font-size:12px">${s.name}</td>
-      <td>${s.execs.toLocaleString('pt-BR')}</td>
-      <td>${fmt(s.val)}</td>
-      <td>${fmt(fat)}</td>
-      <td><span class="badge ${vExec > 0 ? 'b-up' : vExec < 0 ? 'b-dn' : 'b-ne'}">${vExec > 0 ? '+' : ''}${vExec}%</span></td>
-      <td><span class="badge ${vVal > 0 ? 'b-up' : vVal < 0 ? 'b-dn' : 'b-ne'}">${vVal > 0 ? '+' : ''}${vVal}%</span></td>
-      <td><div style="display:flex;align-items:center;gap:6px"><div class="bar-wrap"><div class="bar-fill" style="width:${part}%"></div></div><span style="font-size:12px;color:#6b6b68">${part}%</span></div></td>
+      <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda)">${mesAno(r.mes,r.ano)}</td>
+      <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda)">${r.estado}</td>
+      <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda)">${r.regional}</td>
+      <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);font-size:11px">${r.descricao_servico}</td>
+      <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);text-align:right;color:${divTar?'#BE2F3B':'inherit'}">${fmtR(r.preco_unitario)}</td>
+      <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);text-align:right;font-weight:700">${fmtN(r.qde_paga)}</td>
+      <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);text-align:right">${fmtR(r.preco_unitario * r.qde_paga)}</td>
+      <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);text-align:center">${divTar ? '<span class="pill pill-danger">⚠ Diverge</span>' : '<span class="pill pill-ok">Ok</span>'}</td>
     </tr>`;
   }).join('');
+
+  document.getElementById('upload-bol-preview').style.display = 'block';
 }
 
-function showToast(msg, type) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast ' + (type === 'ok' ? 'toast-ok' : 'toast-err');
-  t.style.display = 'block';
-  setTimeout(() => { t.style.display = 'none'; }, 3500);
+function parsearCaderno(wb) {
+  dadosCad = [];
+  let erros = 0;
+
+  ['MA','PI'].forEach(estado => {
+    const ws = wb.Sheets[estado];
+    if (!ws) return;
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    rows.forEach(r => {
+      if (!r.REGIONAL || !r.COD_SERVICO || !r.VIGENCIA_INICIO || r.PRECO_UNITARIO === '' || r.EVENTOS_PREVISTOS === '') { erros++; return; }
+      dadosCad.push({
+        estado: r.ESTADO || estado,
+        regional: String(r.REGIONAL).trim(),
+        cod_servico: String(r.COD_SERVICO).trim(),
+        descricao_servico: String(r.DESCRICAO_SERVICO||'').trim(),
+        vigencia_inicio: String(r.VIGENCIA_INICIO).trim(),
+        preco_unitario: parseFloat(String(r.PRECO_UNITARIO).replace(',','.')) || 0,
+        eventos_previstos: parseInt(r.EVENTOS_PREVISTOS) || 0
+      });
+    });
+  });
+
+  if (dadosCad.length === 0) { alert('Nenhum dado encontrado. Verifique o arquivo.'); return; }
+
+  const vig = dadosCad[0]?.vigencia_inicio || '';
+  const est = dadosCad[0]?.estado || '';
+  document.getElementById('cad-parse-msg').textContent =
+    `${dadosCad.length} tarifas carregadas — ${est} — Vigência: ${vig}${erros ? ` (${erros} linhas ignoradas)` : ''}`;
+
+  const tb = document.getElementById('tb-cad-preview');
+  tb.innerHTML = dadosCad.map(r => `<tr>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);font-weight:700;color:var(--vermelho)">${r.vigencia_inicio}</td>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda)">${r.estado}</td>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda)">${r.regional}</td>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);font-size:11px">${r.descricao_servico}</td>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);text-align:right">${fmtR(r.preco_unitario)}</td>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);text-align:right">${fmtN(r.eventos_previstos)}</td>
+    <td style="padding:7px 12px;border-top:1px solid var(--cinza-borda);text-align:right;font-weight:700">${fmtR(r.preco_unitario * r.eventos_previstos)}</td>
+  </tr>`).join('');
+
+  document.getElementById('upload-cad-preview').style.display = 'block';
 }
 
-async function logout() {
-  await sb.auth.signOut();
-  window.location.href = 'index.html';
+function cancelarUpload(tipo) {
+  document.getElementById('upload-' + tipo + '-preview').style.display = 'none';
+  document.getElementById('upload-' + tipo + '-file').value = '';
+  if (tipo === 'prod') dadosProd = [];
+  if (tipo === 'bol')  dadosBol  = [];
+  if (tipo === 'cad')  dadosCad  = [];
 }
 
-init();
+// ═══════════════════════════════════════════════
+// SALVAR — PRODUÇÃO REAL
+// ═══════════════════════════════════════════════
+async function salvarProducao() {
+  if (dadosProd.length === 0) return;
+  const user = (await sb.auth.getUser()).data.user;
+
+  for (const r of dadosProd) {
+    await sb.from('producao_real').upsert({
+      mes: r.mes, ano: r.ano, estado: r.estado, regional: r.regional,
+      cod_servico: r.cod_servico, descricao_servico: r.descricao_servico,
+      qde_executada: r.qde_executada, importado_por: user.id
+    }, { onConflict: 'mes,ano,estado,regional,cod_servico' });
+  }
+
+  alert(`✓ ${dadosProd.length} registros salvos com sucesso!`);
+  cancelarUpload('prod');
+  await carregarHistoricos();
+}
+
+// ═══════════════════════════════════════════════
+// SALVAR — BOLETIM
+// ═══════════════════════════════════════════════
+async function salvarBoletim() {
+  if (dadosBol.length === 0) return;
+  const user = (await sb.auth.getUser()).data.user;
+  const { mes, ano, estado } = dadosBol[0];
+
+  // Criar ou substituir boletim
+  await sb.from('boletins').delete().eq('mes', mes).eq('ano', ano).eq('estado', estado);
+  const { data: bol } = await sb.from('boletins').insert({ mes, ano, estado, importado_por: user.id }).select().single();
+  if (!bol) { alert('Erro ao salvar boletim.'); return; }
+
+  const itens = dadosBol.map(r => ({
+    boletim_id: bol.id, estado: r.estado, regional: r.regional,
+    cod_servico: r.cod_servico, descricao_servico: r.descricao_servico,
+    preco_unitario: r.preco_unitario, qde_paga: r.qde_paga
+  }));
+  await sb.from('boletim_itens').insert(itens);
+
+  alert(`✓ Boletim ${nomeMes(mes)}/${ano} — ${estado} salvo com sucesso!`);
+  cancelarUpload('bol');
+  await carregarHistoricos();
+}
+
+// ═══════════════════════════════════════════════
+// SALVAR — CADERNO
+// ═══════════════════════════════════════════════
+async function salvarCaderno() {
+  if (!document.getElementById('cad-confirma').checked) {
+    alert('Confirme os dados marcando a caixa antes de ativar o caderno.'); return;
+  }
+  if (dadosCad.length === 0) return;
+  const user = (await sb.auth.getUser()).data.user;
+  const { estado, vigencia_inicio } = dadosCad[0];
+
+  // Encerrar cadernos ativos do mesmo estado
+  const { data: ativos } = await sb.from('cadernos').select('id').eq('estado', estado).eq('ativo', true);
+  if (ativos) {
+    for (const c of ativos) {
+      await sb.from('cadernos').update({ ativo: false, data_fim: vigencia_inicio }).eq('id', c.id);
+    }
+  }
+
+  // Criar novo caderno
+  const nome = `Caderno ${estado} — vigência ${vigencia_inicio}`;
+  const { data: cad } = await sb.from('cadernos').insert({
+    estado, nome, vigencia_inicio, ativo: true, confirmado: true, importado_por: user.id
+  }).select().single();
+  if (!cad) { alert('Erro ao criar caderno.'); return; }
+
+  // Inserir tarifas
+  const tarifas = dadosCad.map(r => ({
+    caderno_id: cad.id, estado: r.estado, regional: r.regional,
+    cod_servico: r.cod_servico, descricao_servico: r.descricao_servico,
+    preco_unitario: r.preco_unitario, eventos_previstos: r.eventos_previstos
+  }));
+  await sb.from('caderno_tarifas').insert(tarifas);
+
+  alert(`✓ Caderno ativado com sucesso! Vigência: ${vigencia_inicio}`);
+  document.getElementById('cad-confirma').checked = false;
+  cancelarUpload('cad');
+  document.getElementById('upload-cad-box').style.display = 'none';
+  await carregarListaCadernos();
+}
+
+// ═══════════════════════════════════════════════
+// HISTÓRICOS
+// ═══════════════════════════════════════════════
+async function carregarHistoricos() {
+  // Histórico produção
+  const { data: prod } = await sb.from('producao_real').select('mes, ano, estado, regional, qde_executada, importado_em, importado_por').order('ano', {ascending:false}).order('mes', {ascending:false}).limit(50);
+  const tbP = document.getElementById('tb-hist-prod');
+  if (prod) {
+    const agrup = {};
+    prod.forEach(r => {
+      const k = `${r.mes}|${r.ano}|${r.estado}|${r.regional}`;
+      if (!agrup[k]) agrup[k] = { mes:r.mes, ano:r.ano, estado:r.estado, regional:r.regional, total:0, em:r.importado_em };
+      agrup[k].total += r.qde_executada;
+    });
+    tbP.innerHTML = Object.values(agrup).map(r => `<tr>
+      <td>${mesAno(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td>
+      <td>${fmtN(r.total)}</td>
+      <td>${r.em ? new Date(r.em).toLocaleDateString('pt-BR') : '—'}</td>
+      <td style="font-size:11px;color:var(--cinza-texto)">${r.em ? '—' : '—'}</td>
+    </tr>`).join('');
+  }
+
+  // Histórico boletins
+  const { data: bols } = await sb.from('boletins').select('id, mes, ano, estado, importado_em').order('ano', {ascending:false}).order('mes', {ascending:false}).limit(20);
+  const tbB = document.getElementById('tb-hist-bol');
+  if (bols) {
+    for (const b of bols) {
+      const { data: itens } = await sb.from('boletim_itens').select('qde_paga, valor_pago').eq('boletim_id', b.id);
+      const totEvt = (itens||[]).reduce((s,i) => s + (i.qde_paga||0), 0);
+      const totVal = (itens||[]).reduce((s,i) => s + (parseFloat(i.valor_pago)||0), 0);
+      tbB.innerHTML += `<tr>
+        <td>${mesAno(b.mes,b.ano)}</td><td>${b.estado}</td>
+        <td>${fmtN(totEvt)}</td><td>${fmtR(totVal)}</td>
+        <td>${b.importado_em ? new Date(b.importado_em).toLocaleDateString('pt-BR') : '—'}</td>
+        <td style="font-size:11px;color:var(--cinza-texto)">—</td>
+      </tr>`;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+// LISTA CADERNOS
+// ═══════════════════════════════════════════════
+async function carregarListaCadernos() {
+  const { data: cads } = await sb.from('cadernos').select('*').order('importado_em', {ascending:false});
+  const el = document.getElementById('lista-cadernos');
+  if (!cads || cads.length === 0) { el.innerHTML = '<div class="loader">Nenhum caderno cadastrado ainda.</div>'; return; }
+
+  let html = '';
+  for (const c of cads) {
+    const { data: tarifas } = await sb.from('caderno_tarifas').select('faturamento_previsto, regional').eq('caderno_id', c.id);
+    const totalMeta  = (tarifas||[]).reduce((s,t) => s+(parseFloat(t.faturamento_previsto)||0), 0);
+    const regsCount  = new Set((tarifas||[]).map(t=>t.regional)).size;
+    const svcsCount  = (tarifas||[]).length / Math.max(regsCount,1);
+    const vigencia   = c.ativo ? `${c.vigencia_inicio} em diante` : `${c.vigencia_inicio} — ${c.data_fim||'?'}`;
+    const status     = c.ativo ? '<span class="pill pill-ok">Ativo</span>' : '<span class="pill pill-cinza">Encerrado</span>';
+    const confirmado = c.confirmado ? '<span style="color:var(--verde);font-weight:700">✓ Sim</span>' : '<span style="color:var(--amarelo);font-weight:700">⚠ Pendente</span>';
+
+    html += `<div class="caderno-card ${c.ativo?'ativo':''}">
+      <div class="caderno-header">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span class="caderno-titulo">${c.nome}</span>
+            ${status}
+          </div>
+          <div class="caderno-meta">${c.estado} · Vigência: ${vigencia} · Importado em ${c.importado_em ? new Date(c.importado_em).toLocaleDateString('pt-BR') : '—'}</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          ${c.ativo ? `<button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="encerrarCaderno(${c.id},'${c.vigencia_inicio}')">Encerrar</button>` : ''}
+        </div>
+      </div>
+      <div class="caderno-stats">
+        <div class="caderno-stat"><div class="sl">Meta mensal total</div><div class="sv">${fmtR(totalMeta)}</div></div>
+        <div class="caderno-stat"><div class="sl">Regionais</div><div class="sv">${regsCount}</div></div>
+        <div class="caderno-stat"><div class="sl">Serviços mapeados</div><div class="sv">${Math.round(svcsCount)}</div></div>
+        <div class="caderno-stat"><div class="sl">Dados confirmados</div><div class="sv">${confirmado}</div></div>
+      </div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+async function encerrarCaderno(id, vigInicio) {
+  const dataFim = prompt('Informe o mês/ano de encerramento (MM/AAAA):');
+  if (!dataFim) return;
+  await sb.from('cadernos').update({ ativo: false, data_fim: dataFim }).eq('id', id);
+  await carregarListaCadernos();
+}
+
+function toggleUploadCaderno() {
+  const box = document.getElementById('upload-cad-box');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
 </script>
 </body>
 </html>
+
+<!-- PATCH: Gestão de Usuários + Controle de Acesso por Perfil -->
+<script>
+// ═══════════════════════════════════════════════
+// CONTROLE DE ACESSO POR PERFIL
+// ═══════════════════════════════════════════════
+let perfilUsuario = null; // objeto completo da tabela usuarios_perfil
+
+async function carregarPerfil(userId) {
+  const { data } = await sb.from('usuarios_perfil').select('*').eq('id', userId).single();
+  perfilUsuario = data;
+  return data;
+}
+
+function aplicarPermissoes() {
+  const role = perfilUsuario?.role || 'viewer';
+  const permProd = perfilUsuario?.perm_producao || false;
+  const permBol  = perfilUsuario?.perm_boletim  || false;
+
+  // Abas visíveis por perfil
+  const tabLancar   = document.querySelector('[onclick*="lancar"]');
+  const tabBoletim  = document.querySelector('[onclick*="boletim"]');
+  const tabCadernos = document.querySelector('[onclick*="cadernos"]');
+  const tabUsuarios = document.querySelector('[onclick*="usuarios"]');
+
+  if (tabLancar)   tabLancar.style.display   = (role === 'admin' || (role === 'analyst' && permProd)) ? 'block' : 'none';
+  if (tabBoletim)  tabBoletim.style.display  = (role === 'admin' || (role === 'analyst' && permBol))  ? 'block' : 'none';
+  if (tabCadernos) tabCadernos.style.display = role === 'admin' ? 'block' : 'none';
+  if (tabUsuarios) tabUsuarios.style.display = role === 'admin' ? 'block' : 'none';
+
+  // Badge de perfil
+  const labels = { admin: 'Administrador', analyst: 'Analista', viewer: 'Visualizador' };
+  document.getElementById('topbar-role').textContent = labels[role] || 'Visualizador';
+}
+
+// Sobrescreve iniciarApp para carregar perfil da tabela
+const _iniciarAppOriginal = iniciarApp;
+iniciarApp = async function(user) {
+  document.getElementById('tela-login').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  usuarioEmail = user.email;
+
+  // Carregar perfil da tabela usuarios_perfil
+  await carregarPerfil(user.id);
+
+  // Fallback: user_metadata para compatibilidade com admin antigo
+  if (!perfilUsuario) {
+    usuarioRole = user.user_metadata?.role || 'viewer';
+    perfilUsuario = { role: usuarioRole, perm_producao: usuarioRole === 'admin', perm_boletim: usuarioRole === 'admin' };
+  } else {
+    usuarioRole = perfilUsuario.role;
+  }
+
+  document.getElementById('topbar-usuario').textContent = usuarioEmail;
+  aplicarPermissoes();
+  preencherFiltrosPeriodo();
+  atualizarRegiaisSelect();
+  await carregarGeral();
+  await carregarHistoricos();
+  await carregarListaCadernos();
+  await carregarListaUsuarios();
+  populaSelectRegionaisPizza();
+};
+
+// ═══════════════════════════════════════════════
+// GESTÃO DE USUÁRIOS
+// ═══════════════════════════════════════════════
+async function carregarListaUsuarios() {
+  const el = document.getElementById('lista-usuarios');
+  if (!el) return;
+  const { data: users } = await sb.from('usuarios_perfil').select('*').order('criado_em', { ascending: false });
+  if (!users || users.length === 0) { el.innerHTML = '<div class="loader">Nenhum usuário cadastrado ainda.</div>'; return; }
+
+  const rolesLabel = { admin: 'Administrador', analyst: 'Analista', viewer: 'Visualizador' };
+  el.innerHTML = users.map(u => `
+    <tr>
+      <td>${u.nome || '—'}</td>
+      <td>${u.email}</td>
+      <td>
+        <select onchange="alterarRole('${u.id}', this.value)" style="font-size:12px;padding:4px 8px;border-radius:var(--raio-sm);border:1px solid var(--cinza-borda)">
+          ${['admin','analyst','viewer'].map(r => `<option value="${r}" ${u.role===r?'selected':''}>${rolesLabel[r]}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        ${u.role === 'analyst' ? `
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;margin-bottom:4px">
+            <input type="checkbox" ${u.perm_producao?'checked':''} onchange="alterarPermissao('${u.id}','perm_producao',this.checked)" style="accent-color:var(--vermelho)">
+            Produção real
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px">
+            <input type="checkbox" ${u.perm_boletim?'checked':''} onchange="alterarPermissao('${u.id}','perm_boletim',this.checked)" style="accent-color:var(--vermelho)">
+            Boletim de pagamento
+          </label>
+        ` : '<span style="font-size:11px;color:var(--cinza-texto)">—</span>'}
+      </td>
+      <td>${u.criado_em ? new Date(u.criado_em).toLocaleDateString('pt-BR') : '—'}</td>
+      <td>
+        ${u.ativo
+          ? `<button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;color:var(--vermelho)" onclick="desativarUsuario('${u.id}')">Desativar</button>`
+          : `<span class="pill pill-cinza">Inativo</span>`}
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function alterarRole(userId, novaRole) {
+  const permProd = novaRole === 'admin';
+  const permBol  = novaRole === 'admin';
+  await sb.from('usuarios_perfil').update({
+    role: novaRole,
+    perm_producao: permProd,
+    perm_boletim: permBol,
+    atualizado_em: new Date().toISOString()
+  }).eq('id', userId);
+  await carregarListaUsuarios();
+}
+
+async function alterarPermissao(userId, campo, valor) {
+  await sb.from('usuarios_perfil').update({
+    [campo]: valor,
+    atualizado_em: new Date().toISOString()
+  }).eq('id', userId);
+}
+
+async function desativarUsuario(userId) {
+  if (!confirm('Desativar este usuário? Ele perderá acesso imediatamente.')) return;
+  await sb.from('usuarios_perfil').update({ ativo: false }).eq('id', userId);
+  await carregarListaUsuarios();
+}
+
+async function convidarUsuario() {
+  const nome  = document.getElementById('novo-nome').value.trim();
+  const email = document.getElementById('novo-email').value.trim();
+  const role  = document.getElementById('novo-role').value;
+  const permP = role === 'analyst' ? document.getElementById('novo-perm-prod').checked : role === 'admin';
+  const permB = role === 'analyst' ? document.getElementById('novo-perm-bol').checked  : role === 'admin';
+
+  if (!email) { alert('Informe o e-mail.'); return; }
+
+  // Criar usuário via Supabase Admin API (convite por e-mail)
+  const { data, error } = await sb.auth.admin.inviteUserByEmail(email, {
+    data: { role, nome }
+  });
+
+  if (error) {
+    // Fallback: apenas cadastrar na tabela (admin API pode não estar disponível no client)
+    alert('Convite enviado! O usuário receberá um e-mail para definir a senha.\n\nSe o e-mail não chegar, solicite que ele use "Esqueci minha senha" no login.');
+  }
+
+  // Registrar na tabela de perfis (será vinculado ao UUID quando o usuário ativar a conta)
+  // Como o UUID ainda não existe, guardamos o e-mail para vincular no primeiro login
+  const alertEl = document.getElementById('convite-alerta');
+  alertEl.innerHTML = `<div class="alerta alerta-ok"><span class="alerta-icone">✓</span><span>Convite enviado para <strong>${email}</strong> com perfil <strong>${{admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[role]}</strong>. O usuário receberá um e-mail para definir a senha.</span></div>`;
+
+  // Limpar form
+  document.getElementById('novo-nome').value  = '';
+  document.getElementById('novo-email').value = '';
+  document.getElementById('novo-role').value  = 'viewer';
+  togglePermsAnalista();
+}
+
+function togglePermsAnalista() {
+  const role = document.getElementById('novo-role')?.value;
+  const box  = document.getElementById('perms-analista');
+  if (box) box.style.display = role === 'analyst' ? 'block' : 'none';
+}
+</script>

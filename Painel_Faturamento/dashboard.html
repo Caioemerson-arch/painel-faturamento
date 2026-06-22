@@ -89,7 +89,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 .cn{color:var(--vm)}.cp{color:var(--vd)}.cw{color:var(--am)}.cm{color:var(--tx2)}
 
 /* BOXES */
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem;min-width:0}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem;min-width:0}.row2>*{min-width:0;overflow:hidden}
 .gbox{background:var(--br);border-radius:var(--r);padding:1rem 1.1rem;border:1px solid var(--bd)}
 .gbox h3{font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
 .gbox h3::before{content:'';display:block;width:3px;height:12px;background:var(--vm);border-radius:2px;flex-shrink:0}
@@ -278,14 +278,14 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <div class="tbox"><table><thead><tr><th>Regional</th><th>Eventos previstos</th><th>Eventos executados</th><th>Eventos pagos</th><th>Diferença</th><th>Divergência %</th><th>Status</th></tr></thead><tbody id="tb-evt-reg"></tbody></table></div>
           <div class="sec">Faturamento por regional</div>
           <div class="tbox"><table><thead><tr><th>Regional</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-fat-reg"></tbody></table></div>
-          <div class="row2">
-            <div>
+          <div class="row2" style="align-items:start">
+            <div style="min-width:0;overflow:hidden">
               <div class="sec">Tarifa prevista vs paga</div>
-              <div class="tbox"><table><thead><tr><th>Serviço</th><th>Regional</th><th>Tarifa prevista</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-tar"></tbody></table></div>
+              <div class="tbox" style="overflow-x:auto"><table style="min-width:unset;width:100%"><thead><tr><th>Serviço</th><th>Regional</th><th>Tarifa prev.</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-tar"></tbody></table></div>
             </div>
-            <div>
+            <div style="min-width:0;overflow:hidden">
               <div class="sec">Proporção por serviço</div>
-              <div class="tbox"><table><thead><tr><th>Serviço</th><th>% previsto</th><th>% executado</th><th>% pago</th><th>Desvio</th><th>Status</th></tr></thead><tbody id="tb-prop"></tbody></table></div>
+              <div class="tbox" style="overflow-x:auto"><table style="min-width:unset;width:100%"><thead><tr><th>Serviço</th><th>% prev.</th><th>% exec.</th><th>% pago</th><th>Desvio</th><th>Status</th></tr></thead><tbody id="tb-prop"></tbody></table></div>
             </div>
           </div>
         </div>
@@ -328,14 +328,14 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <div class="tbox"><table><thead><tr><th>Serviço</th><th>Prev.(evt)</th><th>Exec.(evt)</th><th>Pago(evt)</th><th>Diferença</th><th>Divergência %</th><th>Status</th></tr></thead><tbody id="tb-reg-evt"></tbody></table></div>
           <div class="sec">Faturamento por serviço</div>
           <div class="tbox"><table><thead><tr><th>Serviço</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-reg-fat"></tbody></table></div>
-          <div class="row2">
-            <div>
+          <div class="row2" style="align-items:start">
+            <div style="min-width:0;overflow:hidden">
               <div class="sec">Tarifa prevista vs paga</div>
-              <div class="tbox"><table><thead><tr><th>Serviço</th><th>Tarifa prev.</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-reg-tar"></tbody></table></div>
+              <div class="tbox" style="overflow-x:auto"><table style="min-width:unset;width:100%"><thead><tr><th>Serviço</th><th>Tarifa prev.</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-reg-tar"></tbody></table></div>
             </div>
-            <div>
+            <div style="min-width:0;overflow:hidden">
               <div class="sec">Proporção por serviço</div>
-              <div class="tbox"><table><thead><tr><th>Serviço</th><th>% previsto</th><th>% exec.</th><th>% pago</th><th>Desvio</th><th>Status</th></tr></thead><tbody id="tb-reg-prop"></tbody></table></div>
+              <div class="tbox" style="overflow-x:auto"><table style="min-width:unset;width:100%"><thead><tr><th>Serviço</th><th>% prev.</th><th>% exec.</th><th>% pago</th><th>Desvio</th><th>Status</th></tr></thead><tbody id="tb-reg-prop"></tbody></table></div>
             </div>
           </div>
         </div>

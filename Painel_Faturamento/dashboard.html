@@ -289,8 +289,13 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
               <div class="sec">Acumulado YTD por regional — jan até mês selecionado</div>
           <div class="tbox"><table><thead><tr><th>Regional</th><th>Previsto acum.</th><th>Executado acum.</th><th>Pago acum.</th><th>Diverg. acum.</th><th>Meses c/ diverg.</th><th>% meta acum.</th></tr></thead><tbody id="tb-ytd-reg"></tbody></table></div>
 
-          <div class="sec">Relatório de divergência acumulada</div>
-          <div class="tbox"><table><thead><tr><th>Regional</th><th>Serviço</th><th>Diverg. qtd (eventos)</th><th>Diverg. tarifa</th><th>Valor não pago</th><th>Meses c/ diverg.</th><th>Diagnóstico</th></tr></thead><tbody id="tb-diverg-rel"></tbody></table></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="sec" style="margin:0">Relatório de divergência acumulada</div>
+            <button class="btn btn-p btn-sm" onclick="exportarRelPDF()" style="display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" aria-hidden="true"></i>Exportar PDF</button>
+          </div>
+          <div id="relatorio-divergencia" style="background:var(--br);border-radius:var(--r);border:1px solid var(--bd);padding:1.25rem;margin-bottom:1.25rem;font-size:13px;line-height:1.7">
+            <p style="color:var(--tx2);font-style:italic">Carregando relatório...</p>
+          </div>
 
           <div class="sec">Tarifa prevista vs paga</div>
           <div class="tbox"><table><thead><tr><th>Serviço</th><th>Regional</th><th>Tarifa prevista</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-tar"></tbody></table></div>
@@ -340,8 +345,13 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <div class="sec">Acumulado YTD por regional — jan até mês selecionado</div>
           <div class="tbox"><table><thead><tr><th>Regional</th><th>Previsto acum.</th><th>Executado acum.</th><th>Pago acum.</th><th>Diverg. acum.</th><th>Meses c/ diverg.</th><th>% meta acum.</th></tr></thead><tbody id="tb-ytd-reg"></tbody></table></div>
 
-          <div class="sec">Relatório de divergência acumulada</div>
-          <div class="tbox"><table><thead><tr><th>Regional</th><th>Serviço</th><th>Diverg. qtd (eventos)</th><th>Diverg. tarifa</th><th>Valor não pago</th><th>Meses c/ diverg.</th><th>Diagnóstico</th></tr></thead><tbody id="tb-diverg-rel"></tbody></table></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="sec" style="margin:0">Relatório de divergência acumulada</div>
+            <button class="btn btn-p btn-sm" onclick="exportarRelPDF()" style="display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" aria-hidden="true"></i>Exportar PDF</button>
+          </div>
+          <div id="relatorio-divergencia" style="background:var(--br);border-radius:var(--r);border:1px solid var(--bd);padding:1.25rem;margin-bottom:1.25rem;font-size:13px;line-height:1.7">
+            <p style="color:var(--tx2);font-style:italic">Carregando relatório...</p>
+          </div>
 
           <div class="sec">Separação da divergência — quantidade vs tarifa</div>
           <div class="tbox"><table><thead><tr><th>Serviço</th><th>Exec.(evt)</th><th>Pago(evt)</th><th>Diverg.qtd</th><th>Impacto qtd (R$)</th><th>Tarifa prev.</th><th>Tarifa paga</th><th>Diverg.tarifa</th><th>Impacto tarifa (R$)</th><th>Total não pago</th></tr></thead><tbody id="tb-reg-diverg-sep"></tbody></table></div>
@@ -756,52 +766,128 @@ function renderTbYTDReg(est,mes,ano){
 }
 
 function renderTbDivergRel(est,mes,ano){
-  const tb=document.getElementById('tb-diverg-rel');
-  tb.innerHTML='';
-  const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
-  const tars=getTarifas(est,mes,ano);
-  const svcSet=new Set(tars.map(t=>t.cod_servico+'|'+t.descricao_servico));
+  const el=document.getElementById('relatorio-divergencia');
+  if(!el) return;
+  const THRESHOLD_TAR=0.01; // ignorar divergências de tarifa menores que R$0,01
+  const estados=est==='TODOS'?['MA','PI']:[est];
+  let htmlTotal='';
+  let temDivergencia=false;
 
-  svcSet.forEach(key=>{
-    const [cod,desc]=key.split('|');
+  estados.forEach(estado=>{
+    const regs=REGS[estado]||[];
+    const tars=getTarifas(estado,mes,ano);
+    if(!tars.length) return;
+
+    // Coleta divergências por regional
+    const divPorReg={};
     regs.forEach(reg=>{
-      let mDiv=0,totDivQtd=0,totDivTar=0,totValNaoPago=0;
-      for(let m=1;m<=mes;m++){
-        const tar=getTarifas(est,m,ano,reg).find(t=>t.cod_servico===cod);
-        if(!tar) return;
-        const prod=getProd(est,m,ano,reg).find(r=>r.cod_servico===cod);
-        const itens=getItens(est,m,ano,reg).filter(i=>i.cod_servico===cod);
-        const execEvt=prod?.qde_executada||0;
-        const pagoEvt=itens.reduce((s,i)=>s+(i.qde_paga||0),0);
-        const tarPrev=parseFloat(tar.preco_unitario)||0;
-        const tarPaga=itens[0]?parseFloat(itens[0].preco_unitario)||0:0;
-        const divQtd=pagoEvt-execEvt;
-        const divTar=tarPaga>0?tarPaga-tarPrev:0;
-        const impQtd=divQtd*tarPrev;
-        const impTar=tarPaga>0?(tarPaga-tarPrev)*pagoEvt:0;
-        const total=impQtd+impTar;
-        if(divQtd!==0||Math.abs(divTar)>0.01) mDiv++;
-        totDivQtd+=divQtd;
-        totDivTar+=divTar;
-        totValNaoPago+=total;
-      }
-      if(totDivQtd===0&&Math.abs(totDivTar)<0.01) return;
-      const tarRef=tars.find(t=>t.cod_servico===cod&&t.regional===reg);
-      const diagQtd=totDivQtd<0?'Qtd menor que executado':'Qtd maior que executado';
-      const diagTar=Math.abs(totDivTar)>0.01?(totDivTar<0?'Tarifa abaixo do caderno':'Tarifa acima do caderno'):'Tarifa ok';
-      const diag=`${totDivQtd!==0?diagQtd:''}${totDivQtd!==0&&Math.abs(totDivTar)>0.01?' + ':''}${Math.abs(totDivTar)>0.01?diagTar:''}`;
-      tb.innerHTML+=`<tr>
-        <td style="font-size:11px">${reg}</td>
-        <td style="font-size:11px">${desc}</td>
-        <td style="color:${totDivQtd<0?'#BE2F3B':totDivQtd>0?'#1D9E75':'inherit'}">${totDivQtd>=0?'+':''}${fN(totDivQtd)}</td>
-        <td style="color:${totDivTar<0?'#BE2F3B':Math.abs(totDivTar)>0.01?'#BA7517':'inherit'}">${Math.abs(totDivTar)>0.01?(totDivTar>=0?'+R$':'-R$')+Math.abs(totDivTar).toFixed(4):'—'}</td>
-        <td style="color:${totValNaoPago<0?'#BE2F3B':totValNaoPago>0?'#1D9E75':'inherit'}">${totValNaoPago!==0?fR(totValNaoPago):'—'}</td>
-        <td><span class="pill ${mDiv===0?'p-ok':mDiv>=mes?'p-danger':'p-warn'}">${mDiv}/${mes} meses</span></td>
-        <td style="font-size:11px;color:var(--tx2)">${diag}</td>
-      </tr>`;
+      const svcSet=new Set(tars.filter(t=>t.regional===reg).map(t=>t.cod_servico+'||'+t.descricao_servico));
+      const itensReg=[];
+      svcSet.forEach(key=>{
+        const [cod,desc]=key.split('||');
+        let totDivQtd=0,totValNaoPago=0,mDiv=0,tarDivFlag=false;
+        for(let m=1;m<=mes;m++){
+          const tar=getTarifas(estado,m,ano,reg).find(t=>t.cod_servico===cod);
+          if(!tar) continue;
+          const prod=getProd(estado,m,ano,reg).find(r=>r.cod_servico===cod);
+          const itens=getItens(estado,m,ano,reg).filter(i=>i.cod_servico===cod);
+          const execEvt=prod?.qde_executada||0;
+          const pagoEvt=itens.reduce((s,i)=>s+(i.qde_paga||0),0);
+          const tarPrev=parseFloat(tar.preco_unitario)||0;
+          const tarPaga=itens[0]?parseFloat(itens[0].preco_unitario)||0:tarPrev;
+          const divQtd=pagoEvt-execEvt;
+          const divTar=Math.abs(tarPaga-tarPrev)>=THRESHOLD_TAR?tarPaga-tarPrev:0;
+          const impQtd=divQtd*tarPrev;
+          const impTar=divTar*pagoEvt;
+          totDivQtd+=divQtd;
+          totValNaoPago+=impQtd+impTar;
+          if(Math.abs(divQtd)>0||Math.abs(divTar)>=THRESHOLD_TAR) mDiv++;
+          if(Math.abs(divTar)>=THRESHOLD_TAR) tarDivFlag=true;
+        }
+        // Só inclui se há divergência relevante
+        if(Math.abs(totDivQtd)>0||Math.abs(totValNaoPago)>1){
+          itensReg.push({cod,desc,totDivQtd,totValNaoPago,mDiv,tarDivFlag});
+        }
+      });
+      if(itensReg.length) divPorReg[reg]=itensReg;
     });
+
+    if(!Object.keys(divPorReg).length) return;
+    temDivergencia=true;
+
+    // Total estado
+    const totalEstado=Object.values(divPorReg).flat().reduce((s,i)=>s+i.totValNaoPago,0);
+
+    htmlTotal+=`<div style="margin-bottom:1.5rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--vm);margin-bottom:12px">
+        <strong style="font-size:14px;color:var(--pt)">${estado==='MA'?'Maranhão':'Piauí'} · Jan→${MN[mes]}/${ano}</strong>
+        <span style="font-size:13px;font-weight:700;color:${totalEstado<0?'#BE2F3B':'#1D9E75'}">Divergência total: ${totalEstado<0?'':'+'}${fR(totalEstado)}</span>
+      </div>`;
+
+    Object.entries(divPorReg).forEach(([reg,svcs])=>{
+      const totalReg=svcs.reduce((s,i)=>s+i.totValNaoPago,0);
+      htmlTotal+=`<div style="margin-bottom:14px;padding-left:12px;border-left:3px solid var(--bd)">
+        <p style="font-weight:700;color:var(--pt);margin-bottom:8px">Regional ${reg} <span style="font-weight:400;font-size:12px;color:${totalReg<0?'#BE2F3B':'#1D9E75'}">&nbsp;·&nbsp; ${totalReg<0?'':'+'}${fR(totalReg)}</span></p>`;
+      svcs.forEach(s=>{
+        const dirQtd=s.totDivQtd<0?'a menos':'a mais';
+        const corValor=s.totValNaoPago<0?'#BE2F3B':'#1D9E75';
+        let frase=`A Equatorial pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo`;
+        frase+=` em <strong>${s.mDiv} de ${mes} ${mes===1?'mês':'meses'}</strong>`;
+        frase+=`, representando um impacto financeiro de <strong style="color:${corValor}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>`;
+        frase+=s.tarDivFlag?' (inclui divergência de tarifa).':'.';
+        htmlTotal+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px">
+          <span style="font-weight:700;color:var(--pt)">${s.desc}:</span> ${frase}
+        </p>`;
+      });
+      htmlTotal+='</div>';
+    });
+    htmlTotal+='</div>';
   });
-  if(!tb.innerHTML) tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1.5rem;color:var(--tx2)">Nenhuma divergência detectada.</td></tr>';
+
+  if(!temDivergencia){
+    el.innerHTML='<p style="color:var(--tx2);text-align:center;padding:1rem">Nenhuma divergência relevante detectada no período.</p>';
+    return;
+  }
+  el.innerHTML=htmlTotal;
+}
+
+async function exportarRelPDF(){
+  const {jsPDF}=window.jspdf;
+  const est=document.getElementById('g-est').value;
+  const mes=parseInt(document.getElementById('g-mes').value);
+  const ano=parseInt(document.getElementById('g-ano').value);
+  const el=document.getElementById('relatorio-divergencia');
+  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#ffffff'});
+  const img=canvas.toDataURL('image/png');
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,H=297,margin=12;
+  pdf.setFillColor(26,26,46);pdf.rect(0,0,W,22,'F');
+  pdf.setFillColor(190,47,59);pdf.rect(0,22,W,2,'F');
+  pdf.setTextColor(255,255,255);
+  pdf.setFontSize(14);pdf.setFont('helvetica','bold');
+  pdf.text('CENEGED',margin,14);
+  pdf.setFontSize(10);pdf.setFont('helvetica','normal');
+  pdf.text('Relatório de Divergência Acumulada',W/2,10,{align:'center'});
+  pdf.text(`${est==='MA'?'Maranhão':est==='PI'?'Piauí':'Consolidado'} · Jan→${MN[mes]}/${ano}`,W/2,16,{align:'center'});
+  pdf.setFontSize(8);pdf.text('Gerado em '+new Date().toLocaleString('pt-BR'),W-margin,19,{align:'right'});
+  const imgW=W-margin*2,imgH=(canvas.height/canvas.width)*imgW;
+  let y=28;
+  if(imgH<H-y-10){
+    pdf.addImage(img,'PNG',margin,y,imgW,imgH);
+  } else {
+    const pxPerMm=canvas.width/imgW,mmPerPage=H-y-10,pxPerPage=mmPerPage*pxPerMm;
+    let srcY=0;
+    while(srcY<canvas.height){
+      const sliceH=Math.min(pxPerPage,canvas.height-srcY);
+      const sc=document.createElement('canvas');sc.width=canvas.width;sc.height=sliceH;
+      sc.getContext('2d').drawImage(canvas,0,srcY,canvas.width,sliceH,0,0,canvas.width,sliceH);
+      pdf.addImage(sc.toDataURL('image/png'),'PNG',margin,y,imgW,sliceH/pxPerMm);
+      srcY+=sliceH;if(srcY<canvas.height){pdf.addPage();y=10;}
+    }
+  }
+  const tp=pdf.internal.getNumberOfPages();
+  for(let i=1;i<=tp;i++){pdf.setPage(i);pdf.setFillColor(245,244,241);pdf.rect(0,H-8,W,8,'F');pdf.setTextColor(123,123,123);pdf.setFontSize(7);pdf.text('CENEGED — Relatório de Divergência · Confidencial',margin,H-3);pdf.text(`Página ${i} de ${tp}`,W-margin,H-3,{align:'right'});}
+  pdf.save(`CENEGED_Relatorio_Divergencia_${MN[mes]}_${ano}.pdf`);
 }
 
 function renderGraficoMensal(est,ano){
@@ -862,6 +948,8 @@ function renderGraficoMensal(est,ano){
   });
 }
 
+
+
 function renderGraficoDivMes(est,ano,mesAtual){
   const divs=[],cores=[];
   for(let m=1;m<=12;m++){
@@ -874,25 +962,15 @@ function renderGraficoDivMes(est,ano,mesAtual){
   if(chPizza) chPizza.destroy();
   chPizza=new Chart(document.getElementById('ch-div-mes'),{
     type:'bar',
-    data:{
-      labels:MN.slice(1),
-      datasets:[{label:'Divergência',data:divs,backgroundColor:cores,borderRadius:3,borderWidth:0}]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
+    data:{labels:MN.slice(1),datasets:[{label:'Divergência',data:divs,backgroundColor:cores,borderRadius:3,borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw===null?'':' R$'+Math.abs(c.raw/1000).toFixed(1)+'k '+(c.raw<0?'abaixo':'acima')}}},
-      scales:{
-        y:{ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},
-        x:{ticks:{font:{size:10}}}
-      }
-    }
+      scales:{y:{ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}
   });
-
-  // Resumo divergência
   const divReal=divs.filter(d=>d!==null);
   const acum=divReal.reduce((s,v)=>s+v,0);
   const media=divReal.length>0?acum/divReal.length:0;
-  const meses=divReal.filter(d=>d<0).length;
+  const mNeg=divReal.filter(d=>d<0).length;
   const el=document.getElementById('div-resumo');
   if(el) el.innerHTML=`
     <div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px">
@@ -905,11 +983,9 @@ function renderGraficoDivMes(est,ano,mesAtual){
     </div>
     <div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px">
       <div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Meses c/ divergência</div>
-      <div style="font-size:13px;font-weight:700;color:${meses>0?'#BE2F3B':'#1D9E75'}">${meses} de ${divReal.length} meses</div>
+      <div style="font-size:13px;font-weight:700;color:${mNeg>0?'#BE2F3B':'#1D9E75'}">${mNeg} de ${divReal.length} meses</div>
     </div>`;
 }
-
-// renderPizza removida — substituída por renderGraficoDivMes
 
 function renderTbEvtReg(est,mes,ano){
   const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);

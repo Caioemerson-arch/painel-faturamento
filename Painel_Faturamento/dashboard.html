@@ -273,12 +273,13 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
               <div style="position:relative;height:200px"><canvas id="ch-mensal"></canvas></div>
             </div>
             <div class="gbox">
-              <div class="gbox-h">
-                <h3>Pago por serviço</h3>
-                <select id="g-reg-pz" onchange="renderPizza()"><option value="">Todas regionais</option></select>
+              <h3>Divergência de faturamento mês a mês</h3>
+              <div class="leg">
+                <span><i style="background:#BE2F3B"></i>Negativa (pago &lt; executado)</span>
+                <span><i style="background:#1D9E75"></i>Positiva (pago &gt; executado)</span>
               </div>
-              <div class="leg" id="leg-pz"></div>
-              <div style="position:relative;height:185px"><canvas id="ch-pizza"></canvas></div>
+              <div style="position:relative;height:160px"><canvas id="ch-div-mes" role="img" aria-label="Divergência mensal de faturamento">Divergência mensal.</canvas></div>
+              <div id="div-resumo" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
             </div>
           </div>
           <div class="sec">Eventos por regional</div>
@@ -908,19 +909,7 @@ function renderGraficoDivMes(est,ano,mesAtual){
     </div>`;
 }
 
-function renderPizza(){
-  const est=document.getElementById('g-est')?.value||'MA';
-  const reg=document.getElementById('g-reg-pz')?.value||'';
-  const mes=parseInt(document.getElementById('g-mes')?.value)||new Date().getMonth()+1;
-  const ano=parseInt(document.getElementById('g-ano')?.value)||new Date().getFullYear();
-  const map={};
-  getItens(est,mes,ano,reg).forEach(i=>{if(!map[i.cod_servico]) map[i.cod_servico]={desc:i.descricao_servico,val:0};map[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
-  const svcs=Object.entries(map).sort((a,b)=>b[1].val-a[1].val);
-  document.getElementById('leg-pz').innerHTML=svcs.map((s,i)=>`<span><i style="background:${CS[i%CS.length]};width:9px;height:9px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,18)}</span>`).join('');
-  if(chPizza) chPizza.destroy();
-  if(!svcs.length) return;
-  chPizza=new Chart(document.getElementById('ch-pizza'),{type:'doughnut',data:{labels:svcs.map(s=>s[1].desc),datasets:[{data:svcs.map(s=>s[1].val),backgroundColor:CS,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fR(c.raw)}}}}});
-}
+// renderPizza removida — substituída por renderGraficoDivMes
 
 function renderTbEvtReg(est,mes,ano){
   const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);

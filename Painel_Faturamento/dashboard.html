@@ -1409,23 +1409,42 @@ async function alterarRole(id,r){await sb.from('usuarios_perfil').update({role:r
 
 async function salvarPermissoes(userId){
   const ABAS_IDS=['geral','servico','regional','lancar','boletim','cadernos','usuarios'];
-  const abas=ABAS_IDS.filter(a=>document.getElementById('aba-'+userId+'-'+a)?.checked);
+  const abas=[];
+  ABAS_IDS.forEach(a=>{
+    const el=document.getElementById('aba-'+userId+'-'+a);
+    if(el&&el.checked) abas.push(a);
+  });
   const pp=document.getElementById('pp-'+userId)?.checked||false;
   const pb=document.getElementById('pb-'+userId)?.checked||false;
   const ppdf=document.getElementById('ppdf-'+userId)?.checked||false;
   const pxls=document.getElementById('pxls-'+userId)?.checked||false;
-  const {error}=await sb.from('usuarios_perfil').update({
-    abas_permitidas:abas,
+
+  // Enviar cada campo separadamente para evitar problema com array
+  const updates={
     perm_producao:pp,
     perm_boletim:pb,
     perm_exportar_pdf:ppdf,
     perm_exportar_excel:pxls,
     atualizado_em:new Date().toISOString()
-  }).eq('id',userId);
-  if(error){alert('Erro ao salvar: '+error.message);return;}
+  };
+
+  // Salvar campos booleanos primeiro
+  const {error:e1}=await sb.from('usuarios_perfil').update(updates).eq('id',userId);
+  if(e1){alert('Erro ao salvar permissões: '+e1.message);return;}
+
+  // Salvar abas_permitidas separadamente com cast explícito
+  const {error:e2}=await sb.from('usuarios_perfil')
+    .update({abas_permitidas:abas})
+    .eq('id',userId);
+
+  if(e2){
+    alert('Erro ao salvar abas: '+e2.message);
+    return;
+  }
+
   alert('✓ Permissões salvas com sucesso!');
   togglePerms('perms-'+userId);
-  carregarUsuarios();
+  await carregarUsuarios();
 }
 async function desativarUser(id){if(!confirm('Desativar?')) return;await sb.from('usuarios_perfil').update({ativo:false}).eq('id',id);carregarUsuarios();}
 async function convidarUsuario(){

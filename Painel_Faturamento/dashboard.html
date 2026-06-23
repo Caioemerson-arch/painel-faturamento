@@ -1415,8 +1415,23 @@ function carregarCadernos(){
         </table>
       </div>
     </div>`;
-  }).join('');
+  };
+
+  // Renderizar ativos
+  if(!ativos.length){
+    elAtivos.innerHTML='<div class="loader" style="padding:1rem;color:var(--tx2)">Nenhum caderno ativo.</div>';
+  } else {
+    elAtivos.innerHTML=ativos.map(c=>renderCad(c)).join('');
+  }
+
+  // Renderizar histórico
+  if(!historico.length){
+    elHist.innerHTML='<div class="loader" style="padding:1rem;color:var(--tx2)">Nenhum caderno encerrado encontrado.</div>';
+  } else {
+    elHist.innerHTML=historico.map(c=>renderCad(c)).join('');
+  }
 }
+
 function toggleTar(id){const b=document.getElementById('tar-'+id);b.style.display=b.style.display==='block'?'none':'block';}
 async function salvarVig(id){
   const ini=document.getElementById('vi-'+id).value.trim();

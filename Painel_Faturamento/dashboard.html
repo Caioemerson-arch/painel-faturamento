@@ -221,6 +221,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <a class="sb-item" id="nav-boletim" onclick="setTab('boletim',this)" style="display:none"><i class="ti ti-file-invoice" aria-hidden="true"></i>Importar Boletim</a>
         <a class="sb-item" id="nav-cadernos" onclick="setTab('cadernos',this)" style="display:none"><i class="ti ti-book" aria-hidden="true"></i>Cadernos</a>
         <div class="sb-sec">Gestão</div>
+        <a class="sb-item" id="nav-resumida" onclick="setTab('resumida',this)"><i class="ti ti-table" aria-hidden="true"></i>Visão Resumida</a>
         <a class="sb-item" id="nav-usuarios" onclick="setTab('usuarios',this)" style="display:none"><i class="ti ti-users" aria-hidden="true"></i>Usuários</a>
       </div>
       <div class="sb-bottom">
@@ -500,7 +501,50 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           </div>
         </div>
 
-      </div><!-- /con -->
+      
+        <!-- VISÃO RESUMIDA -->
+        <div id="tab-resumida" style="display:none">
+          <div class="fil">
+            <label>Estado</label>
+            <select id="rs-est" onchange="syncRegsResum();carregarResumida()"><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option></select>
+            <label>Ano</label>
+            <select id="rs-ano"></select>
+            <button class="btn btn-p btn-sm" style="margin-left:8px" onclick="carregarResumida()">Atualizar</button>
+          </div>
+
+          <div class="sec">Faturamento mensal — previsto vs executado vs pago</div>
+          <div class="tbox" style="overflow-x:auto">
+            <table id="tb-rs-fat" style="min-width:600px">
+              <thead><tr id="tr-rs-fat-head"></tr></thead>
+              <tbody id="tb-rs-fat-body"></tbody>
+            </table>
+          </div>
+
+          <div class="sec">Quantidade de eventos por serviço — previsto e realizado por mês</div>
+          <div class="tbox" style="overflow-x:auto">
+            <table id="tb-rs-evt" style="min-width:900px">
+              <thead><tr id="tr-rs-evt-head"></tr></thead>
+              <tbody id="tb-rs-evt-body"></tbody>
+            </table>
+          </div>
+
+          <div class="sec">Diferença: Qtd pago vs Previsto caderno — por serviço e mês</div>
+          <div class="tbox" style="overflow-x:auto">
+            <table id="tb-rs-dif-cad" style="min-width:700px">
+              <thead><tr id="tr-rs-dif-cad-head"></tr></thead>
+              <tbody id="tb-rs-dif-cad-body"></tbody>
+            </table>
+          </div>
+
+          <div class="sec">Diferença: Qtd executado vs Qtd pago — por serviço e mês</div>
+          <div class="tbox" style="overflow-x:auto">
+            <table id="tb-rs-dif-exec" style="min-width:700px">
+              <thead><tr id="tr-rs-dif-exec-head"></tr></thead>
+              <tbody id="tb-rs-dif-exec-body"></tbody>
+            </table>
+          </div>
+        </div>
+</div><!-- /con -->
     </div><!-- /main -->
   </div><!-- /layout -->
 </div><!-- /app -->
@@ -541,9 +585,9 @@ let tabAtual='geral';
 let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
 
 const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['METROPOLITANA','NORTE','SUL']};
+const REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['PIAUÍ']};
 const CS=['#BE2F3B','#378ADD','#1D9E75','#BA7517','#533AB7','#D4537E','#888780','#0F6E56','#7F77DD'];
-const TABS_LABELS={geral:'Visão Geral',servico:'Por Serviço',regional:'Por Regional',lancar:'Lançar Produção',boletim:'Importar Boletim',cadernos:'Cadernos de Serviço',usuarios:'Gestão de Usuários'};
+const TABS_LABELS={geral:'Visão Geral',servico:'Por Serviço',regional:'Por Regional',resumida:'Visão Resumida',lancar:'Lançar Produção',boletim:'Importar Boletim',cadernos:'Cadernos de Serviço',usuarios:'Gestão de Usuários'};
 const TABS_EXPORT=['geral','servico','regional'];
 
 const fR=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -581,7 +625,7 @@ async function iniciarApp(user){
   aplicarPermissoes();
   preencherPeriodos();
   preencherModalExcel();
-  syncRegsGeral();syncRegsServ();syncRegsReg();
+  syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();
   await carregarCache();
   carregarGeral();
 }
@@ -669,6 +713,7 @@ function setTab(id,el){
   atualizarPageSub();
   atualizarHeaderActions();
   if(id==='servico') carregarServico();
+  if(id==='resumida') carregarResumida();
   if(id==='regional') carregarRegional();
   if(id==='cadernos') carregarCadernos();
   if(id==='usuarios') carregarUsuarios();
@@ -778,37 +823,29 @@ function renderYTD(est,mes,ano){
 function renderTbYTDReg(est,mes,ano){
   const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
   const tb=document.getElementById('tb-ytd-reg');
-  tb.innerHTML='';
-  let totYP=0,totYE=0,totYG=0,totMDiv=0;
+  if(!tb) return;
+  if(!C.cads.length&&!C.prod.length&&!C.bols.length){
+    tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados carregados.</td></tr>';
+    return;
+  }
+  let html='',totYP=0,totYE=0,totYG=0,totMDiv=0;
   regs.forEach(reg=>{
     let yP=0,yE=0,yG=0,mDiv=0;
     for(let m=1;m<=mes;m++){
-      yP+=calcPrevisto(est,m,ano,reg);
-      yE+=calcExec(est,m,ano,reg).val;
-      const pg=calcPago(est,m,ano,reg);
-      yG+=pg.val;
+      const p=calcPrevisto(est,m,ano,reg);
       const ex=calcExec(est,m,ano,reg);
-      if(pg.val<ex.val) mDiv++;
+      const pg=calcPago(est,m,ano,reg);
+      yP+=p;yE+=ex.val;yG+=pg.val;
+      if(pg.val<ex.val&&(ex.val>0||pg.val>0)) mDiv++;
     }
     const div=yG-yE,pct=yP>0?(yG/yP*100):0;
     const cor=div>=0?'#1D9E75':'#BE2F3B';
-    tb.innerHTML+=`<tr>
-      <td><strong>${reg}</strong></td>
-      <td>${fR(yP)}</td><td>${fR(yE)}</td><td>${fR(yG)}</td>
-      <td style="color:${cor}">${div>=0?'+':''}${fR(div)}</td>
-      <td><span class="pill ${mDiv===0?'p-ok':mDiv>=mes?'p-danger':'p-warn'}">${mDiv}/${mes} meses</span></td>
-      <td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td>
-    </tr>`;
+    html+=`<tr><td><strong>${reg}</strong></td><td>${fR(yP)}</td><td>${fR(yE)}</td><td>${fR(yG)}</td><td style="color:${cor}">${div>=0?'+':''}${fR(div)}</td><td><span class="pill ${mDiv===0?'p-ok':mDiv>=mes?'p-danger':'p-warn'}">${mDiv}/${mes} meses</span></td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;
     totYP+=yP;totYE+=yE;totYG+=yG;totMDiv+=mDiv;
   });
   const totDiv=totYG-totYE,totPct=totYP>0?(totYG/totYP*100):0;
-  tb.innerHTML+=`<tr style="background:var(--bg);font-weight:700;border-top:2px solid var(--bd)">
-    <td><strong>TOTAL</strong></td>
-    <td>${fR(totYP)}</td><td>${fR(totYE)}</td><td>${fR(totYG)}</td>
-    <td style="color:${totDiv>=0?'#1D9E75':'#BE2F3B'}">${totDiv>=0?'+':''}${fR(totDiv)}</td>
-    <td><span class="pill ${totMDiv===0?'p-ok':totMDiv>=mes*regs.length?'p-danger':'p-warn'}">${totMDiv} ocorr.</span></td>
-    <td><span class="pill ${totPct>=95?'p-ok':totPct>=85?'p-warn':'p-danger'}">${totPct.toFixed(1)}%</span></td>
-  </tr>`;
+  html+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td><strong>TOTAL</strong></td><td>${fR(totYP)}</td><td>${fR(totYE)}</td><td>${fR(totYG)}</td><td style="color:${totDiv>=0?'#1D9E75':'#BE2F3B'}">${totDiv>=0?'+':''}${fR(totDiv)}</td><td><span class="pill ${totMDiv===0?'p-ok':'p-warn'}">${totMDiv} ocorr.</span></td><td><span class="pill ${totPct>=95?'p-ok':totPct>=85?'p-warn':'p-danger'}">${totPct.toFixed(1)}%</span></td></tr>`;
+  tb.innerHTML=html;
 }
 
 function renderTbDivergRel(est,mes,ano){
@@ -1310,7 +1347,19 @@ async function salvarProducao(){
   if(svProd||!dadosProd.length) return;svProd=true;
   const btn=document.getElementById('btn-sv-prod');btn.textContent='Salvando...';btn.disabled=true;
   const user=(await sb.auth.getUser()).data.user;
-  const {error}=await sb.from('producao_real').upsert(dadosProd.map(r=>({mes:r.mes,ano:r.ano,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,qde_executada:r.qde_executada,ativo:true,importado_por:user.id})),{onConflict:'mes,ano,estado,regional,cod_servico'});
+  // Para PI: consolidar todas as regionais em "PIAUÍ"
+  const dadosNorm=dadosProd.map(r=>({
+    ...r,
+    regional: r.estado==='PI' ? 'PIAUÍ' : r.regional
+  }));
+  // Agregar duplicatas PI
+  const mapProd={};
+  dadosNorm.forEach(r=>{
+    const k=`${r.mes}|${r.ano}|${r.estado}|${r.regional}|${r.cod_servico}`;
+    if(!mapProd[k]) mapProd[k]={...r};
+    else mapProd[k].qde_executada+=r.qde_executada;
+  });
+  const {error}=await sb.from('producao_real').upsert(Object.values(mapProd).map(r=>({mes:r.mes,ano:r.ano,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,qde_executada:r.qde_executada,ativo:true,importado_por:user.id})),{onConflict:'mes,ano,estado,regional,cod_servico'});
   if(error) alert('Erro: '+error.message);
   else{alert(`✓ ${dadosProd.length} registros salvos!`);cancelarUpload('prod');await carregarCache();carregarHistProd();}
   btn.textContent='✓ Confirmar e salvar';btn.disabled=false;svProd=false;
@@ -1324,7 +1373,16 @@ async function salvarBoletim(){
   if(ja) await sb.from('boletins').delete().eq('id',ja.id);
   const {data:bol,error:e1}=await sb.from('boletins').insert({mes,ano,estado,ativo:true,importado_por:user.id}).select().single();
   if(e1||!bol){alert('Erro ao criar boletim.');btn.textContent='✓ Confirmar e salvar';btn.disabled=false;svBol=false;return;}
-  const {error:e2}=await sb.from('boletim_itens').insert(dadosBol.map(r=>({boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga})));
+  // Para PI: consolidar todas as regionais em "PIAUÍ"
+  const bolNorm=dadosBol.map(r=>({...r, regional: r.estado==='PI'?'PIAUÍ':r.regional}));
+  const mapBol={};
+  bolNorm.forEach(r=>{
+    const k=`${r.estado}|PIAUÍ|${r.cod_servico}`;
+    if(r.estado!=='PI'){const k2=`${r.estado}|${r.regional}|${r.cod_servico}`;mapBol[k2]={...r};return;}
+    if(!mapBol[k]) mapBol[k]={...r,regional:'PIAUÍ'};
+    else mapBol[k].qde_paga+=r.qde_paga;
+  });
+  const {error:e2}=await sb.from('boletim_itens').insert(Object.values(mapBol).map(r=>({boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga})));
   if(e2) alert('Erro: '+e2.message);
   else{alert(`✓ Boletim ${MN[mes]}/${ano} — ${estado} salvo!`);cancelarUpload('bol');await carregarCache();carregarHistBol();}
   btn.textContent='✓ Confirmar e salvar';btn.disabled=false;svBol=false;
@@ -1781,6 +1839,170 @@ async function exportarRelRegPDF(){
   const imgW=W-margin*2,imgH=(canvas.height/canvas.width)*imgW;
   pdf.addImage(img,'PNG',margin,28,imgW,Math.min(imgH,H-38));
   pdf.save(`CENEGED_Divergencia_${reg}_${MN[mes]}_${ano}.pdf`);
+}
+
+// ═══════════════════════════════════════════════
+// VISÃO RESUMIDA
+// ═══════════════════════════════════════════════
+function syncRegsResum(){
+  const ano=new Date().getFullYear();
+  const sa=document.getElementById('rs-ano');
+  if(sa&&!sa.innerHTML) sa.innerHTML=[ano-1,ano,ano+1].map(a=>`<option value="${a}" ${a===ano?'selected':''}>${a}</option>`).join('');
+}
+
+function carregarResumida(){
+  const est=document.getElementById('rs-est')?.value||'MA';
+  const ano=parseInt(document.getElementById('rs-ano')?.value||new Date().getFullYear());
+
+  // Descobrir meses com dados
+  const mesesComDados=[];
+  for(let m=1;m<=12;m++){
+    const temProd=C.prod.some(r=>r.ano===ano&&r.mes===m&&(est==='TODOS'||r.estado===est));
+    const temBol=C.bols.some(b=>b.ano===ano&&b.mes===m&&(est==='TODOS'||b.estado===est));
+    if(temProd||temBol) mesesComDados.push(m);
+  }
+  if(!mesesComDados.length){
+    ['tb-rs-fat-body','tb-rs-evt-body','tb-rs-dif-cad-body','tb-rs-dif-exec-body'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados para ${ano}.</td></tr>`;
+    });
+    return;
+  }
+
+  // ── TABELA 1: Faturamento mensal ──
+  const headFat=document.getElementById('tr-rs-fat-head');
+  const bodyFat=document.getElementById('tb-rs-fat-body');
+  if(headFat&&bodyFat){
+    headFat.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Referência</th>'+
+      mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">${MN[m].substring(0,3)}/${ano}</th>`).join('')+
+      '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
+
+    const linhas=[
+      {label:'Faturamento Previsto (Caderno)',fn:m=>calcPrevisto(est,m,ano),cor:'var(--vm)'},
+      {label:'Faturamento Executado (Campo)',fn:m=>calcExec(est,m,ano).val,cor:'var(--vd)'},
+      {label:'Faturamento Pago (Equatorial)',fn:m=>calcPago(est,m,ano).val,cor:'var(--az)'},
+    ];
+    bodyFat.innerHTML=linhas.map(l=>{
+      const vals=mesesComDados.map(m=>l.fn(m));
+      const tot=vals.reduce((s,v)=>s+v,0);
+      return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:${l.cor}">${l.label}</td>`+
+        vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
+        `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(tot)}</td></tr>`;
+    }).join('');
+  }
+
+  // ── TABELA 2: Quantidade eventos por serviço ──
+  const tars=getTarifas(est,mesesComDados[0],ano);
+  const svcs=[...new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico))];
+
+  const headEvt=document.getElementById('tr-rs-evt-head');
+  const bodyEvt=document.getElementById('tb-rs-evt-body');
+  if(headEvt&&bodyEvt){
+    let headHtml='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+
+      '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Prev. Caderno</th>';
+    mesesComDados.forEach(m=>{
+      const lbl=`${String(m).padStart(2,'0')}/${String(ano).slice(2)}`;
+      headHtml+=`<th style="font-size:11px;padding:9px 12px;background:#eaf3de;color:#3B6D11;text-align:right">Exec.${lbl}</th>`;
+      headHtml+=`<th style="font-size:11px;padding:9px 12px;background:#e6f1fb;color:#185FA5;text-align:right">Pago ${lbl}</th>`;
+    });
+    headEvt.innerHTML=headHtml;
+
+    let bodyHtml='';
+    let totPrev=0,totExecArr=mesesComDados.map(()=>0),totPagoArr=mesesComDados.map(()=>0);
+
+    svcs.forEach(key=>{
+      const [cod,desc]=key.split('||');
+      const prevEvt=tars.filter(t=>t.cod_servico===cod).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);
+      totPrev+=prevEvt;
+      let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`;
+      row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fN(prevEvt)}</td>`;
+      mesesComDados.forEach((m,i)=>{
+        const execEvt=getProd(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+r.qde_executada,0);
+        const pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);
+        totExecArr[i]+=execEvt;
+        totPagoArr[i]+=pagoEvt;
+        row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#eaf3de33">${fN(execEvt)}</td>`;
+        row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#e6f1fb33">${fN(pagoEvt)}</td>`;
+      });
+      row+='</tr>';
+      bodyHtml+=row;
+    });
+
+    // Linha total
+    let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td><td style="padding:9px 12px;text-align:right">${fN(totPrev)}</td>`;
+    mesesComDados.forEach((_,i)=>{
+      totRow+=`<td style="padding:9px 12px;text-align:right">${fN(totExecArr[i])}</td>`;
+      totRow+=`<td style="padding:9px 12px;text-align:right">${fN(totPagoArr[i])}</td>`;
+    });
+    totRow+='</tr>';
+    bodyEvt.innerHTML=bodyHtml+totRow;
+  }
+
+  // ── TABELA 3: Diferença Pago vs Previsto Caderno ──
+  const headDifCad=document.getElementById('tr-rs-dif-cad-head');
+  const bodyDifCad=document.getElementById('tb-rs-dif-cad-body');
+  if(headDifCad&&bodyDifCad){
+    headDifCad.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+
+      mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Dif.${String(m).padStart(2,'0')}/${String(ano).slice(2)} x Cad.</th>`).join('')+
+      '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
+
+    let bodyHtml='';
+    let totArr=mesesComDados.map(()=>0),totGeral=0;
+    svcs.forEach(key=>{
+      const [cod,desc]=key.split('||');
+      const prevEvt=tars.filter(t=>t.cod_servico===cod).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);
+      let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`;
+      let tot=0;
+      mesesComDados.forEach((m,i)=>{
+        const pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);
+        const dif=pagoEvt-prevEvt;
+        totArr[i]+=dif; tot+=dif; totGeral+=dif;
+        const cor=dif>=0?'#1D9E75':'#BE2F3B';
+        row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;
+      });
+      const corTot=tot>=0?'#1D9E75':'#BE2F3B';
+      row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;
+      bodyHtml+=row;
+    });
+    let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td>`;
+    totArr.forEach(v=>{const c=v>=0?'#1D9E75':'#BE2F3B';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});
+    const cT=totGeral>=0?'#1D9E75':'#BE2F3B';
+    totRow+=`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
+    bodyDifCad.innerHTML=bodyHtml+totRow;
+  }
+
+  // ── TABELA 4: Diferença Executado vs Pago ──
+  const headDifExec=document.getElementById('tr-rs-dif-exec-head');
+  const bodyDifExec=document.getElementById('tb-rs-dif-exec-body');
+  if(headDifExec&&bodyDifExec){
+    headDifExec.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+
+      mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Exec-Pago ${String(m).padStart(2,'0')}/${String(ano).slice(2)}</th>`).join('')+
+      '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
+
+    let bodyHtml='';
+    let totArr=mesesComDados.map(()=>0),totGeral=0;
+    svcs.forEach(key=>{
+      const [cod,desc]=key.split('||');
+      let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`;
+      let tot=0;
+      mesesComDados.forEach((m,i)=>{
+        const execEvt=getProd(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+r.qde_executada,0);
+        const pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);
+        const dif=execEvt-pagoEvt;
+        totArr[i]+=dif; tot+=dif; totGeral+=dif;
+        const cor=dif<=0?'#1D9E75':'#BE2F3B';
+        row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;
+      });
+      const corTot=tot<=0?'#1D9E75':'#BE2F3B';
+      row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;
+      bodyHtml+=row;
+    });
+    let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td>`;
+    totArr.forEach(v=>{const c=v<=0?'#1D9E75':'#BE2F3B';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});
+    const cT=totGeral<=0?'#1D9E75':'#BE2F3B';
+    totRow+=`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
+    bodyDifExec.innerHTML=bodyHtml+totRow;
+  }
 }
 </script>
 </body>

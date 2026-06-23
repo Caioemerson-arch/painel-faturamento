@@ -380,7 +380,17 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
               <div class="btn-row"><button class="btn btn-s" onclick="cancelarUpload('prod')">Cancelar</button><button class="btn btn-p" id="btn-sv-prod" onclick="salvarProducao()">✓ Confirmar e salvar</button></div>
             </div>
           </div>
-          <div class="sec-row"><div class="sec">Histórico de lançamentos</div><button class="btn btn-s btn-sm" onclick="carregarHistProd()">↻ Atualizar</button></div>
+          <div class="sec-row">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="sec" style="margin:0">Histórico de lançamentos</div>
+              <select id="fil-hist-prod" onchange="carregarHistProd()" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)">
+                <option value="">Todos os estados</option>
+                <option value="MA">Maranhão</option>
+                <option value="PI">Piauí</option>
+              </select>
+            </div>
+            <button class="btn btn-s btn-sm" onclick="carregarHistProd()">↻ Atualizar</button>
+          </div>
           <div class="tbox"><table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tb-hist-prod"></tbody></table></div>
         </div>
 
@@ -404,7 +414,17 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
               <div class="btn-row"><button class="btn btn-s" onclick="cancelarUpload('bol')">Cancelar</button><button class="btn btn-p" id="btn-sv-bol" onclick="salvarBoletim()">✓ Confirmar e salvar</button></div>
             </div>
           </div>
-          <div class="sec-row"><div class="sec">Histórico de boletins</div><button class="btn btn-s btn-sm" onclick="carregarHistBol()">↻ Atualizar</button></div>
+          <div class="sec-row">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="sec" style="margin:0">Histórico de boletins</div>
+              <select id="fil-hist-bol" onchange="carregarHistBol()" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)">
+                <option value="">Todos os estados</option>
+                <option value="MA">Maranhão</option>
+                <option value="PI">Piauí</option>
+              </select>
+            </div>
+            <button class="btn btn-s btn-sm" onclick="carregarHistBol()">↻ Atualizar</button>
+          </div>
           <div class="tbox"><table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Total pago</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tb-hist-bol"></tbody></table></div>
         </div>
 
@@ -435,7 +455,23 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
               <div class="btn-row"><button class="btn btn-s" onclick="cancelarUpload('cad')">Cancelar</button><button class="btn btn-p" id="btn-sv-cad" onclick="salvarCaderno()">✓ Ativar caderno</button></div>
             </div>
           </div>
-          <div id="lista-cadernos"><div class="loader">Carregando cadernos...</div></div>
+          <!-- Cadernos ativos -->
+          <div class="sec">Cadernos ativos</div>
+          <div id="lista-cad-ativos"><div class="loader">Carregando...</div></div>
+
+          <!-- Histórico -->
+          <div class="sec-row" style="margin-top:1.5rem">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="sec" style="margin:0">Histórico de cadernos</div>
+              <select id="fil-hist-cad" onchange="carregarCadernos()" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)">
+                <option value="">Todos os estados</option>
+                <option value="MA">Maranhão</option>
+                <option value="PI">Piauí</option>
+              </select>
+            </div>
+            <button class="btn btn-s btn-sm" onclick="carregarCadernos()">↻ Atualizar</button>
+          </div>
+          <div id="lista-cad-hist"><div class="loader">Carregando...</div></div>
         </div>
 
         <!-- USUÁRIOS -->
@@ -743,6 +779,7 @@ function renderTbYTDReg(est,mes,ano){
   const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
   const tb=document.getElementById('tb-ytd-reg');
   tb.innerHTML='';
+  let totYP=0,totYE=0,totYG=0,totMDiv=0;
   regs.forEach(reg=>{
     let yP=0,yE=0,yG=0,mDiv=0;
     for(let m=1;m<=mes;m++){
@@ -762,7 +799,16 @@ function renderTbYTDReg(est,mes,ano){
       <td><span class="pill ${mDiv===0?'p-ok':mDiv>=mes?'p-danger':'p-warn'}">${mDiv}/${mes} meses</span></td>
       <td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td>
     </tr>`;
+    totYP+=yP;totYE+=yE;totYG+=yG;totMDiv+=mDiv;
   });
+  const totDiv=totYG-totYE,totPct=totYP>0?(totYG/totYP*100):0;
+  tb.innerHTML+=`<tr style="background:var(--bg);font-weight:700;border-top:2px solid var(--bd)">
+    <td><strong>TOTAL</strong></td>
+    <td>${fR(totYP)}</td><td>${fR(totYE)}</td><td>${fR(totYG)}</td>
+    <td style="color:${totDiv>=0?'#1D9E75':'#BE2F3B'}">${totDiv>=0?'+':''}${fR(totDiv)}</td>
+    <td><span class="pill ${totMDiv===0?'p-ok':totMDiv>=mes*regs.length?'p-danger':'p-warn'}">${totMDiv} ocorr.</span></td>
+    <td><span class="pill ${totPct>=95?'p-ok':totPct>=85?'p-warn':'p-danger'}">${totPct.toFixed(1)}%</span></td>
+  </tr>`;
 }
 
 function renderTbDivergRel(est,mes,ano){
@@ -1285,22 +1331,32 @@ async function salvarCaderno(){
 
 // ═══ HISTÓRICOS ═══
 async function carregarHistProd(){
-  const {data:prod}=await sb.from('producao_real').select('mes,ano,estado,qde_executada,importado_em,ativo').order('ano',{ascending:false}).order('mes',{ascending:false});
+  const filtEst=document.getElementById('fil-hist-prod')?.value||'';
+  let q=sb.from('producao_real').select('mes,ano,estado,qde_executada,importado_em,ativo').order('ano',{ascending:false}).order('mes',{ascending:false});
+  if(filtEst) q=q.eq('estado',filtEst);
+  const {data:prod}=await q;
   const tb=document.getElementById('tb-hist-prod');
   if(!prod?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum lançamento.</td></tr>';return;}
   const ag={};
-  prod.forEach(r=>{const k=`${r.mes}|${r.ano}|${r.estado}`;if(!ag[k]) ag[k]={mes:r.mes,ano:r.ano,estado:r.estado,total:0,em:r.importado_em,ativo:r.ativo!==false};ag[k].total+=r.qde_executada;});
-  tb.innerHTML=Object.values(ag).map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${fN(r.total)}</td><td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'—'}</td><td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',${r.ativo})">${r.ativo?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}')">Excluir</button></td></tr>`).join('');
+  prod.forEach(r=>{const k=`${r.ano}|${String(r.mes).padStart(2,'0')}|${r.estado}`;if(!ag[k]) ag[k]={mes:r.mes,ano:r.ano,estado:r.estado,total:0,em:r.importado_em,ativo:r.ativo!==false};ag[k].total+=r.qde_executada;});
+  // Ordenar do mais recente para o mais antigo
+  const ordenado=Object.entries(ag).sort((a,b)=>b[0].localeCompare(a[0])).map(e=>e[1]);
+  tb.innerHTML=ordenado.map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${fN(r.total)}</td><td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'—'}</td><td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',${r.ativo})">${r.ativo?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}')">Excluir</button></td></tr>`).join('');
 }
 async function inativarProd(mes,ano,est,ativo){await sb.from('producao_real').update({ativo:!ativo}).eq('mes',mes).eq('ano',ano).eq('estado',est);await carregarCache();carregarHistProd();}
 async function excluirProd(mes,ano,est){if(!confirm(`Excluir ${mA(mes,ano)} — ${est}?`)) return;await sb.from('producao_real').delete().eq('mes',mes).eq('ano',ano).eq('estado',est);await carregarCache();carregarHistProd();}
 
 async function carregarHistBol(){
-  const {data:bols}=await sb.from('boletins').select('*').order('ano',{ascending:false}).order('mes',{ascending:false});
+  const filtEst=document.getElementById('fil-hist-bol')?.value||'';
+  let q=sb.from('boletins').select('*').order('ano',{ascending:false}).order('mes',{ascending:false});
+  if(filtEst) q=q.eq('estado',filtEst);
+  const {data:bols}=await q;
   const tb=document.getElementById('tb-hist-bol');
   if(!bols?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum boletim.</td></tr>';return;}
+  // Ordenar do mais recente para o mais antigo
+  const ordenado=[...bols].sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes);
   tb.innerHTML='';
-  for(const b of bols){
+  for(const b of ordenado){
     const it=C.itens.filter(i=>i.boletim_id===b.id);
     const tE=it.reduce((s,i)=>s+(i.qde_paga||0),0),tV=it.reduce((s,i)=>s+(parseFloat(i.valor_pago)||0),0);
     tb.innerHTML+=`<tr><td>${mA(b.mes,b.ano)}</td><td>${b.estado}</td><td>${fN(tE)}</td><td>${fR(tV)}</td><td>${b.importado_em?new Date(b.importado_em).toLocaleDateString('pt-BR'):'—'}</td><td>${b.ativo!==false?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarBol(${b.id},${b.ativo!==false})">${b.ativo!==false?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirBol(${b.id},'${mA(b.mes,b.ano)}','${b.estado}')">Excluir</button></td></tr>`;
@@ -1312,9 +1368,20 @@ async function excluirBol(id,p,e){if(!confirm(`Excluir boletim ${p} — ${e}?`))
 // ═══ CADERNOS ═══
 function toggleUploadCad(){const b=document.getElementById('upload-cad-box');b.style.display=b.style.display==='none'?'block':'none';}
 function carregarCadernos(){
-  const el=document.getElementById('lista-cadernos');
-  if(!C.cads.length){el.innerHTML='<div class="loader">Nenhum caderno cadastrado ainda.</div>';return;}
-  el.innerHTML=[...C.cads].reverse().map(c=>{
+  const filtEst=document.getElementById('fil-hist-cad')?.value||'';
+  const elAtivos=document.getElementById('lista-cad-ativos');
+  const elHist=document.getElementById('lista-cad-hist');
+
+  const ativos=C.cads.filter(c=>c.ativo);
+  const historico=[...C.cads]
+    .filter(c=>!c.ativo&&(filtEst===''||c.estado===filtEst))
+    .sort((a,b)=>{
+      const va=parseInt((a.vigencia_inicio||'01/2000').split('/').reverse().join(''));
+      const vb=parseInt((b.vigencia_inicio||'01/2000').split('/').reverse().join(''));
+      return vb-va;
+    });
+
+  const renderCad=(c)=>{
     const tars=C.tars.filter(t=>t.caderno_id===c.id);
     const meta=tars.reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||0),0);
     const regs=new Set(tars.map(t=>t.regional)).size;

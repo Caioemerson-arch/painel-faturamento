@@ -343,13 +343,13 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <div class="sec">Faturamento por serviço</div>
           <div class="tbox"><table><thead><tr><th>Serviço</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-reg-fat"></tbody></table></div>
           <div class="sec">Acumulado YTD por regional — jan até mês selecionado</div>
-          <div class="tbox"><table><thead><tr><th>Regional</th><th>Previsto acum.</th><th>Executado acum.</th><th>Pago acum.</th><th>Diverg. acum.</th><th>Meses c/ diverg.</th><th>% meta acum.</th></tr></thead><tbody id="tb-ytd-reg"></tbody></table></div>
+          <div class="tbox"><table><thead><tr><th>Regional</th><th>Previsto acum.</th><th>Executado acum.</th><th>Pago acum.</th><th>Diverg. acum.</th><th>Meses c/ diverg.</th><th>% meta acum.</th></tr></thead><tbody id="tb-reg-ytd"></tbody></table></div>
 
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <div class="sec" style="margin:0">Relatório de divergência acumulada</div>
-            <button class="btn btn-p btn-sm" onclick="exportarRelPDF()" style="display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" aria-hidden="true"></i>Exportar PDF</button>
+            <button class="btn btn-p btn-sm" onclick="exportarRelRegPDF()" style="display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" aria-hidden="true"></i>Exportar PDF</button>
           </div>
-          <div id="relatorio-divergencia" style="background:var(--br);border-radius:var(--r);border:1px solid var(--bd);padding:1.25rem;margin-bottom:1.25rem;font-size:13px;line-height:1.7">
+          <div id="relatorio-diverg-reg" style="background:var(--br);border-radius:var(--r);border:1px solid var(--bd);padding:1.25rem;margin-bottom:1.25rem;font-size:13px;line-height:1.7">
             <p style="color:var(--tx2);font-style:italic">Carregando relatório...</p>
           </div>
 
@@ -1174,6 +1174,10 @@ function carregarRegional(){
   const tEE=Object.values(execByS).reduce((s,v)=>s+v,0);
   const tGE=Object.values(pagoByS).reduce((s,v)=>s+v,0);
 
+  // YTD e relatório na aba Por Regional
+  renderTbRegYTD(est,mes,ano,reg);
+  renderTbDivergRelReg(est,mes,ano,reg);
+
   const tbE=document.getElementById('tb-reg-evt'),tbF=document.getElementById('tb-reg-fat'),tbT=document.getElementById('tb-reg-tar'),tbP=document.getElementById('tb-reg-prop');
   const tbDS=document.getElementById('tb-reg-diverg-sep');
   tbE.innerHTML='';tbF.innerHTML='';tbT.innerHTML='';tbP.innerHTML='';if(tbDS) tbDS.innerHTML='';
@@ -1674,6 +1678,109 @@ function exportarExcel(){
   XLSX.utils.book_append_sheet(wb,ws,'Eventos');
   XLSX.writeFile(wb,`CENEGED_Eventos_${est}_${mA(mesIni,anoIni).replace('/','_')}_${mA(mesFim,anoFim).replace('/','_')}.xlsx`);
   fecharModalExcel();
+}
+
+// ═══ YTD E RELATÓRIO PARA ABA POR REGIONAL ═══
+function renderTbRegYTD(est,mes,ano,reg){
+  const tb=document.getElementById('tb-reg-ytd');
+  if(!tb) return;
+  let yP=0,yE=0,yG=0,mDiv=0;
+  for(let m=1;m<=mes;m++){
+    yP+=calcPrevisto(est,m,ano,reg);
+    yE+=calcExec(est,m,ano,reg).val;
+    const pg=calcPago(est,m,ano,reg);
+    const ex=calcExec(est,m,ano,reg);
+    yG+=pg.val;
+    if(pg.val<ex.val) mDiv++;
+  }
+  const div=yG-yE,pct=yP>0?(yG/yP*100):0;
+  const cor=div>=0?'#1D9E75':'#BE2F3B';
+  tb.innerHTML=`<tr>
+    <td><strong>${reg}</strong></td>
+    <td>${fR(yP)}</td><td>${fR(yE)}</td><td>${fR(yG)}</td>
+    <td style="color:${cor}">${div>=0?'+':''}${fR(div)}</td>
+    <td><span class="pill ${mDiv===0?'p-ok':mDiv>=mes?'p-danger':'p-warn'}">${mDiv}/${mes} meses</span></td>
+    <td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td>
+  </tr>`;
+}
+
+function renderTbDivergRelReg(est,mes,ano,reg){
+  const el=document.getElementById('relatorio-diverg-reg');
+  if(!el) return;
+  const THRESHOLD_TAR=0.01;
+  const tars=getTarifas(est,mes,ano,reg);
+  if(!tars.length){el.innerHTML='<p style="color:var(--tx2);text-align:center;padding:1rem">Sem dados de caderno para esta regional.</p>';return;}
+
+  const svcSet=new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico));
+  const itens=[];
+  svcSet.forEach(key=>{
+    const [cod,desc]=key.split('||');
+    let totDivQtd=0,totValNaoPago=0,mDiv=0,tarDivFlag=false;
+    for(let m=1;m<=mes;m++){
+      const tar=getTarifas(est,m,ano,reg).find(t=>t.cod_servico===cod);
+      if(!tar) continue;
+      const prod=getProd(est,m,ano,reg).find(r=>r.cod_servico===cod);
+      const its=getItens(est,m,ano,reg).filter(i=>i.cod_servico===cod);
+      const execEvt=prod?.qde_executada||0;
+      const pagoEvt=its.reduce((s,i)=>s+(i.qde_paga||0),0);
+      const tarPrev=parseFloat(tar.preco_unitario)||0;
+      const tarPaga=its[0]?parseFloat(its[0].preco_unitario)||0:tarPrev;
+      const divQtd=pagoEvt-execEvt;
+      const divTar=Math.abs(tarPaga-tarPrev)>=THRESHOLD_TAR?tarPaga-tarPrev:0;
+      totDivQtd+=divQtd;
+      totValNaoPago+=divQtd*tarPrev+divTar*pagoEvt;
+      if(Math.abs(divQtd)>0||Math.abs(divTar)>=THRESHOLD_TAR) mDiv++;
+      if(Math.abs(divTar)>=THRESHOLD_TAR) tarDivFlag=true;
+    }
+    if(Math.abs(totDivQtd)>0||Math.abs(totValNaoPago)>1){
+      itens.push({cod,desc,totDivQtd,totValNaoPago,mDiv,tarDivFlag});
+    }
+  });
+
+  if(!itens.length){el.innerHTML='<p style="color:var(--tx2);text-align:center;padding:1rem">Nenhuma divergência relevante detectada.</p>';return;}
+
+  const totalReg=itens.reduce((s,i)=>s+i.totValNaoPago,0);
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--vm);margin-bottom:12px">
+    <strong style="font-size:14px">${reg} · Jan→${MN[mes]}/${ano}</strong>
+    <span style="font-size:13px;font-weight:700;color:${totalReg<0?'#BE2F3B':'#1D9E75'}">Divergência total: ${totalReg<0?'':'+'}${fR(totalReg)}</span>
+  </div>`;
+
+  itens.forEach(s=>{
+    const dirQtd=s.totDivQtd<0?'a menos':'a mais';
+    const corV=s.totValNaoPago<0?'#BE2F3B':'#1D9E75';
+    let frase=`A Equatorial pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo`;
+    frase+=` em <strong>${s.mDiv} de ${mes} ${mes===1?'mês':'meses'}</strong>`;
+    frase+=`, representando um impacto de <strong style="color:${corV}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>`;
+    frase+=s.tarDivFlag?' (inclui divergência de tarifa).':'.';
+    html+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px">
+      <span style="font-weight:700;color:var(--pt)">${s.desc}:</span> ${frase}
+    </p>`;
+  });
+  el.innerHTML=html;
+}
+
+async function exportarRelRegPDF(){
+  const {jsPDF}=window.jspdf;
+  const est=document.getElementById('r-est').value;
+  const reg=document.getElementById('r-reg').value;
+  const mes=parseInt(document.getElementById('r-mes').value);
+  const ano=parseInt(document.getElementById('r-ano').value);
+  const el=document.getElementById('relatorio-diverg-reg');
+  const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#ffffff'});
+  const img=canvas.toDataURL('image/png');
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,H=297,margin=12;
+  pdf.setFillColor(26,26,46);pdf.rect(0,0,W,22,'F');
+  pdf.setFillColor(190,47,59);pdf.rect(0,22,W,2,'F');
+  pdf.setTextColor(255,255,255);
+  pdf.setFontSize(14);pdf.setFont('helvetica','bold');pdf.text('CENEGED',margin,14);
+  pdf.setFontSize(10);pdf.setFont('helvetica','normal');
+  pdf.text(`Relatório de Divergência — ${reg}`,W/2,10,{align:'center'});
+  pdf.text(`${est==='MA'?'Maranhão':'Piauí'} · Jan→${MN[mes]}/${ano}`,W/2,16,{align:'center'});
+  pdf.setFontSize(8);pdf.text('Gerado em '+new Date().toLocaleString('pt-BR'),W-margin,19,{align:'right'});
+  const imgW=W-margin*2,imgH=(canvas.height/canvas.width)*imgW;
+  pdf.addImage(img,'PNG',margin,28,imgW,Math.min(imgH,H-38));
+  pdf.save(`CENEGED_Divergencia_${reg}_${MN[mes]}_${ano}.pdf`);
 }
 </script>
 </body>

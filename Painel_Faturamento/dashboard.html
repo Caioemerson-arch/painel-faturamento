@@ -1035,22 +1035,35 @@ function renderGraficoDivMes(est,ano,mesAtual){
 
 function renderTbEvtReg(est,mes,ano){
   const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
-  document.getElementById('tb-evt-reg').innerHTML=regs.map(reg=>{
+  const tb=document.getElementById('tb-evt-reg');
+  let html='',totPE=0,totEx=0,totPg=0;
+  regs.forEach(reg=>{
     const pE=calcPrevEvt(est,mes,ano,reg),ex=calcExec(est,mes,ano,reg),pg=calcPago(est,mes,ano,reg);
     const df=pg.evt-ex.evt,pct=ex.evt>0?((ex.evt-pg.evt)/ex.evt*100):0;
     const bc=Math.abs(pct)<2?'#1D9E75':pct>5?'#BE2F3B':'#BA7517';
     const st=Math.abs(pct)<2?'<span class="pill p-ok">Normal</span>':pct>5?'<span class="pill p-danger">Crítico</span>':'<span class="pill p-warn">Atenção</span>';
-    return `<tr><td><strong>${reg}</strong></td><td>${fN(pE)}</td><td>${fN(ex.evt)}</td><td>${fN(pg.evt)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fN(df)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${bc}"></div></div><span style="font-size:10px;color:${bc};font-weight:700">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;
-  }).join('');
+    html+=`<tr><td><strong>${reg}</strong></td><td>${fN(pE)}</td><td>${fN(ex.evt)}</td><td>${fN(pg.evt)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fN(df)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${bc}"></div></div><span style="font-size:10px;color:${bc};font-weight:700">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;
+    totPE+=pE;totEx+=ex.evt;totPg+=pg.evt;
+  });
+  const totDf=totPg-totEx,totPct=totEx>0?((totEx-totPg)/totEx*100):0;
+  const totBc=Math.abs(totPct)<2?'#1D9E75':totPct>5?'#BE2F3B':'#BA7517';
+  html+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td><strong>TOTAL</strong></td><td><strong>${fN(totPE)}</strong></td><td><strong>${fN(totEx)}</strong></td><td><strong>${fN(totPg)}</strong></td><td style="color:${totDf>=0?'#1D9E75':'#BE2F3B'};font-weight:700">${totDf>=0?'+':''}${fN(totDf)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(totPct)*10,100)}%;background:${totBc}"></div></div><span style="font-size:10px;color:${totBc};font-weight:700">${totPct.toFixed(1)}%</span></div></td><td></td></tr>`;
+  tb.innerHTML=html;
 }
 
 function renderTbFatReg(est,mes,ano){
   const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
-  document.getElementById('tb-fat-reg').innerHTML=regs.map(reg=>{
+  const tb=document.getElementById('tb-fat-reg');
+  let html='',totP=0,totE=0,totG=0;
+  regs.forEach(reg=>{
     const prev=calcPrevisto(est,mes,ano,reg),ex=calcExec(est,mes,ano,reg),pg=calcPago(est,mes,ano,reg);
     const dv=pg.val-ex.val,pct=prev>0?(pg.val/prev*100):0;
-    return `<tr><td><strong>${reg}</strong></td><td>${fR(prev)}</td><td>${fR(ex.val)}</td><td>${fR(pg.val)}</td><td style="color:${dv>=0?'#1D9E75':'#BE2F3B'}">${dv>=0?'+':''}${fR(dv)}</td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;
-  }).join('');
+    html+=`<tr><td><strong>${reg}</strong></td><td>${fR(prev)}</td><td>${fR(ex.val)}</td><td>${fR(pg.val)}</td><td style="color:${dv>=0?'#1D9E75':'#BE2F3B'}">${dv>=0?'+':''}${fR(dv)}</td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;
+    totP+=prev;totE+=ex.val;totG+=pg.val;
+  });
+  const totDv=totG-totE,totPct=totP>0?(totG/totP*100):0;
+  html+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td><strong>TOTAL</strong></td><td><strong>${fR(totP)}</strong></td><td><strong>${fR(totE)}</strong></td><td><strong>${fR(totG)}</strong></td><td style="color:${totDv>=0?'#1D9E75':'#BE2F3B'};font-weight:700">${totDv>=0?'+':''}${fR(totDv)}</td><td><span class="pill ${totPct>=95?'p-ok':totPct>=85?'p-warn':'p-danger'}">${totPct.toFixed(1)}%</span></td></tr>`;
+  tb.innerHTML=html;
 }
 
 function renderTbTar(est,mes,ano){

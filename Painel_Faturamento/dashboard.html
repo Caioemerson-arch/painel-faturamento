@@ -2014,7 +2014,7 @@ function carregarResumida(){
         const pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);
         const dif=execEvt-pagoEvt;
         totArr[i]+=dif; tot+=dif; totGeral+=dif;
-        const cor=dif>0?'#BE2F3B':dif<0?'#1D9E75':'inherit';
+        const cor=dif>0?'#1D9E75':dif<0?'#BE2F3B':'inherit';
         row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;
       });
       const corTot=tot<=0?'#1D9E75':'#BE2F3B';
@@ -2022,8 +2022,8 @@ function carregarResumida(){
       bodyHtml+=row;
     });
     let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td>`;
-    totArr.forEach(v=>{const c=v>0?'#BE2F3B':v<0?'#1D9E75':'inherit';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});
-    const cT=totGeral>0?'#BE2F3B':totGeral<0?'#1D9E75':'inherit';
+    totArr.forEach(v=>{const c=v>0?'#1D9E75':v<0?'#BE2F3B':'inherit';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});
+    const cT=totGeral>0?'#1D9E75':totGeral<0?'#BE2F3B':'inherit';
     totRow+=`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
     bodyDifExec.innerHTML=bodyHtml+totRow;
   }

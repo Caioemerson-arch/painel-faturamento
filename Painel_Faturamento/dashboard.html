@@ -1381,27 +1381,12 @@ async function inativarCad(id,ativo){await sb.from('cadernos').update({ativo:!at
 async function excluirCad(id,nome){if(!confirm(`Excluir "${nome}"?`)) return;await sb.from('cadernos').delete().eq('id',id);await carregarCache();carregarCadernos();}
 
 // ═══ USUÁRIOS ═══
-// Armazena permissões editadas em memória por userId
-const permCache = {};
-
 async function carregarUsuarios(){
   const el=document.getElementById('lista-usuarios');
   const {data:users}=await sb.from('usuarios_perfil_completo').select('*').order('criado_em',{ascending:false});
   if(!users?.length){el.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum usuário.</td></tr>';return;}
   const rl={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'};
   const ABAS_DISP=[{id:'geral',label:'Visão Geral'},{id:'servico',label:'Por Serviço'},{id:'regional',label:'Por Regional'},{id:'resumida',label:'Visão Resumida'},{id:'lancar',label:'Lançar Produção'},{id:'boletim',label:'Importar Boletim'},{id:'cadernos',label:'Cadernos'},{id:'usuarios',label:'Usuários'}];
-
-  // Inicializar cache com valores atuais do banco
-  users.forEach(u=>{
-    permCache[u.id]={
-      abas: u.abas_permitidas||['geral','servico','regional'],
-      role: u.role||'viewer',
-      perm_producao: u.perm_producao||false,
-      perm_boletim: u.perm_boletim||false,
-      perm_exportar_pdf: u.perm_exportar_pdf||false,
-      perm_exportar_excel: u.perm_exportar_excel||false
-    };
-  });
 
   el.innerHTML=users.map(u=>{
     const abas=u.abas_permitidas||['geral','servico','regional'];
@@ -1439,17 +1424,17 @@ async function carregarUsuarios(){
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
           <div>
             <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Abas permitidas</p>
-            ${ABAS_DISP.map(a=>`<label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="aba-${u.id}-${a.id}" ${abas.includes(a.id)?'checked':''} onchange="atualizarPermCache('${u.id}')" style="accent-color:var(--vm);width:13px;height:13px">${a.label}</label>`).join('')}
+            ${ABAS_DISP.map(a=>`<label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="aba-${u.id}-${a.id}" ${abas.includes(a.id)?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">${a.label}</label>`).join('')}
           </div>
           <div>
             <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Uploads (analista)</p>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pp-${u.id}" ${u.perm_producao?'checked':''} onchange="atualizarPermCache('${u.id}')" style="accent-color:var(--vm);width:13px;height:13px">Lançar produção</label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="pb-${u.id}" ${u.perm_boletim?'checked':''} onchange="atualizarPermCache('${u.id}')" style="accent-color:var(--vm);width:13px;height:13px">Importar boletim</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pp-${u.id}" ${u.perm_producao?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Lançar produção</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="pb-${u.id}" ${u.perm_boletim?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Importar boletim</label>
           </div>
           <div>
             <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Exportações</p>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="ppdf-${u.id}" ${u.perm_exportar_pdf?'checked':''} onchange="atualizarPermCache('${u.id}')" style="accent-color:var(--vm);width:13px;height:13px">Exportar PDF</label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="pxls-${u.id}" ${u.perm_exportar_excel?'checked':''} onchange="atualizarPermCache('${u.id}')" style="accent-color:var(--vm);width:13px;height:13px">Exportar Excel</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="ppdf-${u.id}" ${u.perm_exportar_pdf?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Exportar PDF</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="pxls-${u.id}" ${u.perm_exportar_excel?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Exportar Excel</label>
           </div>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)">
@@ -1461,40 +1446,27 @@ async function carregarUsuarios(){
   }).join('');
 }
 
-// Atualiza o cache de permissões a partir dos checkboxes visíveis
-function atualizarPermCache(userId){
-  const ABAS_IDS=['geral','servico','regional','resumida','lancar','boletim','cadernos','usuarios'];
-  const abas=[];
-  ABAS_IDS.forEach(a=>{
-    const el=document.getElementById('aba-'+userId+'-'+a);
-    if(el&&el.checked) abas.push(a);
-  });
-  if(!permCache[userId]) permCache[userId]={};
-  permCache[userId].abas=abas;
-  permCache[userId].role=document.getElementById('role-'+userId)?.value||'viewer';
-  permCache[userId].perm_producao=document.getElementById('pp-'+userId)?.checked||false;
-  permCache[userId].perm_boletim=document.getElementById('pb-'+userId)?.checked||false;
-  permCache[userId].perm_exportar_pdf=document.getElementById('ppdf-'+userId)?.checked||false;
-  permCache[userId].perm_exportar_excel=document.getElementById('pxls-'+userId)?.checked||false;
-}
-
-function togglePerms(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none';}
-function toggleSenha(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none';}
-
+// Lê os checkboxes do DOM e salva direto no Supabase
 async function salvarPermissoes(userId){
-  // Forçar leitura dos checkboxes antes de salvar
-  atualizarPermCache(userId);
-  const perm=permCache[userId];
-  if(!perm){alert('Erro: permissões não encontradas.');return;}
+  const ABAS_IDS=['geral','servico','regional','resumida','lancar','boletim','cadernos','usuarios'];
+  const abas=ABAS_IDS.filter(a=>{
+    const el=document.getElementById('aba-'+userId+'-'+a);
+    return el&&el.checked;
+  });
+  const role=document.getElementById('role-'+userId)?.value||'viewer';
+  const perm_producao=document.getElementById('pp-'+userId)?.checked||false;
+  const perm_boletim=document.getElementById('pb-'+userId)?.checked||false;
+  const perm_exportar_pdf=document.getElementById('ppdf-'+userId)?.checked||false;
+  const perm_exportar_excel=document.getElementById('pxls-'+userId)?.checked||false;
 
   const {error}=await sb.rpc('atualizar_permissoes_usuario',{
     p_id: userId,
-    p_role: perm.role,
-    p_abas: perm.abas,
-    p_perm_producao: perm.perm_producao,
-    p_perm_boletim: perm.perm_boletim,
-    p_perm_exportar_pdf: perm.perm_exportar_pdf,
-    p_perm_exportar_excel: perm.perm_exportar_excel
+    p_role: role,
+    p_abas: abas,
+    p_perm_producao: perm_producao,
+    p_perm_boletim: perm_boletim,
+    p_perm_exportar_pdf: perm_exportar_pdf,
+    p_perm_exportar_excel: perm_exportar_excel
   });
 
   if(error){alert('Erro ao salvar: '+error.message);return;}

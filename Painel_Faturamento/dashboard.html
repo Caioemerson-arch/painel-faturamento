@@ -627,7 +627,7 @@ async function iniciarApp(user){
   preencherModalExcel();
   syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();
   await carregarCache();
-  carregarGeral();
+  await carregarGeral();
 }
 function aplicarPermissoes(){
   const abas=perfil?.abas_permitidas||(role==='admin'?['geral','servico','regional','lancar','boletim','cadernos','usuarios']:['geral','servico','regional']);
@@ -756,7 +756,7 @@ function syncRegsReg(){
 }
 
 // ═══ VISÃO GERAL ═══
-function carregarGeral(){
+async function carregarGeral(){
   const est=document.getElementById('g-est').value;
   const mes=parseInt(document.getElementById('g-mes').value);
   const ano=parseInt(document.getElementById('g-ano').value);
@@ -792,8 +792,11 @@ function carregarGeral(){
   renderGraficoDivMes(est,ano,mes);
   renderTbEvtReg(est,mes,ano);
   renderTbFatReg(est,mes,ano);
-  renderTbYTDReg(est,mes,ano);
-  renderTbDivergRel(est,mes,ano);
+  // Pequeno delay para garantir que o DOM está pronto
+  setTimeout(()=>{
+    renderTbYTDReg(est,mes,ano);
+    renderTbDivergRel(est,mes,ano);
+  },100);
   renderTbTar(est,mes,ano);
   renderTbProp(est,mes,ano);
 }
@@ -1212,8 +1215,10 @@ function carregarRegional(){
   const tGE=Object.values(pagoByS).reduce((s,v)=>s+v,0);
 
   // YTD e relatório na aba Por Regional
-  renderTbRegYTD(est,mes,ano,reg);
-  renderTbDivergRelReg(est,mes,ano,reg);
+  setTimeout(()=>{
+    renderTbRegYTD(est,mes,ano,reg);
+    renderTbDivergRelReg(est,mes,ano,reg);
+  },100);
 
   const tbE=document.getElementById('tb-reg-evt'),tbF=document.getElementById('tb-reg-fat'),tbT=document.getElementById('tb-reg-tar'),tbP=document.getElementById('tb-reg-prop');
   const tbDS=document.getElementById('tb-reg-diverg-sep');
@@ -1877,18 +1882,37 @@ function carregarResumida(){
       mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">${MN[m].substring(0,3)}/${ano}</th>`).join('')+
       '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
 
-    const linhas=[
-      {label:'Faturamento Previsto (Caderno)',fn:m=>calcPrevisto(est,m,ano),cor:'var(--vm)'},
-      {label:'Faturamento Executado (Campo)',fn:m=>calcExec(est,m,ano).val,cor:'var(--vd)'},
-      {label:'Faturamento Pago (Equatorial)',fn:m=>calcPago(est,m,ano).val,cor:'var(--az)'},
-    ];
-    bodyFat.innerHTML=linhas.map(l=>{
-      const vals=mesesComDados.map(m=>l.fn(m));
-      const tot=vals.reduce((s,v)=>s+v,0);
-      return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:${l.cor}">${l.label}</td>`+
-        vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
-        `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(tot)}</td></tr>`;
-    }).join('');
+    const valsPrev=mesesComDados.map(m=>calcPrevisto(est,m,ano));
+    const valsExec=mesesComDados.map(m=>calcExec(est,m,ano).val);
+    const valsPago=mesesComDados.map(m=>calcPago(est,m,ano).val);
+    const totPrev=valsPrev.reduce((s,v)=>s+v,0);
+    const totExec=valsExec.reduce((s,v)=>s+v,0);
+    const totPago=valsPago.reduce((s,v)=>s+v,0);
+
+    const mkPct=(v,p)=>p>0?((v-p)/p*100):0;
+    const fPct=v=>`<span style="color:${v>=0?'#1D9E75':'#BE2F3B'};font-weight:700">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
+
+    bodyFat.innerHTML=
+      // Previsto
+      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vm)">Faturamento Previsto (Caderno)</td>`+
+      valsPrev.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
+      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPrev)}</td></tr>`+
+      // Executado
+      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vd)">Faturamento Executado (Campo)</td>`+
+      valsExec.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
+      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totExec)}</td></tr>`+
+      // % Exec vs Previsto
+      `<tr style="background:#eaf3de22"><td style="padding:7px 12px;border-top:1px solid var(--bd);font-size:11px;color:#3B6D11">% Executado vs Previsto</td>`+
+      valsPrev.map((p,i)=>`<td style="padding:7px 12px;border-top:1px solid var(--bd);text-align:right;font-size:11px">${fPct(mkPct(valsExec[i],p))}</td>`).join('')+
+      `<td style="padding:7px 12px;border-top:1px solid var(--bd);text-align:right;font-size:11px">${fPct(mkPct(totExec,totPrev))}</td></tr>`+
+      // Pago
+      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--az)">Faturamento Pago (Equatorial)</td>`+
+      valsPago.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
+      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPago)}</td></tr>`+
+      // % Pago vs Previsto
+      `<tr style="background:#e6f1fb22"><td style="padding:7px 12px;border-top:1px solid var(--bd);font-size:11px;color:#185FA5">% Pago vs Previsto</td>`+
+      valsPrev.map((p,i)=>`<td style="padding:7px 12px;border-top:1px solid var(--bd);text-align:right;font-size:11px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+
+      `<td style="padding:7px 12px;border-top:1px solid var(--bd);text-align:right;font-size:11px">${fPct(mkPct(totPago,totPrev))}</td></tr>`;
   }
 
   // ── TABELA 2: Quantidade eventos por serviço ──

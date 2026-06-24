@@ -1446,6 +1446,9 @@ async function carregarUsuarios(){
   }).join('');
 }
 
+function togglePerms(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none';}
+function toggleSenha(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none';}
+
 // Lê os checkboxes do DOM e salva direto no Supabase
 async function salvarPermissoes(userId){
   const ABAS_IDS=['geral','servico','regional','resumida','lancar','boletim','cadernos','usuarios'];

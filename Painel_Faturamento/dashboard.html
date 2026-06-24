@@ -510,6 +510,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
             <label>Ano</label>
             <select id="rs-ano"></select>
             <button class="btn btn-p btn-sm" style="margin-left:8px" onclick="carregarResumida()">Atualizar</button>
+            <button class="btn-pdf" onclick="exportarPDFResumida()" style="margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;padding:6px 12px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer"><i class="ti ti-file-type-pdf" aria-hidden="true"></i>Exportar PDF</button>
           </div>
 
           <div class="sec">Faturamento mensal — previsto vs executado vs pago</div>
@@ -883,15 +884,14 @@ function renderTbDivergRel(est,mes,ano){
           const tarPaga=itens[0]?parseFloat(itens[0].preco_unitario)||0:tarPrev;
           const divQtd=pagoEvt-execEvt;
           const divTar=Math.abs(tarPaga-tarPrev)>=THRESHOLD_TAR?tarPaga-tarPrev:0;
-          const impQtd=divQtd*tarPrev;
-          const impTar=divTar*pagoEvt;
+          // Consistente com YTD: valorPago - valorExec
           totDivQtd+=divQtd;
-          totValNaoPago+=impQtd+impTar;
+          totValNaoPago+=(pagoEvt*tarPaga)-(execEvt*tarPrev);
           if(Math.abs(divQtd)>0||Math.abs(divTar)>=THRESHOLD_TAR) mDiv++;
           if(Math.abs(divTar)>=THRESHOLD_TAR) tarDivFlag=true;
         }
         // Só inclui se há divergência relevante
-        if(Math.abs(totDivQtd)>0||Math.abs(totValNaoPago)>1){
+        if(Math.abs(totValNaoPago)>=0.01||Math.abs(totDivQtd)>0){
           itensReg.push({cod,desc,totDivQtd,totValNaoPago,mDiv,tarDivFlag});
         }
       });
@@ -1806,12 +1806,13 @@ function renderTbDivergRelReg(est,mes,ano,reg){
       const tarPaga=its[0]?parseFloat(its[0].preco_unitario)||0:tarPrev;
       const divQtd=pagoEvt-execEvt;
       const divTar=Math.abs(tarPaga-tarPrev)>=THRESHOLD_TAR?tarPaga-tarPrev:0;
+      // Consistente com YTD: pago*tarPaga - exec*tarPrev
       totDivQtd+=divQtd;
-      totValNaoPago+=divQtd*tarPrev+divTar*pagoEvt;
+      totValNaoPago+=(pagoEvt*tarPaga)-(execEvt*tarPrev);
       if(Math.abs(divQtd)>0||Math.abs(divTar)>=THRESHOLD_TAR) mDiv++;
       if(Math.abs(divTar)>=THRESHOLD_TAR) tarDivFlag=true;
     }
-    if(Math.abs(totDivQtd)>0||Math.abs(totValNaoPago)>1){
+    if(Math.abs(totValNaoPago)>=0.01||Math.abs(totDivQtd)>0){
       itens.push({cod,desc,totDivQtd,totValNaoPago,mDiv,tarDivFlag});
     }
   });
@@ -2043,6 +2044,44 @@ function carregarResumida(){
     totRow+=`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
     bodyDifExec.innerHTML=bodyHtml+totRow;
   }
+}
+
+async function exportarPDFResumida(){
+  const {jsPDF}=window.jspdf;
+  const est=document.getElementById('rs-est')?.value||'MA';
+  const ano=document.getElementById('rs-ano')?.value||new Date().getFullYear();
+  const nomes={MA:'Maranhão',PI:'Piauí',TODOS:'Consolidado'};
+  const tab=document.getElementById('tab-resumida');
+  const canvas=await html2canvas(tab,{scale:1.5,useCORS:true,backgroundColor:'#f5f4f1'});
+  const img=canvas.toDataURL('image/png');
+  const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const W=297,H=210,margin=10;
+  pdf.setFillColor(26,26,46);pdf.rect(0,0,W,20,'F');
+  pdf.setFillColor(190,47,59);pdf.rect(0,20,W,2,'F');
+  pdf.setTextColor(255,255,255);
+  pdf.setFontSize(13);pdf.setFont('helvetica','bold');pdf.text('CENEGED',margin,13);
+  pdf.setFontSize(10);pdf.setFont('helvetica','normal');
+  pdf.text('Visão Resumida',W/2,9,{align:'center'});
+  pdf.text(`${nomes[est]} · ${ano}`,W/2,15,{align:'center'});
+  pdf.setFontSize(7);pdf.text('Gerado em '+new Date().toLocaleString('pt-BR'),W-margin,17,{align:'right'});
+  const imgW=W-margin*2,imgH=(canvas.height/canvas.width)*imgW;
+  let y=25;
+  if(imgH<H-y-8){
+    pdf.addImage(img,'PNG',margin,y,imgW,imgH);
+  } else {
+    const pxPerMm=canvas.width/imgW,pxPerPage=(H-y-8)*pxPerMm;
+    let srcY=0;
+    while(srcY<canvas.height){
+      const slH=Math.min(pxPerPage,canvas.height-srcY);
+      const sc=document.createElement('canvas');sc.width=canvas.width;sc.height=slH;
+      sc.getContext('2d').drawImage(canvas,0,srcY,canvas.width,slH,0,0,canvas.width,slH);
+      pdf.addImage(sc.toDataURL('image/png'),'PNG',margin,y,imgW,slH/pxPerMm);
+      srcY+=slH;if(srcY<canvas.height){pdf.addPage();y=10;}
+    }
+  }
+  const tp=pdf.internal.getNumberOfPages();
+  for(let i=1;i<=tp;i++){pdf.setPage(i);pdf.setFillColor(245,244,241);pdf.rect(0,H-7,W,7,'F');pdf.setTextColor(123,123,123);pdf.setFontSize(7);pdf.text('CENEGED — Visão Resumida · Confidencial',margin,H-2);pdf.text(`Página ${i} de ${tp}`,W-margin,H-2,{align:'right'});}
+  pdf.save(`CENEGED_Visao_Resumida_${ano}.pdf`);
 }
 </script>
 </body>

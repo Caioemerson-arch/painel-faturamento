@@ -1330,10 +1330,18 @@ function parsearBoletim(wb){
 }
 function parsearCaderno(wb){
   dadosCad=[];let erros=0;
+  const mapTemp={};
   lerAbas(wb).forEach(r=>{
     if(!r.REGIONAL||!r.COD_SERVICO||!r.VIGENCIA_INICIO||r.PRECO_UNITARIO===''||r.EVENTOS_PREVISTOS===''){erros++;return;}
-    dadosCad.push({estado:String(r.ESTADO||'').trim(),regional:String(r.REGIONAL).trim(),cod_servico:String(r.COD_SERVICO).trim(),descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),vigencia_inicio:String(r.VIGENCIA_INICIO).trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO).replace(',','.'))||0,eventos_previstos:parseFloat(String(r.EVENTOS_PREVISTOS).replace(',','.'))||0});
+    const est=String(r.ESTADO||'').trim();
+    const regFinal=est==='PI'?'PIAUÍ':String(r.REGIONAL).trim();
+    const cod=String(r.COD_SERVICO).trim();
+    const k=`${est}|${regFinal}|${cod}`;
+    const item={estado:est,regional:regFinal,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),vigencia_inicio:String(r.VIGENCIA_INICIO).trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO).replace(',','.'))||0,eventos_previstos:parseFloat(String(r.EVENTOS_PREVISTOS).replace(',','.'))||0};
+    if(!mapTemp[k]) mapTemp[k]=item;
+    else mapTemp[k].eventos_previstos+=item.eventos_previstos;
   });
+  dadosCad=Object.values(mapTemp);
   if(!dadosCad.length){alert('Nenhum dado encontrado. Verifique se o arquivo tem aba MA ou PI.');return;}
   const vig=dadosCad[0]?.vigencia_inicio||'',est=dadosCad[0]?.estado||'';
   document.getElementById('cad-st-txt').textContent=`${dadosCad.length} tarifas carregadas — ${est} — Vigência: ${vig}${erros?` (${erros} ignoradas)`:''}`;
@@ -1378,13 +1386,12 @@ async function salvarBoletim(){
   if(ja) await sb.from('boletins').delete().eq('id',ja.id);
   const {data:bol,error:e1}=await sb.from('boletins').insert({mes,ano,estado,ativo:true,importado_por:user.id}).select().single();
   if(e1||!bol){alert('Erro ao criar boletim.');btn.textContent='✓ Confirmar e salvar';btn.disabled=false;svBol=false;return;}
-  // Para PI: consolidar todas as regionais em "PIAUÍ"
-  const bolNorm=dadosBol.map(r=>({...r, regional: r.estado==='PI'?'PIAUÍ':r.regional}));
+  // Para PI: consolidar todas as regionais em "PIAUÍ" somando eventos
   const mapBol={};
-  bolNorm.forEach(r=>{
-    const k=`${r.estado}|PIAUÍ|${r.cod_servico}`;
-    if(r.estado!=='PI'){const k2=`${r.estado}|${r.regional}|${r.cod_servico}`;mapBol[k2]={...r};return;}
-    if(!mapBol[k]) mapBol[k]={...r,regional:'PIAUÍ'};
+  dadosBol.forEach(r=>{
+    const regFinal = r.estado==='PI' ? 'PIAUÍ' : r.regional;
+    const k=`${r.estado}|${regFinal}|${r.cod_servico}`;
+    if(!mapBol[k]) mapBol[k]={...r, regional:regFinal, qde_paga:r.qde_paga};
     else mapBol[k].qde_paga+=r.qde_paga;
   });
   const {error:e2}=await sb.from('boletim_itens').insert(Object.values(mapBol).map(r=>({boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga})));
@@ -1403,7 +1410,15 @@ async function salvarCaderno(){
   for(const c of ativos) await sb.from('cadernos').update({ativo:false,data_fim:vigencia_inicio}).eq('id',c.id);
   const {data:cad,error:e1}=await sb.from('cadernos').insert({estado,nome:`Caderno ${estado} — vigência ${vigencia_inicio}`,vigencia_inicio,ativo:true,confirmado:true,importado_por:user.id}).select().single();
   if(e1||!cad){alert('Erro: '+(e1?.message||''));btn.textContent='✓ Ativar caderno';btn.disabled=false;svCad=false;return;}
-  const {error:e2}=await sb.from('caderno_tarifas').insert(dadosCad.map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos})));
+  // Para PI: consolidar todas as regionais em "PIAUÍ" somando eventos_previstos
+  const mapCad={};
+  dadosCad.forEach(r=>{
+    const regFinal = r.estado==='PI' ? 'PIAUÍ' : r.regional;
+    const k=`${r.estado}|${regFinal}|${r.cod_servico}`;
+    if(!mapCad[k]) mapCad[k]={...r, regional:regFinal};
+    else mapCad[k].eventos_previstos+=r.eventos_previstos;
+  });
+  const {error:e2}=await sb.from('caderno_tarifas').insert(Object.values(mapCad).map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos})));
   if(e2){alert('Erro nas tarifas: '+e2.message);await sb.from('cadernos').delete().eq('id',cad.id);}
   else{alert(`✓ Caderno ativado com ${dadosCad.length} tarifas!`);document.getElementById('cad-conf').checked=false;cancelarUpload('cad');document.getElementById('upload-cad-box').style.display='none';await carregarCache();carregarCadernos();}
   btn.textContent='✓ Ativar caderno';btn.disabled=false;svCad=false;
@@ -1529,7 +1544,7 @@ async function carregarUsuarios(){
   const {data:users}=await sb.from('usuarios_perfil_completo').select('*').order('criado_em',{ascending:false});
   if(!users?.length){el.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum usuário.</td></tr>';return;}
   const rl={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'};
-  const ABAS_DISP=[{id:'geral',label:'Visão Geral'},{id:'servico',label:'Por Serviço'},{id:'regional',label:'Por Regional'},{id:'lancar',label:'Lançar Produção'},{id:'boletim',label:'Importar Boletim'},{id:'cadernos',label:'Cadernos'},{id:'usuarios',label:'Usuários'}];
+  const ABAS_DISP=[{id:'geral',label:'Visão Geral'},{id:'servico',label:'Por Serviço'},{id:'regional',label:'Por Regional'},{id:'resumida',label:'Visão Resumida'},{id:'lancar',label:'Lançar Produção'},{id:'boletim',label:'Importar Boletim'},{id:'cadernos',label:'Cadernos'},{id:'usuarios',label:'Usuários'}];
   el.innerHTML=users.map(u=>{
     const abas=u.abas_permitidas||['geral','servico','regional'];
     return `<tr>

@@ -216,12 +216,12 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <a class="sb-item active" id="nav-geral" onclick="setTab('geral',this)"><i class="ti ti-layout-dashboard" aria-hidden="true"></i>Visão Geral</a>
         <a class="sb-item" id="nav-servico" onclick="setTab('servico',this)"><i class="ti ti-list-details" aria-hidden="true"></i>Por Serviço</a>
         <a class="sb-item" id="nav-regional" onclick="setTab('regional',this)"><i class="ti ti-map-pin" aria-hidden="true"></i>Por Regional</a>
+        <a class="sb-item" id="nav-resumida" onclick="setTab('resumida',this)"><i class="ti ti-table" aria-hidden="true"></i>Visão Resumida</a>
         <div class="sb-sec">Dados</div>
         <a class="sb-item" id="nav-lancar" onclick="setTab('lancar',this)" style="display:none"><i class="ti ti-upload" aria-hidden="true"></i>Lançar Produção</a>
         <a class="sb-item" id="nav-boletim" onclick="setTab('boletim',this)" style="display:none"><i class="ti ti-file-invoice" aria-hidden="true"></i>Importar Boletim</a>
         <a class="sb-item" id="nav-cadernos" onclick="setTab('cadernos',this)" style="display:none"><i class="ti ti-book" aria-hidden="true"></i>Cadernos</a>
         <div class="sb-sec">Gestão</div>
-        <a class="sb-item" id="nav-resumida" onclick="setTab('resumida',this)"><i class="ti ti-table" aria-hidden="true"></i>Visão Resumida</a>
         <a class="sb-item" id="nav-usuarios" onclick="setTab('usuarios',this)" style="display:none"><i class="ti ti-users" aria-hidden="true"></i>Usuários</a>
       </div>
       <div class="sb-bottom">
@@ -1890,7 +1890,7 @@ function carregarResumida(){
     const totPago=valsPago.reduce((s,v)=>s+v,0);
 
     const mkPct=(v,p)=>p>0?((v-p)/p*100):0;
-    const fPct=v=>`<span style="color:${v>=0?'#1D9E75':'#BE2F3B'};font-weight:700">${v>=0?'+':''}${v.toFixed(1)}%</span>`;
+    const fPct=v=>{const c=v>=0?'#1D9E75':'#BE2F3B';return `<span style="color:${c};font-weight:700">${v>=0?'+':''}${v.toFixed(1)}%</span>`;};
 
     bodyFat.innerHTML=
       // Previsto
@@ -1901,18 +1901,18 @@ function carregarResumida(){
       `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vd)">Faturamento Executado (Campo)</td>`+
       valsExec.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
       `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totExec)}</td></tr>`+
-      // % Exec vs Previsto
-      `<tr style="background:#eaf3de22"><td style="padding:7px 12px;border-top:1px solid var(--bd);font-size:11px;color:#3B6D11">% Executado vs Previsto</td>`+
-      valsPrev.map((p,i)=>`<td style="padding:7px 12px;border-top:1px solid var(--bd);text-align:right;font-size:11px">${fPct(mkPct(valsExec[i],p))}</td>`).join('')+
-      `<td style="padding:7px 12px;border-top:1px solid var(--bd);text-align:right;font-size:11px">${fPct(mkPct(totExec,totPrev))}</td></tr>`+
       // Pago
       `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--az)">Faturamento Pago (Equatorial)</td>`+
       valsPago.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
       `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPago)}</td></tr>`+
-      // % Pago vs Previsto
-      `<tr style="background:#e6f1fb22"><td style="padding:7px 12px;border-top:1px solid var(--bd);font-size:11px;color:#185FA5">% Pago vs Previsto</td>`+
-      valsPrev.map((p,i)=>`<td style="padding:7px 12px;border-top:1px solid var(--bd);text-align:right;font-size:11px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+
-      `<td style="padding:7px 12px;border-top:1px solid var(--bd);text-align:right;font-size:11px">${fPct(mkPct(totPago,totPrev))}</td></tr>`;
+      // % Exec vs Previsto — linha separada
+      `<tr style="background:#eaf3de22;border-top:2px solid var(--vd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#3B6D11">% Exec. vs Previsto</td>`+
+      valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsExec[i],p))}</td>`).join('')+
+      `<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totExec,totPrev))}</td></tr>`+
+      // % Pago vs Previsto — linha separada
+      `<tr style="background:#e6f1fb22;border-top:1px solid var(--bd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#185FA5">% Pago vs Previsto</td>`+
+      valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+
+      `<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totPago,totPrev))}</td></tr>`;
   }
 
   // ── TABELA 2: Quantidade eventos por serviço ──
@@ -2014,7 +2014,7 @@ function carregarResumida(){
         const pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);
         const dif=execEvt-pagoEvt;
         totArr[i]+=dif; tot+=dif; totGeral+=dif;
-        const cor=dif<=0?'#1D9E75':'#BE2F3B';
+        const cor=dif>0?'#BE2F3B':dif<0?'#1D9E75':'inherit';
         row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;
       });
       const corTot=tot<=0?'#1D9E75':'#BE2F3B';
@@ -2022,8 +2022,8 @@ function carregarResumida(){
       bodyHtml+=row;
     });
     let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td>`;
-    totArr.forEach(v=>{const c=v<=0?'#1D9E75':'#BE2F3B';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});
-    const cT=totGeral<=0?'#1D9E75':'#BE2F3B';
+    totArr.forEach(v=>{const c=v>0?'#BE2F3B':v<0?'#1D9E75':'inherit';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});
+    const cT=totGeral>0?'#BE2F3B':totGeral<0?'#1D9E75':'inherit';
     totRow+=`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
     bodyDifExec.innerHTML=bodyHtml+totRow;
   }

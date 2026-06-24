@@ -700,7 +700,7 @@ function calcExec(est,m,a,r=''){
   getProd(est,m,a,r).forEach(p=>{const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=p.qde_executada*tar;evt+=p.qde_executada;});
   return {val,evt};
 }
-function calcPago(est,m,a,r=''){let val=0,evt=0;getItens(est,m,a,r).forEach(i=>{val+=parseFloat(i.valor_pago)||0;evt+=i.qde_paga||0;});return {val,evt};}
+function calcPago(est,m,a,r=''){let val=0,evt=0;getItens(est,m,a,r).forEach(i=>{const v=parseFloat(i.valor_pago)||((parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0));val+=v;evt+=i.qde_paga||0;});return {val,evt};}
 
 // ═══ NAVEGAÇÃO ═══
 function setTab(id,el){

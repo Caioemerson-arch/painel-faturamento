@@ -691,7 +691,7 @@ function getItens(estado,mes,ano,reg=''){
   const bids=new Set(C.bols.filter(b=>b.mes===mes&&b.ano===ano&&(estado==='TODOS'||b.estado===estado)).map(b=>b.id));
   return C.itens.filter(i=>bids.has(i.boletim_id)&&(!reg||i.regional===reg));
 }
-function calcPrevisto(est,m,a,r=''){return getTarifas(est,m,a,r).reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||0),0);}
+function calcPrevisto(est,m,a,r=''){return getTarifas(est,m,a,r).reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0)),0);}
 function calcPrevEvt(est,m,a,r=''){return getTarifas(est,m,a,r).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);}
 function calcExec(est,m,a,r=''){
   const tars=getTarifas(est,m,a,r);

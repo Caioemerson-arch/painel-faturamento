@@ -300,9 +300,8 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <div class="tbox"><table><thead><tr><th>Regional</th><th>Eventos previstos</th><th>Eventos executados</th><th>Eventos pagos</th><th>Diferença</th><th>Divergência %</th><th>Status</th></tr></thead><tbody id="tb-evt-reg"></tbody></table></div>
           <div class="sec">Faturamento por regional</div>
           <div class="tbox"><table><thead><tr><th>Regional</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-fat-reg"></tbody></table></div>
-              <div class="sec">Acumulado YTD por regional — jan até mês selecionado</div>
+          <div class="sec">Acumulado YTD por regional — jan até mês selecionado</div>
           <div class="tbox"><table><thead><tr><th>Regional</th><th>Previsto acum.</th><th>Executado acum.</th><th>Pago acum.</th><th>Diverg. acum.</th><th>Meses c/ diverg.</th><th>% meta acum.</th></tr></thead><tbody id="tb-ytd-reg"></tbody></table></div>
-
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <div class="sec" style="margin:0">Relatório de divergência acumulada</div>
             <button class="btn btn-p btn-sm" onclick="exportarRelPDF()" style="display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" aria-hidden="true"></i>Exportar PDF</button>
@@ -310,7 +309,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <div id="relatorio-divergencia" style="background:var(--br);border-radius:var(--r);border:1px solid var(--bd);padding:1.25rem;margin-bottom:1.25rem;font-size:13px;line-height:1.7">
             <p style="color:var(--tx2);font-style:italic">Carregando relatório...</p>
           </div>
-
           <div class="sec">Tarifa prevista vs paga</div>
           <div class="tbox"><table><thead><tr><th>Serviço</th><th>Regional</th><th>Tarifa prevista</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-tar"></tbody></table></div>
           <div class="sec">Proporção por serviço</div>
@@ -347,7 +345,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           </div>
           <div id="r-alerta" class="alerta al-warn" style="display:none"><span>⚠</span><span id="r-alerta-txt"></span></div>
           <div class="cards" id="r-cards"></div>
-    <div class="cards" id="r-var-cards" style="margin-top:-8px"></div>
+          <div class="cards" id="r-var-cards" style="margin-top:-8px"></div>
           <div class="row2">
             <div class="gbox"><h3 id="r-ch-tit">Evolução mensal</h3><div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div><div style="position:relative;height:190px"><canvas id="ch-reg-m"></canvas></div></div>
             <div class="gbox"><h3>Distribuição por serviço — pago</h3><div class="leg" id="leg-reg-pz"></div><div style="position:relative;height:190px"><canvas id="ch-reg-pz"></canvas></div></div>
@@ -358,7 +356,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <div class="tbox"><table><thead><tr><th>Serviço</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-reg-fat"></tbody></table></div>
           <div class="sec">Acumulado YTD por regional — jan até mês selecionado</div>
           <div class="tbox"><table><thead><tr><th>Regional</th><th>Previsto acum.</th><th>Executado acum.</th><th>Pago acum.</th><th>Diverg. acum.</th><th>Meses c/ diverg.</th><th>% meta acum.</th></tr></thead><tbody id="tb-reg-ytd"></tbody></table></div>
-
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <div class="sec" style="margin:0">Relatório de divergência acumulada</div>
             <button class="btn btn-p btn-sm" onclick="exportarRelRegPDF()" style="display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" aria-hidden="true"></i>Exportar PDF</button>
@@ -366,7 +363,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <div id="relatorio-diverg-reg" style="background:var(--br);border-radius:var(--r);border:1px solid var(--bd);padding:1.25rem;margin-bottom:1.25rem;font-size:13px;line-height:1.7">
             <p style="color:var(--tx2);font-style:italic">Carregando relatório...</p>
           </div>
-
           <div class="sec">Separação da divergência — quantidade vs tarifa</div>
           <div class="tbox"><table><thead><tr><th>Serviço</th><th>Exec.(evt)</th><th>Pago(evt)</th><th>Diverg.qtd</th><th>Impacto qtd (R$)</th><th>Tarifa prev.</th><th>Tarifa paga</th><th>Diverg.tarifa</th><th>Impacto tarifa (R$)</th><th>Total não pago</th></tr></thead><tbody id="tb-reg-diverg-sep"></tbody></table></div>
           <div class="sec">Tarifa prevista vs paga</div>
@@ -469,11 +465,8 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
               <div class="btn-row"><button class="btn btn-s" onclick="cancelarUpload('cad')">Cancelar</button><button class="btn btn-p" id="btn-sv-cad" onclick="salvarCaderno()">✓ Ativar caderno</button></div>
             </div>
           </div>
-          <!-- Cadernos ativos -->
           <div class="sec">Cadernos ativos</div>
           <div id="lista-cad-ativos"><div class="loader">Carregando...</div></div>
-
-          <!-- Histórico -->
           <div class="sec-row" style="margin-top:1.5rem">
             <div style="display:flex;align-items:center;gap:10px">
               <div class="sec" style="margin:0">Histórico de cadernos</div>
@@ -500,7 +493,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           </div>
         </div>
 
-      
         <!-- VISÃO RESUMIDA -->
         <div id="tab-resumida" style="display:none">
           <div class="fil">
@@ -511,7 +503,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
             <button class="btn btn-p btn-sm" style="margin-left:8px" onclick="carregarResumida()">Atualizar</button>
             <button class="btn-pdf" onclick="exportarPDFResumida()" style="margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;padding:6px 12px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer"><i class="ti ti-file-type-pdf" aria-hidden="true"></i>Exportar PDF</button>
           </div>
-
           <div class="sec">Faturamento mensal — previsto vs executado vs pago</div>
           <div class="tbox" style="overflow-x:auto">
             <table id="tb-rs-fat" style="min-width:600px">
@@ -519,7 +510,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
               <tbody id="tb-rs-fat-body"></tbody>
             </table>
           </div>
-
           <div class="sec">Quantidade de eventos por serviço — previsto e realizado por mês</div>
           <div class="tbox" style="overflow-x:auto">
             <table id="tb-rs-evt" style="min-width:900px">
@@ -527,7 +517,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
               <tbody id="tb-rs-evt-body"></tbody>
             </table>
           </div>
-
           <div class="sec">Diferença: Qtd pago vs Previsto caderno — por serviço e mês</div>
           <div class="tbox" style="overflow-x:auto">
             <table id="tb-rs-dif-cad" style="min-width:700px">
@@ -535,7 +524,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
               <tbody id="tb-rs-dif-cad-body"></tbody>
             </table>
           </div>
-
           <div class="sec">Diferença: Qtd executado vs Qtd pago — por serviço e mês</div>
           <div class="tbox" style="overflow-x:auto">
             <table id="tb-rs-dif-exec" style="min-width:700px">
@@ -544,7 +532,8 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
             </table>
           </div>
         </div>
-</div><!-- /con -->
+
+      </div><!-- /con -->
     </div><!-- /main -->
   </div><!-- /layout -->
 </div><!-- /app -->
@@ -570,7 +559,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     </div>
   </div>
 </div>
-
 <script>
 const SURL='https://wcefqhivhaejueenburz.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
@@ -616,7 +604,6 @@ async function iniciarApp(user){
   const {data}=await sb.from('usuarios_perfil_completo').select('*').eq('id',user.id).single();
   perfil=data||{role:user.user_metadata?.role||'viewer',perm_producao:false,perm_boletim:false,perm_exportar_pdf:false,perm_exportar_excel:false,abas_permitidas:['geral','servico','regional']};
   role=perfil.role||'viewer';
-  // Avatar
   const partes=(perfil.nome||userEmail).split(' ');
   const ini=(partes[0][0]+(partes[1]?partes[1][0]:'')).toUpperCase();
   document.getElementById('sb-avatar').textContent=ini;
@@ -761,16 +748,13 @@ async function carregarGeral(){
   const mes=parseInt(document.getElementById('g-mes').value);
   const ano=parseInt(document.getElementById('g-ano').value);
   syncRegsGeral();atualizarPageSub();
-
   const prev=calcPrevisto(est,mes,ano),prevE=calcPrevEvt(est,mes,ano);
   const exec=calcExec(est,mes,ano),pago=calcPago(est,mes,ano);
   const pct=prev>0?(pago.val/prev*100):0;
-
   document.getElementById('g-prev').textContent=fR(prev);
   document.getElementById('g-exec').textContent=fR(exec.val);
   document.getElementById('g-pago').textContent=fR(pago.val);
   document.getElementById('g-pct').textContent=pct.toFixed(1)+'%';
-
   const dEP=exec.val-prev,dPE=pago.val-exec.val;
   const se=document.getElementById('g-exec-s');
   se.className='cs '+(dEP>=0?'cp':'cw');
@@ -778,36 +762,25 @@ async function carregarGeral(){
   const sp=document.getElementById('g-pago-s');
   sp.className='cs '+(dPE>=0?'cp':'cn');
   sp.textContent=(dPE>=0?'▲ ':'▼ ')+fR(Math.abs(dPE))+(dPE>=0?' acima':' abaixo')+' do executado';
-
   const al=document.getElementById('g-alerta');
   if(Math.abs(dPE)>1000&&exec.val>0){
     const pDiv=exec.evt>0?((exec.evt-pago.evt)/exec.evt*100).toFixed(1):'0';
     document.getElementById('g-alerta-txt').innerHTML=`Divergência: Equatorial pagou <strong>${(100-parseFloat(pDiv)).toFixed(1)}%</strong> da produção real. Diferença de <strong>${fR(Math.abs(dPE))}</strong> não reconhecida.`;
     al.style.display='flex';
   } else al.style.display='none';
-
-  // YTD
   renderYTD(est,mes,ano);
   renderGraficoMensal(est,ano);
   renderGraficoDivMes(est,ano,mes);
   renderTbEvtReg(est,mes,ano);
   renderTbFatReg(est,mes,ano);
-  // Pequeno delay para garantir que o DOM está pronto
-  setTimeout(()=>{
-    renderTbYTDReg(est,mes,ano);
-    renderTbDivergRel(est,mes,ano);
-  },100);
+  setTimeout(()=>{renderTbYTDReg(est,mes,ano);renderTbDivergRel(est,mes,ano);},100);
   renderTbTar(est,mes,ano);
   renderTbProp(est,mes,ano);
 }
 
 function renderYTD(est,mes,ano){
   let ytdPrev=0,ytdExec=0,ytdPago=0;
-  for(let m=1;m<=mes;m++){
-    ytdPrev+=calcPrevisto(est,m,ano);
-    ytdExec+=calcExec(est,m,ano).val;
-    ytdPago+=calcPago(est,m,ano).val;
-  }
+  for(let m=1;m<=mes;m++){ytdPrev+=calcPrevisto(est,m,ano);ytdExec+=calcExec(est,m,ano).val;ytdPago+=calcPago(est,m,ano).val;}
   const pct=ytdPrev>0?(ytdPago/ytdPrev*100):0;
   const dEP=ytdExec-ytdPrev,dPE=ytdPago-ytdExec;
   document.getElementById('g-ytd-prev').textContent=fR(ytdPrev);
@@ -827,10 +800,7 @@ function renderTbYTDReg(est,mes,ano){
   const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
   const tb=document.getElementById('tb-ytd-reg');
   if(!tb) return;
-  if(!C.cads.length&&!C.prod.length&&!C.bols.length){
-    tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados carregados.</td></tr>';
-    return;
-  }
+  if(!C.cads.length&&!C.prod.length&&!C.bols.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados carregados.</td></tr>';return;}
   let html='',totYP=0,totYE=0,totYG=0,totMDiv=0;
   regs.forEach(reg=>{
     let yP=0,yE=0,yG=0,mDiv=0;
@@ -854,17 +824,14 @@ function renderTbYTDReg(est,mes,ano){
 function renderTbDivergRel(est,mes,ano){
   const el=document.getElementById('relatorio-divergencia');
   if(!el) return;
-  const THRESHOLD_TAR=0.01; // ignorar divergências de tarifa menores que R$0,01
+  const THRESHOLD_TAR=0.01;
   const estados=est==='TODOS'?['MA','PI']:[est];
   let htmlTotal='';
   let temDivergencia=false;
-
   estados.forEach(estado=>{
     const regs=REGS[estado]||[];
     const tars=getTarifas(estado,mes,ano);
     if(!tars.length) return;
-
-    // Coleta divergências por regional
     const divPorReg={};
     regs.forEach(reg=>{
       const svcSet=new Set(tars.filter(t=>t.regional===reg).map(t=>t.cod_servico+'||'+t.descricao_servico));
@@ -883,56 +850,35 @@ function renderTbDivergRel(est,mes,ano){
           const tarPaga=itens[0]?parseFloat(itens[0].preco_unitario)||0:tarPrev;
           const divQtd=pagoEvt-execEvt;
           const divTar=Math.abs(tarPaga-tarPrev)>=THRESHOLD_TAR?tarPaga-tarPrev:0;
-          // Consistente com YTD: valorPago - valorExec
           totDivQtd+=divQtd;
           totValNaoPago+=(pagoEvt*tarPaga)-(execEvt*tarPrev);
           if(Math.abs(divQtd)>0||Math.abs(divTar)>=THRESHOLD_TAR) mDiv++;
           if(Math.abs(divTar)>=THRESHOLD_TAR) tarDivFlag=true;
         }
-        // Só inclui se há divergência relevante
         if(Math.abs(totValNaoPago)>=0.01||Math.abs(totDivQtd)>0){
           itensReg.push({cod,desc,totDivQtd,totValNaoPago,mDiv,tarDivFlag});
         }
       });
       if(itensReg.length) divPorReg[reg]=itensReg;
     });
-
     if(!Object.keys(divPorReg).length) return;
     temDivergencia=true;
-
-    // Total estado
     const totalEstado=Object.values(divPorReg).flat().reduce((s,i)=>s+i.totValNaoPago,0);
-
-    htmlTotal+=`<div style="margin-bottom:1.5rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--vm);margin-bottom:12px">
-        <strong style="font-size:14px;color:var(--pt)">${estado==='MA'?'Maranhão':'Piauí'} · Jan→${MN[mes]}/${ano}</strong>
-        <span style="font-size:13px;font-weight:700;color:${totalEstado<0?'#BE2F3B':'#1D9E75'}">Divergência total: ${totalEstado<0?'':'+'}${fR(totalEstado)}</span>
-      </div>`;
-
+    htmlTotal+=`<div style="margin-bottom:1.5rem"><div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--vm);margin-bottom:12px"><strong style="font-size:14px;color:var(--pt)">${estado==='MA'?'Maranhão':'Piauí'} · Jan→${MN[mes]}/${ano}</strong><span style="font-size:13px;font-weight:700;color:${totalEstado<0?'#BE2F3B':'#1D9E75'}">Divergência total: ${totalEstado<0?'':'+'}${fR(totalEstado)}</span></div>`;
     Object.entries(divPorReg).forEach(([reg,svcs])=>{
       const totalReg=svcs.reduce((s,i)=>s+i.totValNaoPago,0);
-      htmlTotal+=`<div style="margin-bottom:14px;padding-left:12px;border-left:3px solid var(--bd)">
-        <p style="font-weight:700;color:var(--pt);margin-bottom:8px">Regional ${reg} <span style="font-weight:400;font-size:12px;color:${totalReg<0?'#BE2F3B':'#1D9E75'}">&nbsp;·&nbsp; ${totalReg<0?'':'+'}${fR(totalReg)}</span></p>`;
+      htmlTotal+=`<div style="margin-bottom:14px;padding-left:12px;border-left:3px solid var(--bd)"><p style="font-weight:700;color:var(--pt);margin-bottom:8px">Regional ${reg} <span style="font-weight:400;font-size:12px;color:${totalReg<0?'#BE2F3B':'#1D9E75'}">&nbsp;·&nbsp; ${totalReg<0?'':'+'}${fR(totalReg)}</span></p>`;
       svcs.forEach(s=>{
         const dirQtd=s.totDivQtd<0?'a menos':'a mais';
         const corValor=s.totValNaoPago<0?'#BE2F3B':'#1D9E75';
-        let frase=`A Equatorial pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo`;
-        frase+=` em <strong>${s.mDiv} de ${mes} ${mes===1?'mês':'meses'}</strong>`;
-        frase+=`, representando um impacto financeiro de <strong style="color:${corValor}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>`;
-        frase+=s.tarDivFlag?' (inclui divergência de tarifa).':'.';
-        htmlTotal+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px">
-          <span style="font-weight:700;color:var(--pt)">${s.desc}:</span> ${frase}
-        </p>`;
+        let frase=`A Equatorial pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo em <strong>${s.mDiv} de ${mes} ${mes===1?'mês':'meses'}</strong>, representando um impacto financeiro de <strong style="color:${corValor}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>${s.tarDivFlag?' (inclui divergência de tarifa).':'.'}`;
+        htmlTotal+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px"><span style="font-weight:700;color:var(--pt)">${s.desc}:</span> ${frase}</p>`;
       });
       htmlTotal+='</div>';
     });
     htmlTotal+='</div>';
   });
-
-  if(!temDivergencia){
-    el.innerHTML='<p style="color:var(--tx2);text-align:center;padding:1rem">Nenhuma divergência relevante detectada no período.</p>';
-    return;
-  }
+  if(!temDivergencia){el.innerHTML='<p style="color:var(--tx2);text-align:center;padding:1rem">Nenhuma divergência relevante detectada no período.</p>';return;}
   el.innerHTML=htmlTotal;
 }
 
@@ -949,17 +895,15 @@ async function exportarRelPDF(){
   pdf.setFillColor(26,26,46);pdf.rect(0,0,W,22,'F');
   pdf.setFillColor(190,47,59);pdf.rect(0,22,W,2,'F');
   pdf.setTextColor(255,255,255);
-  pdf.setFontSize(14);pdf.setFont('helvetica','bold');
-  pdf.text('CENEGED',margin,14);
+  pdf.setFontSize(14);pdf.setFont('helvetica','bold');pdf.text('CENEGED',margin,14);
   pdf.setFontSize(10);pdf.setFont('helvetica','normal');
   pdf.text('Relatório de Divergência Acumulada',W/2,10,{align:'center'});
   pdf.text(`${est==='MA'?'Maranhão':est==='PI'?'Piauí':'Consolidado'} · Jan→${MN[mes]}/${ano}`,W/2,16,{align:'center'});
   pdf.setFontSize(8);pdf.text('Gerado em '+new Date().toLocaleString('pt-BR'),W-margin,19,{align:'right'});
   const imgW=W-margin*2,imgH=(canvas.height/canvas.width)*imgW;
   let y=28;
-  if(imgH<H-y-10){
-    pdf.addImage(img,'PNG',margin,y,imgW,imgH);
-  } else {
+  if(imgH<H-y-10){pdf.addImage(img,'PNG',margin,y,imgW,imgH);}
+  else{
     const pxPerMm=canvas.width/imgW,mmPerPage=H-y-10,pxPerPage=mmPerPage*pxPerMm;
     let srcY=0;
     while(srcY<canvas.height){
@@ -976,64 +920,34 @@ async function exportarRelPDF(){
 }
 
 function renderGraficoMensal(est,ano){
-  // Separar meses reais vs projeção
   const mesAtual=parseInt(document.getElementById('g-mes').value);
   const prev=[],execReal=[],pagoReal=[],execProj=[],pagoProj=[];
-
-  // Calcular % médio de atingimento dos meses reais
   let somaExecPct=0,somaPagoPct=0,countReal=0;
   for(let m=1;m<=mesAtual;m++){
     const p=calcPrevisto(est,m,ano);
-    if(p>0){
-      somaExecPct+=calcExec(est,m,ano).val/p;
-      somaPagoPct+=calcPago(est,m,ano).val/p;
-      countReal++;
-    }
+    if(p>0){somaExecPct+=calcExec(est,m,ano).val/p;somaPagoPct+=calcPago(est,m,ano).val/p;countReal++;}
   }
   const pctExecMedio=countReal>0?somaExecPct/countReal:0.98;
   const pctPagoMedio=countReal>0?somaPagoPct/countReal:0.97;
-
   for(let m=1;m<=12;m++){
     const p=calcPrevisto(est,m,ano);
     prev.push(p);
-    if(m<=mesAtual){
-      execReal.push(calcExec(est,m,ano).val);
-      pagoReal.push(calcPago(est,m,ano).val);
-      execProj.push(null);
-      pagoProj.push(null);
-    } else {
-      execReal.push(null);
-      pagoReal.push(null);
-      execProj.push(p*pctExecMedio);
-      pagoProj.push(p*pctPagoMedio);
-    }
+    if(m<=mesAtual){execReal.push(calcExec(est,m,ano).val);pagoReal.push(calcPago(est,m,ano).val);execProj.push(null);pagoProj.push(null);}
+    else{execReal.push(null);pagoReal.push(null);execProj.push(p*pctExecMedio);pagoProj.push(p*pctPagoMedio);}
   }
-
   if(chMensal) chMensal.destroy();
   chMensal=new Chart(document.getElementById('ch-mensal'),{
     type:'bar',
-    data:{
-      labels:MN.slice(1),
-      datasets:[
-        {label:'Previsto',data:prev,type:'line',borderColor:'#BE2F3B',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2,borderDash:[5,3],order:1},
-        {label:'Executado real',data:execReal,type:'line',borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:3,order:2},
-        {label:'Executado proj.',data:execProj,type:'line',borderColor:'#1D9E7588',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:3,borderDash:[4,3],order:3},
-        {label:'Pago real',data:pagoReal,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0,order:4},
-        {label:'Pago proj.',data:pagoProj,backgroundColor:'#378ADD44',borderRadius:3,borderWidth:1,borderColor:'#378ADD',order:5}
-      ]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        y:{ticks:{callback:v=>'R$'+(v/1e6).toFixed(1)+'M',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},
-        x:{ticks:{font:{size:10}}}
-      }
-    }
+    data:{labels:MN.slice(1),datasets:[
+      {label:'Previsto',data:prev,type:'line',borderColor:'#BE2F3B',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2,borderDash:[5,3],order:1},
+      {label:'Executado real',data:execReal,type:'line',borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:3,order:2},
+      {label:'Executado proj.',data:execProj,type:'line',borderColor:'#1D9E7588',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:3,borderDash:[4,3],order:3},
+      {label:'Pago real',data:pagoReal,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0,order:4},
+      {label:'Pago proj.',data:pagoProj,backgroundColor:'#378ADD44',borderRadius:3,borderWidth:1,borderColor:'#378ADD',order:5}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+(v/1e6).toFixed(1)+'M',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}
   });
 }
-
-
 
 function renderGraficoDivMes(est,ano,mesAtual){
   const divs=[],cores=[];
@@ -1041,16 +955,13 @@ function renderGraficoDivMes(est,ano,mesAtual){
     if(m>mesAtual){divs.push(null);cores.push('transparent');continue;}
     const ex=calcExec(est,m,ano),pg=calcPago(est,m,ano);
     const d=pg.val-ex.val;
-    divs.push(d);
-    cores.push(d<0?'#BE2F3B':'#1D9E75');
+    divs.push(d);cores.push(d<0?'#BE2F3B':'#1D9E75');
   }
   if(chPizza) chPizza.destroy();
   chPizza=new Chart(document.getElementById('ch-div-mes'),{
     type:'bar',
     data:{labels:MN.slice(1),datasets:[{label:'Divergência',data:divs,backgroundColor:cores,borderRadius:3,borderWidth:0}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw===null?'':' R$'+Math.abs(c.raw/1000).toFixed(1)+'k '+(c.raw<0?'abaixo':'acima')}}},
-      scales:{y:{ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw===null?'':' R$'+Math.abs(c.raw/1000).toFixed(1)+'k '+(c.raw<0?'abaixo':'acima')}}},scales:{y:{ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}
   });
   const divReal=divs.filter(d=>d!==null);
   const acum=divReal.reduce((s,v)=>s+v,0);
@@ -1058,18 +969,9 @@ function renderGraficoDivMes(est,ano,mesAtual){
   const mNeg=divReal.filter(d=>d<0).length;
   const el=document.getElementById('div-resumo');
   if(el) el.innerHTML=`
-    <div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px">
-      <div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Acumulado</div>
-      <div style="font-size:13px;font-weight:700;color:${acum<0?'#BE2F3B':'#1D9E75'}">${acum<0?'':'+'}${fR(acum)}</div>
-    </div>
-    <div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px">
-      <div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Média mensal</div>
-      <div style="font-size:13px;font-weight:700;color:${media<0?'#BE2F3B':'#1D9E75'}">${media<0?'':'+'}${fR(media)}</div>
-    </div>
-    <div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px">
-      <div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Meses c/ divergência</div>
-      <div style="font-size:13px;font-weight:700;color:${mNeg>0?'#BE2F3B':'#1D9E75'}">${mNeg} de ${divReal.length} meses</div>
-    </div>`;
+    <div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px"><div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Acumulado</div><div style="font-size:13px;font-weight:700;color:${acum<0?'#BE2F3B':'#1D9E75'}">${acum<0?'':'+'}${fR(acum)}</div></div>
+    <div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px"><div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Média mensal</div><div style="font-size:13px;font-weight:700;color:${media<0?'#BE2F3B':'#1D9E75'}">${media<0?'':'+'}${fR(media)}</div></div>
+    <div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px"><div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Meses c/ divergência</div><div style="font-size:13px;font-weight:700;color:${mNeg>0?'#BE2F3B':'#1D9E75'}">${mNeg} de ${divReal.length} meses</div></div>`;
 }
 
 function renderTbEvtReg(est,mes,ano){
@@ -1159,12 +1061,9 @@ function carregarRegional(){
   const est=document.getElementById('r-est').value,reg=document.getElementById('r-reg').value;
   const mes=parseInt(document.getElementById('r-mes').value),ano=parseInt(document.getElementById('r-ano').value);
   document.getElementById('r-ch-tit').textContent=`Evolução mensal — ${reg}`;
-
   const prev=calcPrevisto(est,mes,ano,reg),prevE=calcPrevEvt(est,mes,ano,reg);
   const exec=calcExec(est,mes,ano,reg),pago=calcPago(est,mes,ano,reg);
   const pct=prev>0?(pago.val/prev*100):0,dv=pago.val-exec.val;
-
-  // Mês anterior
   const mesAnt=mes===1?12:mes-1,anoAnt=mes===1?ano-1:ano;
   const prevAnt=calcPrevisto(est,mesAnt,anoAnt,reg);
   const execAnt=calcExec(est,mesAnt,anoAnt,reg);
@@ -1172,24 +1071,19 @@ function carregarRegional(){
   const varPrev=prevAnt>0?((prev-prevAnt)/prevAnt*100):0;
   const varExec=execAnt.val>0?((exec.val-execAnt.val)/execAnt.val*100):0;
   const varPago=pagoAnt.val>0?((pago.val-pagoAnt.val)/pagoAnt.val*100):0;
-
   document.getElementById('r-cards').innerHTML=`
     <div class="card"><div class="cl">Previsto (caderno)</div><div class="cv">${fR(prev)}</div><div class="cs cm">Meta da regional</div></div>
     <div class="card"><div class="cl">Executado (campo)</div><div class="cv">${fR(exec.val)}</div><div class="cs ${exec.val>=prev?'cp':'cw'}">${exec.val>=prev?'▲ Acima':'▼ Abaixo'} da meta</div></div>
     <div class="card vd"><div class="cl">Pago (Equatorial)</div><div class="cv">${fR(pago.val)}</div><div class="cs ${dv>=0?'cp':'cn'}">${fR(Math.abs(dv))} ${dv>=0?'acima':'abaixo'} do exec. · ${pct.toFixed(1)}%</div></div>`;
-
-  // Cards variação mês anterior
   const vcEl=document.getElementById('r-var-cards');
   if(vcEl) vcEl.innerHTML=`
     <div class="card" style="border-top-color:var(--am)"><div class="cl">Variação previsto vs mês ant.</div><div class="cv" style="font-size:16px;color:${varPrev>=0?'#1D9E75':'#BE2F3B'}">${varPrev>=0?'▲':'▼'} ${Math.abs(varPrev).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(prevAnt)}</div></div>
     <div class="card" style="border-top-color:var(--am)"><div class="cl">Variação executado vs mês ant.</div><div class="cv" style="font-size:16px;color:${varExec>=0?'#1D9E75':'#BE2F3B'}">${varExec>=0?'▲':'▼'} ${Math.abs(varExec).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(execAnt.val)}</div></div>
     <div class="card" style="border-top-color:var(--am)"><div class="cl">Variação pago vs mês ant.</div><div class="cv" style="font-size:16px;color:${varPago>=0?'#1D9E75':'#BE2F3B'}">${varPago>=0?'▲':'▼'} ${Math.abs(varPago).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(pagoAnt.val)}</div></div>`;
-
   const pDiv=exec.evt>0?((exec.evt-pago.evt)/exec.evt*100):0;
   const rAl=document.getElementById('r-alerta');
   if(Math.abs(pDiv)>2){document.getElementById('r-alerta-txt').innerHTML=`Regional ${reg}: Equatorial pagou <strong>${(100-pDiv).toFixed(1)}%</strong> da produção. Diferença de <strong>${fR(Math.abs(dv))}</strong>.`;rAl.style.display='flex';}
   else rAl.style.display='none';
-
   const sP=[],sE=[],sG=[];
   for(let m=1;m<=12;m++){sP.push(calcPrevisto(est,m,ano,reg));sE.push(calcExec(est,m,ano,reg).val);sG.push(calcPago(est,m,ano,reg).val);}
   if(chRegM) chRegM.destroy();
@@ -1198,13 +1092,11 @@ function carregarRegional(){
     {label:'Executado',data:sE,type:'line',borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2},
     {label:'Pago',data:sG,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+(v/1e3).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}});
-
   const pm={};getItens(est,mes,ano,reg).forEach(i=>{if(!pm[i.cod_servico]) pm[i.cod_servico]={desc:i.descricao_servico,val:0};pm[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
   const sv=Object.entries(pm).sort((a,b)=>b[1].val-a[1].val);
   document.getElementById('leg-reg-pz').innerHTML=sv.map((s,i)=>`<span><i style="background:${CS[i%CS.length]};width:9px;height:9px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,16)}</span>`).join('');
   if(chRegPz) chRegPz.destroy();
   if(sv.length) chRegPz=new Chart(document.getElementById('ch-reg-pz'),{type:'doughnut',data:{labels:sv.map(s=>s[1].desc),datasets:[{data:sv.map(s=>s[1].val),backgroundColor:CS,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fR(c.raw)}}}}});
-
   const tars=getTarifas(est,mes,ano,reg);
   const tarMap={};tars.forEach(t=>tarMap[t.cod_servico]={desc:t.descricao_servico,tarifa:parseFloat(t.preco_unitario)||0,prev:parseFloat(t.eventos_previstos)||0,fat:(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0)});
   const execByS={};getProd(est,mes,ano,reg).forEach(r=>execByS[r.cod_servico]=(execByS[r.cod_servico]||0)+r.qde_executada);
@@ -1212,17 +1104,10 @@ function carregarRegional(){
   const tPE=Object.values(tarMap).reduce((s,v)=>s+v.prev,0);
   const tEE=Object.values(execByS).reduce((s,v)=>s+v,0);
   const tGE=Object.values(pagoByS).reduce((s,v)=>s+v,0);
-
-  // YTD e relatório na aba Por Regional
-  setTimeout(()=>{
-    renderTbRegYTD(est,mes,ano,reg);
-    renderTbDivergRelReg(est,mes,ano,reg);
-  },100);
-
+  setTimeout(()=>{renderTbRegYTD(est,mes,ano,reg);renderTbDivergRelReg(est,mes,ano,reg);},100);
   const tbE=document.getElementById('tb-reg-evt'),tbF=document.getElementById('tb-reg-fat'),tbT=document.getElementById('tb-reg-tar'),tbP=document.getElementById('tb-reg-prop');
   const tbDS=document.getElementById('tb-reg-diverg-sep');
   tbE.innerHTML='';tbF.innerHTML='';tbT.innerHTML='';tbP.innerHTML='';if(tbDS) tbDS.innerHTML='';
-
   Object.entries(tarMap).forEach(([cod,s])=>{
     const ex=execByS[cod]||0,pg=pagoByS[cod]||0;
     const df=pg-ex,pct2=ex>0?((ex-pg)/ex*100):0;
@@ -1236,29 +1121,13 @@ function carregarRegional(){
     const pP2=tPE>0?(s.prev/tPE*100):0,pE2=tEE>0?(ex/tEE*100):0,pG2=tGE>0?(pg/tGE*100):0;
     const dv2=Math.abs(pP2-pG2);
     tbP.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${pP2.toFixed(1)}%</td><td>${pE2.toFixed(1)}%</td><td>${pG2.toFixed(1)}%</td><td style="color:${dv2>2?'#BE2F3B':dv2>.5?'#BA7517':'#1D9E75'}">${dv2.toFixed(1)}pp</td><td>${dv2>2?'<span class="pill p-danger">Desvio</span>':dv2>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
-
-    // Separação divergência qtd vs tarifa
     if(tbDS){
       const tarPg=itarByS[cod]||0;
       const divQtd=pg-ex,divTar=tarPg>0?tarPg-s.tarifa:0;
       const impQtd=divQtd*s.tarifa,impTar=tarPg>0?divTar*pg:0;
       const total=impQtd+impTar;
       if(divQtd!==0||Math.abs(divTar)>0.01){
-        let diag='';
-        if(divQtd<0) diag+='Qtd paga menor';
-        if(divQtd>0) diag+='Qtd paga maior';
-        if(Math.abs(divTar)>0.01) diag+=(diag?' + ':'')+(divTar<0?'Tarifa abaixo':'Tarifa acima');
-        tbDS.innerHTML+=`<tr>
-          <td style="font-size:11px">${s.desc}</td>
-          <td>${fN(ex)}</td><td>${fN(pg)}</td>
-          <td style="color:${divQtd<0?'#BE2F3B':divQtd>0?'#1D9E75':'inherit'}">${divQtd>=0?'+':''}${fN(divQtd)}</td>
-          <td style="color:${impQtd<0?'#BE2F3B':impQtd>0?'#1D9E75':'inherit'}">${impQtd!==0?fR(impQtd):'—'}</td>
-          <td>${fR(s.tarifa)}</td>
-          <td style="color:${divTar<0?'#BE2F3B':Math.abs(divTar)>0.01?'#BA7517':'inherit'}">${tarPg>0?fR(tarPg):'—'}</td>
-          <td style="color:${divTar<0?'#BE2F3B':Math.abs(divTar)>0.01?'#BA7517':'inherit'}">${Math.abs(divTar)>0.01?(divTar>=0?'+':'')+fR(divTar):'—'}</td>
-          <td style="color:${impTar<0?'#BE2F3B':impTar>0?'#BA7517':'inherit'}">${Math.abs(impTar)>0?fR(impTar):'—'}</td>
-          <td style="color:${total<0?'#BE2F3B':total>0?'#1D9E75':'inherit'};font-weight:700">${total!==0?fR(total):'—'}</td>
-        </tr>`;
+        tbDS.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fN(ex)}</td><td>${fN(pg)}</td><td style="color:${divQtd<0?'#BE2F3B':divQtd>0?'#1D9E75':'inherit'}">${divQtd>=0?'+':''}${fN(divQtd)}</td><td style="color:${impQtd<0?'#BE2F3B':impQtd>0?'#1D9E75':'inherit'}">${impQtd!==0?fR(impQtd):'—'}</td><td>${fR(s.tarifa)}</td><td style="color:${divTar<0?'#BE2F3B':Math.abs(divTar)>0.01?'#BA7517':'inherit'}">${tarPg>0?fR(tarPg):'—'}</td><td style="color:${divTar<0?'#BE2F3B':Math.abs(divTar)>0.01?'#BA7517':'inherit'}">${Math.abs(divTar)>0.01?(divTar>=0?'+':'')+fR(divTar):'—'}</td><td style="color:${impTar<0?'#BE2F3B':impTar>0?'#BA7517':'inherit'}">${Math.abs(impTar)>0?fR(impTar):'—'}</td><td style="color:${total<0?'#BE2F3B':total>0?'#1D9E75':'inherit'};font-weight:700">${total!==0?fR(total):'—'}</td></tr>`;
       }
     }
   });
@@ -1337,7 +1206,6 @@ function parsearCaderno(wb){
     const cod=String(r.COD_SERVICO).trim();
     const k=`${est}|${regFinal}|${cod}`;
     const item={estado:est,regional:regFinal,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),vigencia_inicio:String(r.VIGENCIA_INICIO).trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO).replace(',','.'))||0,eventos_previstos:parseFloat(String(r.EVENTOS_PREVISTOS).replace(',','.'))||0};
-    // PI: somar eventos_previstos das regionais em PIAUÍ
     if(!mapTemp[k]) mapTemp[k]=item;
     else if(est==='PI') mapTemp[k].eventos_previstos+=item.eventos_previstos;
   });
@@ -1360,12 +1228,7 @@ async function salvarProducao(){
   if(svProd||!dadosProd.length) return;svProd=true;
   const btn=document.getElementById('btn-sv-prod');btn.textContent='Salvando...';btn.disabled=true;
   const user=(await sb.auth.getUser()).data.user;
-  // Para PI: consolidar todas as regionais em "PIAUÍ"
-  const dadosNorm=dadosProd.map(r=>({
-    ...r,
-    regional: r.estado==='PI' ? 'PIAUÍ' : r.regional
-  }));
-  // Agregar duplicatas PI
+  const dadosNorm=dadosProd.map(r=>({...r,regional:r.estado==='PI'?'PIAUÍ':r.regional}));
   const mapProd={};
   dadosNorm.forEach(r=>{
     const k=`${r.mes}|${r.ano}|${r.estado}|${r.regional}|${r.cod_servico}`;
@@ -1386,12 +1249,11 @@ async function salvarBoletim(){
   if(ja) await sb.from('boletins').delete().eq('id',ja.id);
   const {data:bol,error:e1}=await sb.from('boletins').insert({mes,ano,estado,ativo:true,importado_por:user.id}).select().single();
   if(e1||!bol){alert('Erro ao criar boletim.');btn.textContent='✓ Confirmar e salvar';btn.disabled=false;svBol=false;return;}
-  // Para PI: consolidar todas as regionais em "PIAUÍ" somando eventos
   const mapBol={};
   dadosBol.forEach(r=>{
-    const regFinal = r.estado==='PI' ? 'PIAUÍ' : r.regional;
+    const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;
     const k=`${r.estado}|${regFinal}|${r.cod_servico}`;
-    if(!mapBol[k]) mapBol[k]={...r, regional:regFinal, qde_paga:r.qde_paga};
+    if(!mapBol[k]) mapBol[k]={...r,regional:regFinal,qde_paga:r.qde_paga};
     else mapBol[k].qde_paga+=r.qde_paga;
   });
   const {error:e2}=await sb.from('boletim_itens').insert(Object.values(mapBol).map(r=>({boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga})));
@@ -1410,12 +1272,11 @@ async function salvarCaderno(){
   for(const c of ativos) await sb.from('cadernos').update({ativo:false,data_fim:vigencia_inicio}).eq('id',c.id);
   const {data:cad,error:e1}=await sb.from('cadernos').insert({estado,nome:`Caderno ${estado} — vigência ${vigencia_inicio}`,vigencia_inicio,ativo:true,confirmado:true,importado_por:user.id}).select().single();
   if(e1||!cad){alert('Erro: '+(e1?.message||''));btn.textContent='✓ Ativar caderno';btn.disabled=false;svCad=false;return;}
-  // Para PI: consolidar em "PIAUÍ" — somar eventos_previstos das regionais
   const mapCad={};
   dadosCad.forEach(r=>{
-    const regFinal = r.estado==='PI' ? 'PIAUÍ' : r.regional;
+    const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;
     const k=`${r.estado}|${regFinal}|${r.cod_servico}`;
-    if(!mapCad[k]) mapCad[k]={...r, regional:regFinal};
+    if(!mapCad[k]) mapCad[k]={...r,regional:regFinal};
     else if(r.estado==='PI') mapCad[k].eventos_previstos+=r.eventos_previstos;
   });
   const {error:e2}=await sb.from('caderno_tarifas').insert(Object.values(mapCad).map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos})));
@@ -1434,9 +1295,8 @@ async function carregarHistProd(){
   if(!prod?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum lançamento.</td></tr>';return;}
   const ag={};
   prod.forEach(r=>{const k=`${r.ano}|${String(r.mes).padStart(2,'0')}|${r.estado}`;if(!ag[k]) ag[k]={mes:r.mes,ano:r.ano,estado:r.estado,total:0,em:r.importado_em,ativo:r.ativo!==false};ag[k].total+=r.qde_executada;});
-  // Ordenar do mais recente para o mais antigo
   const ordenado=Object.entries(ag).sort((a,b)=>b[0].localeCompare(a[0])).map(e=>e[1]);
-  tb.innerHTML=ordenado.map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${fN(r.total)}</td><td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'—'}</td><td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',${r.ativo})">${r.ativo?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}')">Excluir</button></td></tr>`).join('');
+  tb.innerHTML=ordenado.map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${fN(r.total)}</td><td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'—'}</td><td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',${r.ativo})">${r.ativo?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}')"><i class="ti ti-trash"></i> Excluir</button></td></tr>`).join('');
 }
 async function inativarProd(mes,ano,est,ativo){await sb.from('producao_real').update({ativo:!ativo}).eq('mes',mes).eq('ano',ano).eq('estado',est);await carregarCache();carregarHistProd();}
 async function excluirProd(mes,ano,est){if(!confirm(`Excluir ${mA(mes,ano)} — ${est}?`)) return;await sb.from('producao_real').delete().eq('mes',mes).eq('ano',ano).eq('estado',est);await carregarCache();carregarHistProd();}
@@ -1448,13 +1308,12 @@ async function carregarHistBol(){
   const {data:bols}=await q;
   const tb=document.getElementById('tb-hist-bol');
   if(!bols?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum boletim.</td></tr>';return;}
-  // Ordenar do mais recente para o mais antigo
   const ordenado=[...bols].sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes);
   tb.innerHTML='';
   for(const b of ordenado){
     const it=C.itens.filter(i=>i.boletim_id===b.id);
     const tE=it.reduce((s,i)=>s+(i.qde_paga||0),0),tV=it.reduce((s,i)=>s+(parseFloat(i.valor_pago)||0),0);
-    tb.innerHTML+=`<tr><td>${mA(b.mes,b.ano)}</td><td>${b.estado}</td><td>${fN(tE)}</td><td>${fR(tV)}</td><td>${b.importado_em?new Date(b.importado_em).toLocaleDateString('pt-BR'):'—'}</td><td>${b.ativo!==false?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarBol(${b.id},${b.ativo!==false})">${b.ativo!==false?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirBol(${b.id},'${mA(b.mes,b.ano)}','${b.estado}')">Excluir</button></td></tr>`;
+    tb.innerHTML+=`<tr><td>${mA(b.mes,b.ano)}</td><td>${b.estado}</td><td>${fN(tE)}</td><td>${fR(tV)}</td><td>${b.importado_em?new Date(b.importado_em).toLocaleDateString('pt-BR'):'—'}</td><td>${b.ativo!==false?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td><td style="display:flex;gap:6px"><button class="btn btn-s btn-sm" onclick="inativarBol(${b.id},${b.ativo!==false})">${b.ativo!==false?'Inativar':'Ativar'}</button><button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirBol(${b.id},'${mA(b.mes,b.ano)}','${b.estado}')"><i class="ti ti-trash"></i> Excluir</button></td></tr>`;
   }
 }
 async function inativarBol(id,ativo){await sb.from('boletins').update({ativo:!ativo}).eq('id',id);await carregarCache();carregarHistBol();}
@@ -1466,16 +1325,12 @@ function carregarCadernos(){
   const filtEst=document.getElementById('fil-hist-cad')?.value||'';
   const elAtivos=document.getElementById('lista-cad-ativos');
   const elHist=document.getElementById('lista-cad-hist');
-
   const ativos=C.cads.filter(c=>c.ativo);
-  const historico=[...C.cads]
-    .filter(c=>!c.ativo&&(filtEst===''||c.estado===filtEst))
-    .sort((a,b)=>{
-      const va=parseInt((a.vigencia_inicio||'01/2000').split('/').reverse().join(''));
-      const vb=parseInt((b.vigencia_inicio||'01/2000').split('/').reverse().join(''));
-      return vb-va;
-    });
-
+  const historico=[...C.cads].filter(c=>!c.ativo&&(filtEst===''||c.estado===filtEst)).sort((a,b)=>{
+    const va=parseInt((a.vigencia_inicio||'01/2000').split('/').reverse().join(''));
+    const vb=parseInt((b.vigencia_inicio||'01/2000').split('/').reverse().join(''));
+    return vb-va;
+  });
   const renderCad=(c)=>{
     const tars=C.tars.filter(t=>t.caderno_id===c.id);
     const meta=tars.reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||0),0);
@@ -1487,10 +1342,10 @@ function carregarCadernos(){
       <div class="ccard-h">
         <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="ccard-t">${c.nome}</span>${st}</div><div class="ccard-m">${c.estado} · Importado em ${c.importado_em?new Date(c.importado_em).toLocaleDateString('pt-BR'):'—'}</div></div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-s btn-sm" onclick="toggleTar(${c.id})"><i class="ti ti-chevron-down" aria-hidden="true"></i> Tarifas</button>
-          <button class="btn btn-s btn-sm" onclick="salvarVig(${c.id})"><i class="ti ti-device-floppy" aria-hidden="true"></i> Salvar</button>
+          <button class="btn btn-s btn-sm" onclick="toggleTar(${c.id})"><i class="ti ti-chevron-down"></i> Tarifas</button>
+          <button class="btn btn-s btn-sm" onclick="salvarVig(${c.id})"><i class="ti ti-device-floppy"></i> Salvar</button>
           <button class="btn btn-s btn-sm" onclick="inativarCad(${c.id},${c.ativo})">${c.ativo?'Inativar':'Ativar'}</button>
-          <button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirCad(${c.id},'${c.nome}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
+          <button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirCad(${c.id},'${c.nome}')"><i class="ti ti-trash"></i></button>
         </div>
       </div>
       <div class="ccard-st">
@@ -1511,22 +1366,9 @@ function carregarCadernos(){
       </div>
     </div>`;
   };
-
-  // Renderizar ativos
-  if(!ativos.length){
-    elAtivos.innerHTML='<div class="loader" style="padding:1rem;color:var(--tx2)">Nenhum caderno ativo.</div>';
-  } else {
-    elAtivos.innerHTML=ativos.map(c=>renderCad(c)).join('');
-  }
-
-  // Renderizar histórico
-  if(!historico.length){
-    elHist.innerHTML='<div class="loader" style="padding:1rem;color:var(--tx2)">Nenhum caderno encerrado encontrado.</div>';
-  } else {
-    elHist.innerHTML=historico.map(c=>renderCad(c)).join('');
-  }
+  elAtivos.innerHTML=ativos.length?ativos.map(c=>renderCad(c)).join(''):'<div class="loader" style="padding:1rem;color:var(--tx2)">Nenhum caderno ativo.</div>';
+  elHist.innerHTML=historico.length?historico.map(c=>renderCad(c)).join(''):'<div class="loader" style="padding:1rem;color:var(--tx2)">Nenhum caderno encerrado encontrado.</div>';
 }
-
 function toggleTar(id){const b=document.getElementById('tar-'+id);b.style.display=b.style.display==='block'?'none':'block';}
 async function salvarVig(id){
   const ini=document.getElementById('vi-'+id).value.trim();
@@ -1539,12 +1381,28 @@ async function inativarCad(id,ativo){await sb.from('cadernos').update({ativo:!at
 async function excluirCad(id,nome){if(!confirm(`Excluir "${nome}"?`)) return;await sb.from('cadernos').delete().eq('id',id);await carregarCache();carregarCadernos();}
 
 // ═══ USUÁRIOS ═══
+// Armazena permissões editadas em memória por userId
+const permCache = {};
+
 async function carregarUsuarios(){
   const el=document.getElementById('lista-usuarios');
   const {data:users}=await sb.from('usuarios_perfil_completo').select('*').order('criado_em',{ascending:false});
-  if(!users?.length){el.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum usuário.</td></tr>';return;}
+  if(!users?.length){el.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum usuário.</td></tr>';return;}
   const rl={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'};
   const ABAS_DISP=[{id:'geral',label:'Visão Geral'},{id:'servico',label:'Por Serviço'},{id:'regional',label:'Por Regional'},{id:'resumida',label:'Visão Resumida'},{id:'lancar',label:'Lançar Produção'},{id:'boletim',label:'Importar Boletim'},{id:'cadernos',label:'Cadernos'},{id:'usuarios',label:'Usuários'}];
+
+  // Inicializar cache com valores atuais do banco
+  users.forEach(u=>{
+    permCache[u.id]={
+      abas: u.abas_permitidas||['geral','servico','regional'],
+      role: u.role||'viewer',
+      perm_producao: u.perm_producao||false,
+      perm_boletim: u.perm_boletim||false,
+      perm_exportar_pdf: u.perm_exportar_pdf||false,
+      perm_exportar_excel: u.perm_exportar_excel||false
+    };
+  });
+
   el.innerHTML=users.map(u=>{
     const abas=u.abas_permitidas||['geral','servico','regional'];
     const ativo=u.ativo!==false;
@@ -1552,81 +1410,91 @@ async function carregarUsuarios(){
       <td><strong>${u.nome||'—'}</strong></td>
       <td style="font-size:11px;color:var(--tx2)">${u.email}</td>
       <td>
-        <select id="role-${u.id}" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd)">
+        <select id="role-${u.id}" onchange="permCache['${u.id}'].role=this.value" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd)">
           ${['admin','analyst','viewer'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${rl[r]}</option>`).join('')}
         </select>
       </td>
       <td>${u.last_sign_in_at?new Date(u.last_sign_in_at).toLocaleString('pt-BR'):'<span style="color:var(--tx2);font-size:11px">Nunca</span>'}</td>
       <td>${ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td>
       <td style="display:flex;gap:4px;flex-wrap:wrap">
-        <button class="btn btn-s btn-sm" onclick="togglePerms('perms-${u.id}')"><i class="ti ti-settings" aria-hidden="true"></i> Permissões</button>
+        <button class="btn btn-s btn-sm" onclick="togglePerms('perms-${u.id}')"><i class="ti ti-settings"></i> Permissões</button>
         ${ativo
           ?`<button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="desativarUser('${u.id}')">Desativar</button>`
           :`<button class="btn btn-s btn-sm" style="color:var(--vd)" onclick="reativarUser('${u.id}')">Reativar</button>`
         }
-        <button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirUser('${u.id}','${u.nome||u.email}')"><i class="ti ti-trash" aria-hidden="true"></i></button>
-        <button class="btn btn-s btn-sm" style="color:var(--az-esc)" onclick="toggleSenha('senha-${u.id}')"><i class="ti ti-key" aria-hidden="true"></i> Senha</button>
+        <button class="btn btn-s btn-sm" style="color:var(--vm)" onclick="excluirUser('${u.id}','${u.nome||u.email}')"><i class="ti ti-trash"></i></button>
+        <button class="btn btn-s btn-sm" style="color:var(--az-esc)" onclick="toggleSenha('senha-${u.id}')"><i class="ti ti-key"></i> Senha</button>
       </td>
     </tr>
-    <tr id="senha-${u.id}" style="display:none"><td colspan="7" style="padding:0">
+    <tr id="senha-${u.id}" style="display:none"><td colspan="6" style="padding:0">
       <div style="background:var(--az-cl);padding:12px 16px;border-top:1px solid #b5d4f4;display:flex;align-items:center;gap:10px">
         <span style="font-size:12px;font-weight:700;color:#185FA5">Nova senha:</span>
         <input type="password" id="np-${u.id}" placeholder="Mínimo 6 caracteres" style="font-size:12px;padding:6px 10px;border:1px solid #b5d4f4;border-radius:var(--r2);width:220px">
-        <button class="btn btn-p btn-sm" onclick="redefinirSenha('${u.id}')"><i class="ti ti-device-floppy" aria-hidden="true"></i> Salvar senha</button>
+        <button class="btn btn-p btn-sm" onclick="redefinirSenha('${u.id}')"><i class="ti ti-device-floppy"></i> Salvar senha</button>
         <button class="btn btn-s btn-sm" onclick="toggleSenha('senha-${u.id}')">Cancelar</button>
       </div>
     </td></tr>
-    <tr id="perms-${u.id}" style="display:none"><td colspan="7" style="padding:0">
+    <tr id="perms-${u.id}" style="display:none"><td colspan="6" style="padding:0">
       <div style="background:var(--bg);padding:12px 16px;border-top:1px solid var(--bd)">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
           <div>
             <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Abas permitidas</p>
-            ${ABAS_DISP.map(a=>`<label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="aba-${u.id}-${a.id}" ${abas.includes(a.id)?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">${a.label}</label>`).join('')}
+            ${ABAS_DISP.map(a=>`<label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="aba-${u.id}-${a.id}" ${abas.includes(a.id)?'checked':''} onchange="atualizarPermCache('${u.id}')" style="accent-color:var(--vm);width:13px;height:13px">${a.label}</label>`).join('')}
           </div>
           <div>
             <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Uploads (analista)</p>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pp-${u.id}" ${u.perm_producao?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Lançar produção</label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="pb-${u.id}" ${u.perm_boletim?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Importar boletim</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="pp-${u.id}" ${u.perm_producao?'checked':''} onchange="atualizarPermCache('${u.id}')" style="accent-color:var(--vm);width:13px;height:13px">Lançar produção</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="pb-${u.id}" ${u.perm_boletim?'checked':''} onchange="atualizarPermCache('${u.id}')" style="accent-color:var(--vm);width:13px;height:13px">Importar boletim</label>
           </div>
           <div>
             <p style="font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:8px;text-transform:uppercase">Exportações</p>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="ppdf-${u.id}" ${u.perm_exportar_pdf?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Exportar PDF</label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="pxls-${u.id}" ${u.perm_exportar_excel?'checked':''} style="accent-color:var(--vm);width:13px;height:13px">Exportar Excel</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:5px;cursor:pointer"><input type="checkbox" id="ppdf-${u.id}" ${u.perm_exportar_pdf?'checked':''} onchange="atualizarPermCache('${u.id}')" style="accent-color:var(--vm);width:13px;height:13px">Exportar PDF</label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer"><input type="checkbox" id="pxls-${u.id}" ${u.perm_exportar_excel?'checked':''} onchange="atualizarPermCache('${u.id}')" style="accent-color:var(--vm);width:13px;height:13px">Exportar Excel</label>
           </div>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)">
           <button class="btn btn-s btn-sm" style="margin-right:8px" onclick="togglePerms('perms-${u.id}')">Cancelar</button>
-          <button class="btn btn-p btn-sm" onclick="salvarPermissoes('${u.id}')"><i class="ti ti-device-floppy" aria-hidden="true"></i> Salvar permissões</button>
+          <button class="btn btn-p btn-sm" onclick="salvarPermissoes('${u.id}')"><i class="ti ti-device-floppy"></i> Salvar permissões</button>
         </div>
       </div>
     </td></tr>`;
   }).join('');
 }
-function togglePerms(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none';}
-function toggleSenha(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none';}
 
-async function salvarPermissoes(userId){
+// Atualiza o cache de permissões a partir dos checkboxes visíveis
+function atualizarPermCache(userId){
   const ABAS_IDS=['geral','servico','regional','resumida','lancar','boletim','cadernos','usuarios'];
   const abas=[];
   ABAS_IDS.forEach(a=>{
     const el=document.getElementById('aba-'+userId+'-'+a);
     if(el&&el.checked) abas.push(a);
   });
-  const role=document.getElementById('role-'+userId)?.value||'viewer';
-  const pp=document.getElementById('pp-'+userId)?.checked||false;
-  const pb=document.getElementById('pb-'+userId)?.checked||false;
-  const ppdf=document.getElementById('ppdf-'+userId)?.checked||false;
-  const pxls=document.getElementById('pxls-'+userId)?.checked||false;
+  if(!permCache[userId]) permCache[userId]={};
+  permCache[userId].abas=abas;
+  permCache[userId].role=document.getElementById('role-'+userId)?.value||'viewer';
+  permCache[userId].perm_producao=document.getElementById('pp-'+userId)?.checked||false;
+  permCache[userId].perm_boletim=document.getElementById('pb-'+userId)?.checked||false;
+  permCache[userId].perm_exportar_pdf=document.getElementById('ppdf-'+userId)?.checked||false;
+  permCache[userId].perm_exportar_excel=document.getElementById('pxls-'+userId)?.checked||false;
+}
 
-  // Usar RPC para evitar problema de serialização de array
+function togglePerms(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none';}
+function toggleSenha(id){const el=document.getElementById(id);el.style.display=el.style.display==='none'?'table-row':'none';}
+
+async function salvarPermissoes(userId){
+  // Forçar leitura dos checkboxes antes de salvar
+  atualizarPermCache(userId);
+  const perm=permCache[userId];
+  if(!perm){alert('Erro: permissões não encontradas.');return;}
+
   const {error}=await sb.rpc('atualizar_permissoes_usuario',{
-    p_id:userId,
-    p_role:role,
-    p_abas:abas,
-    p_perm_producao:pp,
-    p_perm_boletim:pb,
-    p_perm_exportar_pdf:ppdf,
-    p_perm_exportar_excel:pxls
+    p_id: userId,
+    p_role: perm.role,
+    p_abas: perm.abas,
+    p_perm_producao: perm.perm_producao,
+    p_perm_boletim: perm.perm_boletim,
+    p_perm_exportar_pdf: perm.perm_exportar_pdf,
+    p_perm_exportar_excel: perm.perm_exportar_excel
   });
 
   if(error){alert('Erro ao salvar: '+error.message);return;}
@@ -1641,13 +1509,11 @@ async function reativarUser(id){
   if(error){alert('Erro: '+error.message);return;}
   await carregarUsuarios();
 }
-
 async function excluirUser(id,nome){
   if(!confirm(`Excluir permanentemente "${nome}"? Esta ação não pode ser desfeita.`)) return;
   await sb.from('usuarios_perfil').delete().eq('id',id);
   await carregarUsuarios();
 }
-
 async function redefinirSenha(userId){
   const nova=document.getElementById('np-'+userId)?.value?.trim();
   if(!nova||nova.length<6){alert('A senha deve ter no mínimo 6 caracteres.');return;}
@@ -1658,14 +1524,6 @@ async function redefinirSenha(userId){
   alert('✓ Senha redefinida com sucesso!');
 }
 async function desativarUser(id){if(!confirm('Desativar?')) return;await sb.from('usuarios_perfil').update({ativo:false}).eq('id',id);carregarUsuarios();}
-async function convidarUsuario(){
-  const nome=document.getElementById('n-nome').value.trim(),email=document.getElementById('n-email').value.trim(),r=document.getElementById('n-role').value;
-  if(!email){alert('Informe o e-mail.');return;}
-  await sb.auth.admin.inviteUserByEmail(email,{data:{role:r,nome}}).catch(()=>{});
-  document.getElementById('convite-alerta').innerHTML=`<div class="alerta al-ok"><span>✓</span><span>Convite enviado para <strong>${email}</strong> como <strong>${{admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[r]}</strong>.</span></div>`;
-  document.getElementById('n-nome').value='';document.getElementById('n-email').value='';document.getElementById('n-role').value='viewer';togglePermsAnal();
-}
-function togglePermsAnal(){const r=document.getElementById('n-role')?.value;const b=document.getElementById('perms-anal');if(b) b.style.display=r==='analyst'?'block':'none';}
 
 // ═══ EXPORTAR PDF ═══
 async function exportarPDF(){
@@ -1676,81 +1534,43 @@ async function exportarPDF(){
   const ano=parseInt(document.getElementById('g-ano')?.value||0);
   const titulo=TABS_LABELS[tabAtual]||tabAtual;
   const subtitulo=`${est==='MA'?'Maranhão':est==='PI'?'Piauí':'Consolidado'} · ${mes?MN[mes]+'/'+ano:''}`;
-
   const canvas=await html2canvas(tab,{scale:1.5,useCORS:true,backgroundColor:'#f5f4f1'});
   const img=canvas.toDataURL('image/png');
   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const W=210,H=297,margin=12;
-
-  // Cabeçalho
-  pdf.setFillColor(26,26,46);
-  pdf.rect(0,0,W,28,'F');
-  pdf.setFillColor(190,47,59);
-  pdf.rect(0,28,W,2,'F');
-
-  // Logo como texto (fallback)
+  pdf.setFillColor(26,26,46);pdf.rect(0,0,W,28,'F');
+  pdf.setFillColor(190,47,59);pdf.rect(0,28,W,2,'F');
   pdf.setTextColor(255,255,255);
-  pdf.setFontSize(16);pdf.setFont('helvetica','bold');
-  pdf.text('CENEGED',margin,18);
-  pdf.setFontSize(9);pdf.setFont('helvetica','normal');
-  pdf.text('energia positiva',margin,23);
-
-  // Título da aba
-  pdf.setFontSize(11);pdf.setFont('helvetica','bold');
-  pdf.text(titulo,W/2,14,{align:'center'});
-  pdf.setFontSize(9);pdf.setFont('helvetica','normal');
-  pdf.text(subtitulo,W/2,20,{align:'center'});
-
-  // Data de geração
-  pdf.setFontSize(8);
-  pdf.text('Gerado em '+new Date().toLocaleString('pt-BR'),W-margin,23,{align:'right'});
-
-  // Conteúdo
+  pdf.setFontSize(16);pdf.setFont('helvetica','bold');pdf.text('CENEGED',margin,18);
+  pdf.setFontSize(9);pdf.setFont('helvetica','normal');pdf.text('energia positiva',margin,23);
+  pdf.setFontSize(11);pdf.setFont('helvetica','bold');pdf.text(titulo,W/2,14,{align:'center'});
+  pdf.setFontSize(9);pdf.setFont('helvetica','normal');pdf.text(subtitulo,W/2,20,{align:'center'});
+  pdf.setFontSize(8);pdf.text('Gerado em '+new Date().toLocaleString('pt-BR'),W-margin,23,{align:'right'});
   const imgW=W-margin*2;
   const imgH=(canvas.height/canvas.width)*imgW;
   let y=34;
-  if(imgH<H-y-10){
-    pdf.addImage(img,'PNG',margin,y,imgW,imgH);
-  } else {
-    // Múltiplas páginas
-    const pxPerMm=canvas.width/imgW;
-    const mmPerPage=H-y-10;
-    const pxPerPage=mmPerPage*pxPerMm;
+  if(imgH<H-y-10){pdf.addImage(img,'PNG',margin,y,imgW,imgH);}
+  else{
+    const pxPerMm=canvas.width/imgW,mmPerPage=H-y-10,pxPerPage=mmPerPage*pxPerMm;
     let srcY=0;
     while(srcY<canvas.height){
       const sliceH=Math.min(pxPerPage,canvas.height-srcY);
-      const sliceCanvas=document.createElement('canvas');
-      sliceCanvas.width=canvas.width;sliceCanvas.height=sliceH;
+      const sliceCanvas=document.createElement('canvas');sliceCanvas.width=canvas.width;sliceCanvas.height=sliceH;
       sliceCanvas.getContext('2d').drawImage(canvas,0,srcY,canvas.width,sliceH,0,0,canvas.width,sliceH);
-      const sliceImg=sliceCanvas.toDataURL('image/png');
-      pdf.addImage(sliceImg,'PNG',margin,y,imgW,sliceH/pxPerMm);
-      srcY+=sliceH;
-      if(srcY<canvas.height){pdf.addPage();y=10;}
+      pdf.addImage(sliceCanvas.toDataURL('image/png'),'PNG',margin,y,imgW,sliceH/pxPerMm);
+      srcY+=sliceH;if(srcY<canvas.height){pdf.addPage();y=10;}
     }
   }
-
-  // Rodapé
   const totalPags=pdf.internal.getNumberOfPages();
-  for(let i=1;i<=totalPags;i++){
-    pdf.setPage(i);
-    pdf.setFillColor(245,244,241);pdf.rect(0,H-8,W,8,'F');
-    pdf.setTextColor(123,123,123);pdf.setFontSize(7);
-    pdf.text('CENEGED — Painel de Faturamento · Confidencial',margin,H-3);
-    pdf.text(`Página ${i} de ${totalPags}`,W-margin,H-3,{align:'right'});
-  }
-
+  for(let i=1;i<=totalPags;i++){pdf.setPage(i);pdf.setFillColor(245,244,241);pdf.rect(0,H-8,W,8,'F');pdf.setTextColor(123,123,123);pdf.setFontSize(7);pdf.text('CENEGED — Painel de Faturamento · Confidencial',margin,H-3);pdf.text(`Página ${i} de ${totalPags}`,W-margin,H-3,{align:'right'});}
   pdf.save(`CENEGED_${titulo.replace(/ /g,'_')}_${mA(mes,ano).replace('/','_')}.pdf`);
 }
 
 // ═══ EXPORTAR EXCEL ═══
 function preencherModalExcel(){
   const ano=new Date().getFullYear(),mes=new Date().getMonth()+1;
-  ['xl-mes-ini','xl-mes-fim'].forEach(id=>{
-    document.getElementById(id).innerHTML=MN.slice(1).map((n,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${n}</option>`).join('');
-  });
-  ['xl-ano-ini','xl-ano-fim'].forEach(id=>{
-    document.getElementById(id).innerHTML=[ano-1,ano,ano+1].map(a=>`<option value="${a}" ${a===ano?'selected':''}>${a}</option>`).join('');
-  });
+  ['xl-mes-ini','xl-mes-fim'].forEach(id=>{document.getElementById(id).innerHTML=MN.slice(1).map((n,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${n}</option>`).join('');});
+  ['xl-ano-ini','xl-ano-fim'].forEach(id=>{document.getElementById(id).innerHTML=[ano-1,ano,ano+1].map(a=>`<option value="${a}" ${a===ano?'selected':''}>${a}</option>`).join('');});
   const est=document.getElementById('xl-est');
   est.addEventListener('change',()=>{
     const e=est.value;
@@ -1759,17 +1579,11 @@ function preencherModalExcel(){
 }
 function abrirModalExcel(){document.getElementById('modal-excel').classList.add('open');}
 function fecharModalExcel(){document.getElementById('modal-excel').classList.remove('open');}
-
 function exportarExcel(){
-  const est=document.getElementById('xl-est').value;
-  const reg=document.getElementById('xl-reg').value;
-  const mesIni=parseInt(document.getElementById('xl-mes-ini').value);
-  const anoIni=parseInt(document.getElementById('xl-ano-ini').value);
-  const mesFim=parseInt(document.getElementById('xl-mes-fim').value);
-  const anoFim=parseInt(document.getElementById('xl-ano-fim').value);
-
+  const est=document.getElementById('xl-est').value,reg=document.getElementById('xl-reg').value;
+  const mesIni=parseInt(document.getElementById('xl-mes-ini').value),anoIni=parseInt(document.getElementById('xl-ano-ini').value);
+  const mesFim=parseInt(document.getElementById('xl-mes-fim').value),anoFim=parseInt(document.getElementById('xl-ano-fim').value);
   const rows=[['Mês/Ano','Estado','Regional','Serviço','Eventos Previstos','Eventos Executados','Eventos Pagos']];
-
   let ano=anoIni,mes=mesIni;
   while(ano<anoFim||(ano===anoFim&&mes<=mesFim)){
     const tars=getTarifas(est,mes,ano,reg);
@@ -1777,13 +1591,9 @@ function exportarExcel(){
     const execMap={};getProd(est,mes,ano,reg).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
     const pagoMap={};getItens(est,mes,ano,reg).forEach(i=>pagoMap[i.cod_servico]=(pagoMap[i.cod_servico]||0)+(i.qde_paga||0));
     const svcs=new Set([...Object.keys(svcMap),...Object.keys(execMap),...Object.keys(pagoMap)]);
-    svcs.forEach(cod=>{
-      const desc=svcMap[cod]?.desc||execMap[cod]||cod;
-      rows.push([mA(mes,ano),est,reg||'Todas',desc,svcMap[cod]?.prev||0,execMap[cod]||0,pagoMap[cod]||0]);
-    });
+    svcs.forEach(cod=>{rows.push([mA(mes,ano),est,reg||'Todas',svcMap[cod]?.desc||cod,svcMap[cod]?.prev||0,execMap[cod]||0,pagoMap[cod]||0]);});
     mes++;if(mes>12){mes=1;ano++;}
   }
-
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!cols']=[{wch:10},{wch:12},{wch:16},{wch:45},{wch:18},{wch:18},{wch:14}];
@@ -1792,103 +1602,67 @@ function exportarExcel(){
   fecharModalExcel();
 }
 
-// ═══ YTD E RELATÓRIO PARA ABA POR REGIONAL ═══
+// ═══ YTD E RELATÓRIO POR REGIONAL ═══
 function renderTbRegYTD(est,mes,ano,reg){
-  const tb=document.getElementById('tb-reg-ytd');
-  if(!tb) return;
+  const tb=document.getElementById('tb-reg-ytd');if(!tb) return;
   let yP=0,yE=0,yG=0,mDiv=0;
   for(let m=1;m<=mes;m++){
     yP+=calcPrevisto(est,m,ano,reg);
-    yE+=calcExec(est,m,ano,reg).val;
-    const pg=calcPago(est,m,ano,reg);
-    const ex=calcExec(est,m,ano,reg);
-    yG+=pg.val;
+    const ex=calcExec(est,m,ano,reg),pg=calcPago(est,m,ano,reg);
+    yE+=ex.val;yG+=pg.val;
     if(pg.val<ex.val) mDiv++;
   }
   const div=yG-yE,pct=yP>0?(yG/yP*100):0;
   const cor=div>=0?'#1D9E75':'#BE2F3B';
-  tb.innerHTML=`<tr>
-    <td><strong>${reg}</strong></td>
-    <td>${fR(yP)}</td><td>${fR(yE)}</td><td>${fR(yG)}</td>
-    <td style="color:${cor}">${div>=0?'+':''}${fR(div)}</td>
-    <td><span class="pill ${mDiv===0?'p-ok':mDiv>=mes?'p-danger':'p-warn'}">${mDiv}/${mes} meses</span></td>
-    <td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td>
-  </tr>`;
+  tb.innerHTML=`<tr><td><strong>${reg}</strong></td><td>${fR(yP)}</td><td>${fR(yE)}</td><td>${fR(yG)}</td><td style="color:${cor}">${div>=0?'+':''}${fR(div)}</td><td><span class="pill ${mDiv===0?'p-ok':mDiv>=mes?'p-danger':'p-warn'}">${mDiv}/${mes} meses</span></td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;
 }
 
 function renderTbDivergRelReg(est,mes,ano,reg){
-  const el=document.getElementById('relatorio-diverg-reg');
-  if(!el) return;
+  const el=document.getElementById('relatorio-diverg-reg');if(!el) return;
   const THRESHOLD_TAR=0.01;
   const tars=getTarifas(est,mes,ano,reg);
   if(!tars.length){el.innerHTML='<p style="color:var(--tx2);text-align:center;padding:1rem">Sem dados de caderno para esta regional.</p>';return;}
-
   const svcSet=new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico));
   const itens=[];
   svcSet.forEach(key=>{
     const [cod,desc]=key.split('||');
     let totDivQtd=0,totValNaoPago=0,mDiv=0,tarDivFlag=false;
     for(let m=1;m<=mes;m++){
-      const tar=getTarifas(est,m,ano,reg).find(t=>t.cod_servico===cod);
-      if(!tar) continue;
+      const tar=getTarifas(est,m,ano,reg).find(t=>t.cod_servico===cod);if(!tar) continue;
       const prod=getProd(est,m,ano,reg).find(r=>r.cod_servico===cod);
       const its=getItens(est,m,ano,reg).filter(i=>i.cod_servico===cod);
-      const execEvt=prod?.qde_executada||0;
-      const pagoEvt=its.reduce((s,i)=>s+(i.qde_paga||0),0);
-      const tarPrev=parseFloat(tar.preco_unitario)||0;
-      const tarPaga=its[0]?parseFloat(its[0].preco_unitario)||0:tarPrev;
-      const divQtd=pagoEvt-execEvt;
-      const divTar=Math.abs(tarPaga-tarPrev)>=THRESHOLD_TAR?tarPaga-tarPrev:0;
-      // Consistente com YTD: pago*tarPaga - exec*tarPrev
-      totDivQtd+=divQtd;
-      totValNaoPago+=(pagoEvt*tarPaga)-(execEvt*tarPrev);
+      const execEvt=prod?.qde_executada||0,pagoEvt=its.reduce((s,i)=>s+(i.qde_paga||0),0);
+      const tarPrev=parseFloat(tar.preco_unitario)||0,tarPaga=its[0]?parseFloat(its[0].preco_unitario)||0:tarPrev;
+      const divQtd=pagoEvt-execEvt,divTar=Math.abs(tarPaga-tarPrev)>=THRESHOLD_TAR?tarPaga-tarPrev:0;
+      totDivQtd+=divQtd;totValNaoPago+=(pagoEvt*tarPaga)-(execEvt*tarPrev);
       if(Math.abs(divQtd)>0||Math.abs(divTar)>=THRESHOLD_TAR) mDiv++;
       if(Math.abs(divTar)>=THRESHOLD_TAR) tarDivFlag=true;
     }
-    if(Math.abs(totValNaoPago)>=0.01||Math.abs(totDivQtd)>0){
-      itens.push({cod,desc,totDivQtd,totValNaoPago,mDiv,tarDivFlag});
-    }
+    if(Math.abs(totValNaoPago)>=0.01||Math.abs(totDivQtd)>0) itens.push({cod,desc,totDivQtd,totValNaoPago,mDiv,tarDivFlag});
   });
-
   if(!itens.length){el.innerHTML='<p style="color:var(--tx2);text-align:center;padding:1rem">Nenhuma divergência relevante detectada.</p>';return;}
-
   const totalReg=itens.reduce((s,i)=>s+i.totValNaoPago,0);
-  let html=`<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--vm);margin-bottom:12px">
-    <strong style="font-size:14px">${reg} · Jan→${MN[mes]}/${ano}</strong>
-    <span style="font-size:13px;font-weight:700;color:${totalReg<0?'#BE2F3B':'#1D9E75'}">Divergência total: ${totalReg<0?'':'+'}${fR(totalReg)}</span>
-  </div>`;
-
+  let html=`<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--vm);margin-bottom:12px"><strong style="font-size:14px">${reg} · Jan→${MN[mes]}/${ano}</strong><span style="font-size:13px;font-weight:700;color:${totalReg<0?'#BE2F3B':'#1D9E75'}">Divergência total: ${totalReg<0?'':'+'}${fR(totalReg)}</span></div>`;
   itens.forEach(s=>{
-    const dirQtd=s.totDivQtd<0?'a menos':'a mais';
-    const corV=s.totValNaoPago<0?'#BE2F3B':'#1D9E75';
-    let frase=`A Equatorial pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo`;
-    frase+=` em <strong>${s.mDiv} de ${mes} ${mes===1?'mês':'meses'}</strong>`;
-    frase+=`, representando um impacto de <strong style="color:${corV}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>`;
-    frase+=s.tarDivFlag?' (inclui divergência de tarifa).':'.';
-    html+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px">
-      <span style="font-weight:700;color:var(--pt)">${s.desc}:</span> ${frase}
-    </p>`;
+    const dirQtd=s.totDivQtd<0?'a menos':'a mais',corV=s.totValNaoPago<0?'#BE2F3B':'#1D9E75';
+    let frase=`A Equatorial pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo em <strong>${s.mDiv} de ${mes} ${mes===1?'mês':'meses'}</strong>, representando um impacto de <strong style="color:${corV}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>${s.tarDivFlag?' (inclui divergência de tarifa).':'.'}`;
+    html+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px"><span style="font-weight:700;color:var(--pt)">${s.desc}:</span> ${frase}</p>`;
   });
   el.innerHTML=html;
 }
 
 async function exportarRelRegPDF(){
   const {jsPDF}=window.jspdf;
-  const est=document.getElementById('r-est').value;
-  const reg=document.getElementById('r-reg').value;
-  const mes=parseInt(document.getElementById('r-mes').value);
-  const ano=parseInt(document.getElementById('r-ano').value);
+  const est=document.getElementById('r-est').value,reg=document.getElementById('r-reg').value;
+  const mes=parseInt(document.getElementById('r-mes').value),ano=parseInt(document.getElementById('r-ano').value);
   const el=document.getElementById('relatorio-diverg-reg');
   const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#ffffff'});
   const img=canvas.toDataURL('image/png');
   const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const W=210,H=297,margin=12;
-  pdf.setFillColor(26,26,46);pdf.rect(0,0,W,22,'F');
-  pdf.setFillColor(190,47,59);pdf.rect(0,22,W,2,'F');
-  pdf.setTextColor(255,255,255);
-  pdf.setFontSize(14);pdf.setFont('helvetica','bold');pdf.text('CENEGED',margin,14);
-  pdf.setFontSize(10);pdf.setFont('helvetica','normal');
-  pdf.text(`Relatório de Divergência — ${reg}`,W/2,10,{align:'center'});
+  pdf.setFillColor(26,26,46);pdf.rect(0,0,W,22,'F');pdf.setFillColor(190,47,59);pdf.rect(0,22,W,2,'F');
+  pdf.setTextColor(255,255,255);pdf.setFontSize(14);pdf.setFont('helvetica','bold');pdf.text('CENEGED',margin,14);
+  pdf.setFontSize(10);pdf.setFont('helvetica','normal');pdf.text(`Relatório de Divergência — ${reg}`,W/2,10,{align:'center'});
   pdf.text(`${est==='MA'?'Maranhão':'Piauí'} · Jan→${MN[mes]}/${ano}`,W/2,16,{align:'center'});
   pdf.setFontSize(8);pdf.text('Gerado em '+new Date().toLocaleString('pt-BR'),W-margin,19,{align:'right'});
   const imgW=W-margin*2,imgH=(canvas.height/canvas.width)*imgW;
@@ -1896,9 +1670,7 @@ async function exportarRelRegPDF(){
   pdf.save(`CENEGED_Divergencia_${reg}_${MN[mes]}_${ano}.pdf`);
 }
 
-// ═══════════════════════════════════════════════
-// VISÃO RESUMIDA
-// ═══════════════════════════════════════════════
+// ═══ VISÃO RESUMIDA ═══
 function syncRegsResum(){
   const ano=new Date().getFullYear();
   const sa=document.getElementById('rs-ano');
@@ -1908,8 +1680,6 @@ function syncRegsResum(){
 function carregarResumida(){
   const est=document.getElementById('rs-est')?.value||'MA';
   const ano=parseInt(document.getElementById('rs-ano')?.value||new Date().getFullYear());
-
-  // Descobrir meses com dados
   const mesesComDados=[];
   for(let m=1;m<=12;m++){
     const temProd=C.prod.some(r=>r.ano===ano&&r.mes===m&&(est==='TODOS'||r.estado===est));
@@ -1923,159 +1693,96 @@ function carregarResumida(){
     });
     return;
   }
-
-  // ── TABELA 1: Faturamento mensal ──
-  const headFat=document.getElementById('tr-rs-fat-head');
-  const bodyFat=document.getElementById('tb-rs-fat-body');
+  // Tabela 1: Faturamento mensal
+  const headFat=document.getElementById('tr-rs-fat-head'),bodyFat=document.getElementById('tb-rs-fat-body');
   if(headFat&&bodyFat){
     headFat.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Referência</th>'+
       mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">${MN[m].substring(0,3)}/${ano}</th>`).join('')+
       '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
-
     const valsPrev=mesesComDados.map(m=>calcPrevisto(est,m,ano));
     const valsExec=mesesComDados.map(m=>calcExec(est,m,ano).val);
     const valsPago=mesesComDados.map(m=>calcPago(est,m,ano).val);
-    const totPrev=valsPrev.reduce((s,v)=>s+v,0);
-    const totExec=valsExec.reduce((s,v)=>s+v,0);
-    const totPago=valsPago.reduce((s,v)=>s+v,0);
-
+    const totPrev=valsPrev.reduce((s,v)=>s+v,0),totExec=valsExec.reduce((s,v)=>s+v,0),totPago=valsPago.reduce((s,v)=>s+v,0);
     const mkPct=(v,p)=>p>0?((v-p)/p*100):0;
     const fPct=v=>{const c=v>=0?'#1D9E75':'#BE2F3B';return `<span style="color:${c};font-weight:700">${v>=0?'+':''}${v.toFixed(1)}%</span>`;};
-
     bodyFat.innerHTML=
-      // Previsto
-      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vm)">Faturamento Previsto (Caderno)</td>`+
-      valsPrev.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
-      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPrev)}</td></tr>`+
-      // Executado
-      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vd)">Faturamento Executado (Campo)</td>`+
-      valsExec.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
-      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totExec)}</td></tr>`+
-      // Pago
-      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--az)">Faturamento Pago (Equatorial)</td>`+
-      valsPago.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
-      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPago)}</td></tr>`+
-      // % Exec vs Previsto — linha separada
-      `<tr style="background:#eaf3de22;border-top:2px solid var(--vd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#3B6D11">% Exec. vs Previsto</td>`+
-      valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsExec[i],p))}</td>`).join('')+
-      `<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totExec,totPrev))}</td></tr>`+
-      // % Pago vs Previsto — linha separada
-      `<tr style="background:#e6f1fb22;border-top:1px solid var(--bd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#185FA5">% Pago vs Previsto</td>`+
-      valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+
-      `<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totPago,totPrev))}</td></tr>`;
+      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vm)">Faturamento Previsto (Caderno)</td>`+valsPrev.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPrev)}</td></tr>`+
+      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vd)">Faturamento Executado (Campo)</td>`+valsExec.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totExec)}</td></tr>`+
+      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--az)">Faturamento Pago (Equatorial)</td>`+valsPago.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPago)}</td></tr>`+
+      `<tr style="background:#eaf3de22;border-top:2px solid var(--vd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#3B6D11">% Exec. vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsExec[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totExec,totPrev))}</td></tr>`+
+      `<tr style="background:#e6f1fb22;border-top:1px solid var(--bd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#185FA5">% Pago vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totPago,totPrev))}</td></tr>`;
   }
-
-  // ── TABELA 2: Quantidade eventos por serviço ──
+  // Tabelas 2, 3 e 4
   const tars=getTarifas(est,mesesComDados[0],ano);
   const svcs=[...new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico))];
-
-  const headEvt=document.getElementById('tr-rs-evt-head');
-  const bodyEvt=document.getElementById('tb-rs-evt-body');
+  const headEvt=document.getElementById('tr-rs-evt-head'),bodyEvt=document.getElementById('tb-rs-evt-body');
   if(headEvt&&bodyEvt){
-    let headHtml='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+
-      '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Prev. Caderno</th>';
-    mesesComDados.forEach(m=>{
-      const lbl=`${String(m).padStart(2,'0')}/${String(ano).slice(2)}`;
-      headHtml+=`<th style="font-size:11px;padding:9px 12px;background:#eaf3de;color:#3B6D11;text-align:right">Exec.${lbl}</th>`;
-      headHtml+=`<th style="font-size:11px;padding:9px 12px;background:#e6f1fb;color:#185FA5;text-align:right">Pago ${lbl}</th>`;
-    });
+    let headHtml='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th><th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Prev. Caderno</th>';
+    mesesComDados.forEach(m=>{const lbl=`${String(m).padStart(2,'0')}/${String(ano).slice(2)}`;headHtml+=`<th style="font-size:11px;padding:9px 12px;background:#eaf3de;color:#3B6D11;text-align:right">Exec.${lbl}</th><th style="font-size:11px;padding:9px 12px;background:#e6f1fb;color:#185FA5;text-align:right">Pago ${lbl}</th>`;});
     headEvt.innerHTML=headHtml;
-
-    let bodyHtml='';
-    let totPrev=0,totExecArr=mesesComDados.map(()=>0),totPagoArr=mesesComDados.map(()=>0);
-
+    let bodyHtml='',totPrev=0,totExecArr=mesesComDados.map(()=>0),totPagoArr=mesesComDados.map(()=>0);
     svcs.forEach(key=>{
       const [cod,desc]=key.split('||');
       const prevEvt=tars.filter(t=>t.cod_servico===cod).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);
       totPrev+=prevEvt;
-      let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`;
-      row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fN(prevEvt)}</td>`;
+      let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td><td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fN(prevEvt)}</td>`;
       mesesComDados.forEach((m,i)=>{
         const execEvt=getProd(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+r.qde_executada,0);
         const pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);
-        totExecArr[i]+=execEvt;
-        totPagoArr[i]+=pagoEvt;
-        row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#eaf3de33">${fN(execEvt)}</td>`;
-        row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#e6f1fb33">${fN(pagoEvt)}</td>`;
+        totExecArr[i]+=execEvt;totPagoArr[i]+=pagoEvt;
+        row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#eaf3de33">${fN(execEvt)}</td><td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#e6f1fb33">${fN(pagoEvt)}</td>`;
       });
-      row+='</tr>';
-      bodyHtml+=row;
+      bodyHtml+=row+'</tr>';
     });
-
-    // Linha total
     let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td><td style="padding:9px 12px;text-align:right">${fN(totPrev)}</td>`;
-    mesesComDados.forEach((_,i)=>{
-      totRow+=`<td style="padding:9px 12px;text-align:right">${fN(totExecArr[i])}</td>`;
-      totRow+=`<td style="padding:9px 12px;text-align:right">${fN(totPagoArr[i])}</td>`;
-    });
-    totRow+='</tr>';
-    bodyEvt.innerHTML=bodyHtml+totRow;
+    mesesComDados.forEach((_,i)=>{totRow+=`<td style="padding:9px 12px;text-align:right">${fN(totExecArr[i])}</td><td style="padding:9px 12px;text-align:right">${fN(totPagoArr[i])}</td>`;});
+    bodyEvt.innerHTML=bodyHtml+totRow+'</tr>';
   }
-
-  // ── TABELA 3: Diferença Pago vs Previsto Caderno ──
-  const headDifCad=document.getElementById('tr-rs-dif-cad-head');
-  const bodyDifCad=document.getElementById('tb-rs-dif-cad-body');
+  // Tabela 3: Diferença Pago vs Previsto Caderno
+  const headDifCad=document.getElementById('tr-rs-dif-cad-head'),bodyDifCad=document.getElementById('tb-rs-dif-cad-body');
   if(headDifCad&&bodyDifCad){
-    headDifCad.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+
-      mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Dif.${String(m).padStart(2,'0')}/${String(ano).slice(2)} x Cad.</th>`).join('')+
-      '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
-
-    let bodyHtml='';
-    let totArr=mesesComDados.map(()=>0),totGeral=0;
+    headDifCad.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Dif.${String(m).padStart(2,'0')}/${String(ano).slice(2)} x Cad.</th>`).join('')+'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
+    let bodyHtml='',totArr=mesesComDados.map(()=>0),totGeral=0;
     svcs.forEach(key=>{
       const [cod,desc]=key.split('||');
       const prevEvt=tars.filter(t=>t.cod_servico===cod).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);
-      let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`;
-      let tot=0;
+      let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`,tot=0;
       mesesComDados.forEach((m,i)=>{
         const pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);
-        const dif=pagoEvt-prevEvt;
-        totArr[i]+=dif; tot+=dif; totGeral+=dif;
+        const dif=pagoEvt-prevEvt;totArr[i]+=dif;tot+=dif;totGeral+=dif;
         const cor=dif>=0?'#1D9E75':'#BE2F3B';
         row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;
       });
       const corTot=tot>=0?'#1D9E75':'#BE2F3B';
-      row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;
-      bodyHtml+=row;
+      bodyHtml+=row+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;
     });
     let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td>`;
     totArr.forEach(v=>{const c=v>=0?'#1D9E75':'#BE2F3B';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});
     const cT=totGeral>=0?'#1D9E75':'#BE2F3B';
-    totRow+=`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
-    bodyDifCad.innerHTML=bodyHtml+totRow;
+    bodyDifCad.innerHTML=bodyHtml+totRow+`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
   }
-
-  // ── TABELA 4: Diferença Executado vs Pago ──
-  const headDifExec=document.getElementById('tr-rs-dif-exec-head');
-  const bodyDifExec=document.getElementById('tb-rs-dif-exec-body');
+  // Tabela 4: Diferença Executado vs Pago
+  const headDifExec=document.getElementById('tr-rs-dif-exec-head'),bodyDifExec=document.getElementById('tb-rs-dif-exec-body');
   if(headDifExec&&bodyDifExec){
-    headDifExec.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+
-      mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Exec-Pago ${String(m).padStart(2,'0')}/${String(ano).slice(2)}</th>`).join('')+
-      '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
-
-    let bodyHtml='';
-    let totArr=mesesComDados.map(()=>0),totGeral=0;
+    headDifExec.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Exec-Pago ${String(m).padStart(2,'0')}/${String(ano).slice(2)}</th>`).join('')+'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
+    let bodyHtml='',totArr=mesesComDados.map(()=>0),totGeral=0;
     svcs.forEach(key=>{
       const [cod,desc]=key.split('||');
-      let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`;
-      let tot=0;
+      let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`,tot=0;
       mesesComDados.forEach((m,i)=>{
         const execEvt=getProd(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+r.qde_executada,0);
         const pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);
-        const dif=execEvt-pagoEvt;
-        totArr[i]+=dif; tot+=dif; totGeral+=dif;
+        const dif=execEvt-pagoEvt;totArr[i]+=dif;tot+=dif;totGeral+=dif;
         const cor=dif>0?'#1D9E75':dif<0?'#BE2F3B':'inherit';
         row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;
       });
       const corTot=tot<=0?'#1D9E75':'#BE2F3B';
-      row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;
-      bodyHtml+=row;
+      bodyHtml+=row+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;
     });
     let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td>`;
     totArr.forEach(v=>{const c=v>0?'#1D9E75':v<0?'#BE2F3B':'inherit';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});
     const cT=totGeral>0?'#1D9E75':totGeral<0?'#BE2F3B':'inherit';
-    totRow+=`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
-    bodyDifExec.innerHTML=bodyHtml+totRow;
+    bodyDifExec.innerHTML=bodyHtml+totRow+`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
   }
 }
 
@@ -2089,19 +1796,15 @@ async function exportarPDFResumida(){
   const img=canvas.toDataURL('image/png');
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   const W=297,H=210,margin=10;
-  pdf.setFillColor(26,26,46);pdf.rect(0,0,W,20,'F');
-  pdf.setFillColor(190,47,59);pdf.rect(0,20,W,2,'F');
-  pdf.setTextColor(255,255,255);
-  pdf.setFontSize(13);pdf.setFont('helvetica','bold');pdf.text('CENEGED',margin,13);
-  pdf.setFontSize(10);pdf.setFont('helvetica','normal');
-  pdf.text('Visão Resumida',W/2,9,{align:'center'});
+  pdf.setFillColor(26,26,46);pdf.rect(0,0,W,20,'F');pdf.setFillColor(190,47,59);pdf.rect(0,20,W,2,'F');
+  pdf.setTextColor(255,255,255);pdf.setFontSize(13);pdf.setFont('helvetica','bold');pdf.text('CENEGED',margin,13);
+  pdf.setFontSize(10);pdf.setFont('helvetica','normal');pdf.text('Visão Resumida',W/2,9,{align:'center'});
   pdf.text(`${nomes[est]} · ${ano}`,W/2,15,{align:'center'});
   pdf.setFontSize(7);pdf.text('Gerado em '+new Date().toLocaleString('pt-BR'),W-margin,17,{align:'right'});
   const imgW=W-margin*2,imgH=(canvas.height/canvas.width)*imgW;
   let y=25;
-  if(imgH<H-y-8){
-    pdf.addImage(img,'PNG',margin,y,imgW,imgH);
-  } else {
+  if(imgH<H-y-8){pdf.addImage(img,'PNG',margin,y,imgW,imgH);}
+  else{
     const pxPerMm=canvas.width/imgW,pxPerPage=(H-y-8)*pxPerMm;
     let srcY=0;
     while(srcY<canvas.height){
@@ -2117,13 +1820,13 @@ async function exportarPDFResumida(){
   pdf.save(`CENEGED_Visao_Resumida_${ano}.pdf`);
 }
 
+// ═══ ALTERAR SENHA PRÓPRIA ═══
 function toggleAlterarSenha(){
   const m=document.getElementById('modal-senha');
   m.style.display=m.style.display==='none'?'flex':'none';
   document.getElementById('minha-senha').value='';
   document.getElementById('minha-senha-conf').value='';
 }
-
 async function alterarMinhaSenha(){
   const s1=document.getElementById('minha-senha').value.trim();
   const s2=document.getElementById('minha-senha-conf').value.trim();
@@ -2131,8 +1834,7 @@ async function alterarMinhaSenha(){
   if(s1!==s2){alert('As senhas não coincidem.');return;}
   const {error}=await sb.auth.updateUser({password:s1});
   if(error){alert('Erro ao alterar senha: '+error.message);return;}
-  toggleAlterarSenha();
-  alert('✓ Senha alterada com sucesso!');
+  toggleAlterarSenha();alert('✓ Senha alterada com sucesso!');
 }
 </script>
 </body>

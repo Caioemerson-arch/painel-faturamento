@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Faturamento — CENEGED</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --vm:#BE2F3B;--az-esc:#1A1A2E;--pt:#2C2C2A;
+  --bg:#f5f4f1;--bd:#e0deda;--tx2:#7B7B7B;--br:#fff;
+  --r:10px;--r2:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--az-esc)}
+.lbox{background:var(--br);border-radius:var(--r);padding:2.5rem 2rem;width:380px;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.llogo{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:2rem}
+.llogo img{height:52px;width:auto}
+.llogo p{font-size:12px;color:var(--tx2)}
+.lbox label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;margin-top:14px;font-weight:700}
+.lbox input{width:100%;padding:10px 12px;border:1px solid var(--bd);border-radius:var(--r2);font-size:14px;color:var(--pt)}
+.lbox input:focus{outline:none;border-color:var(--vm)}
+.btn-login{width:100%;margin-top:20px;padding:11px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;cursor:pointer}
+.btn-login:hover{background:#a02632}
+#login-erro{color:var(--vm);font-size:12px;margin-top:8px;text-align:center;min-height:18px}
+.carregando{text-align:center;color:rgba(255,255,255,.5);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="lbox" id="box-login" style="display:none">
+  <div class="llogo">
+    <img src="https://www.ceneged.com.br/wp-content/uploads/2023/02/Logo-Ceneged.png" alt="CENEGED">
+    <p>Painel de Faturamento v2</p>
+  </div>
+  <label>E-mail</label>
+  <input type="email" id="li-email" placeholder="seu@ceneged.com.br" autocomplete="email">
+  <label>Senha</label>
+  <input type="password" id="li-senha" placeholder="••••••••" autocomplete="current-password">
+  <button class="btn-login" onclick="fazerLogin()">Entrar</button>
+  <p id="login-erro"></p>
+</div>
+
+<p class="carregando" id="carregando">Verificando sessão...</p>
+
+<script>
+const SURL = 'https://wcefqhivhaejueenburz.supabase.co';
+const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
+const { createClient } = supabase;
+const sb = createClient(SURL, SKEY, {
+  auth: {
+    // Crachá expira após 1 hora sem uso (3600 segundos)
+    // A cada ação do usuário no painel, o prazo é renovado automaticamente
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false
+  }
+});
+
+const INATIVIDADE_MS = 60 * 60 * 1000; // 1 hora em milissegundos
+const DESTINO = '/Painel_Faturamento_v2/visoes/';
+
+// Ao carregar a página, verifica se já existe sessão válida
+window.addEventListener('load', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+
+  if (session) {
+    // Verifica se o crachá não expirou por inatividade
+    const ultimaAtividade = localStorage.getItem('ceneged_ultima_atividade');
+    const agora = Date.now();
+
+    if (ultimaAtividade && (agora - parseInt(ultimaAtividade)) > INATIVIDADE_MS) {
+      // Passou mais de 1 hora sem uso — faz logout e pede login de novo
+      await sb.auth.signOut();
+      localStorage.removeItem('ceneged_ultima_atividade');
+      mostrarLogin('Sua sessão expirou por inatividade. Faça login novamente.');
+    } else {
+      // Sessão válida — atualiza o registro de atividade e redireciona
+      localStorage.setItem('ceneged_ultima_atividade', agora.toString());
+      window.location.href = DESTINO;
+    }
+  } else {
+    // Sem sessão — mostra tela de login
+    mostrarLogin();
+  }
+});
+
+function mostrarLogin(erro = '') {
+  document.getElementById('carregando').style.display = 'none';
+  document.getElementById('box-login').style.display = 'block';
+  if (erro) document.getElementById('login-erro').textContent = erro;
+}
+
+async function fazerLogin() {
+  const email = document.getElementById('li-email').value.trim();
+  const senha = document.getElementById('li-senha').value;
+  const erroEl = document.getElementById('login-erro');
+  erroEl.textContent = '';
+
+  if (!email || !senha) {
+    erroEl.textContent = 'Preencha e-mail e senha.';
+    return;
+  }
+
+  const btn = document.querySelector('.btn-login');
+  btn.textContent = 'Entrando...';
+  btn.disabled = true;
+
+  const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+
+  if (error) {
+    erroEl.textContent = 'E-mail ou senha incorretos.';
+    btn.textContent = 'Entrar';
+    btn.disabled = false;
+    return;
+  }
+
+  // Login bem-sucedido — registra horário e redireciona
+  localStorage.setItem('ceneged_ultima_atividade', Date.now().toString());
+  window.location.href = DESTINO;
+}
+
+// Permite pressionar Enter para fazer login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') fazerLogin();
+});
+</script>
+</body>
+</html>

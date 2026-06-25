@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Importação de Dados — CENEGED</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root{
+  --vm:#BE2F3B;--vm-cl:#f9eaea;--az-esc:#1A1A2E;--pt:#2C2C2A;
+  --bg:#f5f4f1;--bd:#e0deda;--tx2:#7B7B7B;--br:#fff;
+  --vd:#1D9E75;--vd-cl:#eaf3de;--az:#378ADD;--az-cl:#e6f1fb;
+  --am:#BA7517;--am-cl:#faeeda;--r:10px;--r2:6px;
+  --sb-w:200px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size:14px}
+
+/* SIDEBAR */
+.sidebar{background:var(--az-esc);display:flex;flex-direction:column;position:fixed;top:0;left:0;width:var(--sb-w);height:100vh;z-index:100;overflow-y:auto;transition:width .2s ease}
+.sidebar.recolhida{width:52px}
+.sidebar.recolhida .sb-uname,.sidebar.recolhida .sb-urole,.sidebar.recolhida .sb-sec,.sidebar.recolhida .sb-item span,.sidebar.recolhida .sb-out span,.sidebar.recolhida .sb-item-span{display:none}
+.sidebar.recolhida .sb-item{justify-content:center;padding:10px 0}
+.sidebar.recolhida .sb-logo img{display:none}
+.sidebar.recolhida .sb-user{justify-content:center;padding:10px 0}
+.sidebar.recolhida .sb-bottom{padding:12px 6px}
+.sidebar.recolhida .sb-out{justify-content:center;padding:6px;width:40px;margin:0 auto 6px}
+.sb-logo{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+.sb-logo img{height:28px;width:auto}
+.btn-toggle-sb{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;padding:4px;border-radius:4px;display:flex;align-items:center;flex-shrink:0}
+.btn-toggle-sb:hover{color:#fff;background:rgba(255,255,255,.1)}
+.btn-toggle-sb i{font-size:18px}
+.sb-user{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--vm);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:700;flex-shrink:0}
+.sb-uname{font-size:11px;color:rgba(255,255,255,.8);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-urole{font-size:9px;color:var(--vm);font-weight:700;margin-top:1px}
+.sb-nav{padding:8px 0;flex:1}
+.sb-sec{font-size:9px;color:rgba(255,255,255,.3);padding:10px 14px 4px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;white-space:nowrap}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12px;color:rgba(255,255,255,.55);cursor:pointer;border-left:2px solid transparent;transition:.15s;text-decoration:none;white-space:nowrap}
+.sb-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.05)}
+.sb-item.active{color:#fff;background:rgba(190,47,59,.18);border-left-color:var(--vm)}
+.sb-item i{font-size:16px;flex-shrink:0}
+.sb-bottom{padding:12px 14px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-out{font-size:11px;color:rgba(255,255,255,.45);background:none;border:1px solid rgba(255,255,255,.12);border-radius:var(--r2);padding:6px 10px;width:100%;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;margin-bottom:6px;white-space:nowrap}
+.sb-out:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.7)}
+
+/* MAIN */
+.main{margin-left:var(--sb-w);display:flex;flex-direction:column;min-height:100vh;transition:margin-left .2s ease}
+.main.expandido{margin-left:52px}
+.main-header{background:var(--br);border-bottom:1px solid var(--bd);padding:0 20px;height:52px;display:flex;align-items:center;position:sticky;top:0;z-index:50}
+.page-title{font-size:14px;font-weight:700;color:var(--pt)}
+.con{padding:1.25rem 1.5rem;flex:1}
+.page-subtitle{font-size:12px;color:var(--tx2);margin-bottom:1.25rem;padding:10px 14px;background:var(--az-cl);border-radius:var(--r2);border-left:3px solid var(--az);line-height:1.6}
+
+/* ALERTAS */
+.alerta{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--r2);margin-bottom:1.25rem;font-size:12px}
+.al-warn{background:var(--am-cl);color:var(--am);border:1px solid #f0c070}
+.al-info{background:var(--az-cl);color:#185FA5;border:1px solid #b5d4f4}
+.al-ok{background:var(--vd-cl);color:#0F6E56;border:1px solid #9fe1cb}
+
+/* UPLOAD */
+.gbox{background:var(--br);border-radius:var(--r);padding:1rem 1.1rem;border:1px solid var(--bd);margin-bottom:1.25rem}
+.gbox h3{font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
+.gbox h3::before{content:'';display:block;width:3px;height:12px;background:var(--vm);border-radius:2px;flex-shrink:0}
+.uarea{border:2px dashed var(--bd);border-radius:var(--r);padding:1.75rem;text-align:center;cursor:pointer;transition:.2s}
+.uarea:hover,.uarea.drag{border-color:var(--vm);background:var(--vm-cl)}
+.uarea input[type=file]{display:none}
+.uarea p{font-size:12px;color:var(--tx2);margin-top:6px}
+
+/* TABELAS */
+.sec{font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sec::before{content:'';display:block;width:3px;height:10px;background:var(--vm);border-radius:2px}
+.sec-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sec-row .sec{margin:0}
+.tbox{background:var(--br);border-radius:var(--r);border:1px solid var(--bd);overflow:hidden;margin-bottom:1.25rem;overflow-x:auto}
+.tbox table{width:100%;border-collapse:collapse;font-size:12px;min-width:500px}
+.tbox thead tr{background:var(--bg)}
+.tbox th{padding:9px 12px;text-align:left;font-weight:700;color:var(--tx2);font-size:10px;text-transform:uppercase;white-space:nowrap}
+.tbox td{padding:9px 12px;border-top:1px solid var(--bd);white-space:nowrap}
+.tbox tr:hover td{background:#fafaf8}
+.revbox{background:var(--br);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:1rem;max-height:360px;overflow-y:auto}
+.revbox table{width:100%;border-collapse:collapse;font-size:12px}
+.revbox thead{position:sticky;top:0;background:var(--bg)}
+.revbox th{padding:8px 12px;text-align:left;font-size:10px;color:var(--tx2);font-weight:700;text-transform:uppercase}
+.revbox td{padding:7px 12px;border-top:1px solid var(--bd)}
+.pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700}
+.p-ok{background:var(--vd-cl);color:#3B6D11}
+.p-warn{background:var(--am-cl);color:#854F0B}
+.p-danger{background:var(--vm-cl);color:#A32D2D}
+.p-cinza{background:var(--bg);color:var(--tx2)}
+
+/* BOTÕES */
+.btn{font-size:12px;padding:7px 16px;border-radius:var(--r2);cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:5px;transition:.15s}
+.btn-p{background:var(--vm);color:#fff;border:none}.btn-p:hover{background:#a02632}
+.btn-s{background:var(--br);color:var(--pt);border:1px solid var(--bd)}.btn-s:hover{background:var(--bg)}
+.btn-sm{font-size:10px;padding:4px 10px}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem}
+
+/* BOTÕES ATIVAR/INATIVAR/EXCLUIR */
+.btn-ativar{font-size:11px;padding:4px 10px;border-radius:var(--r2);background:transparent;color:#3B6D11;border:1px solid #3B6D11;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+.btn-ativar:hover{background:var(--vd-cl)}
+.btn-inativar{font-size:11px;padding:4px 10px;border-radius:var(--r2);background:transparent;color:#854F0B;border:1px solid #854F0B;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+.btn-inativar:hover{background:var(--am-cl)}
+.btn-excluir{font-size:11px;padding:4px 10px;border-radius:var(--r2);background:transparent;color:#A32D2D;border:1px solid #A32D2D;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+.btn-excluir:hover{background:var(--vm-cl)}
+
+/* CADERNOS */
+.ccard{background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:10px}
+.ccard.ativo{border-color:var(--vm);border-width:2px}
+.ccard-h{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+.ccard-t{font-size:13px;font-weight:700}
+.ccard-m{font-size:11px;color:var(--tx2);margin-top:2px}
+.ccard-st{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.ccard-s{background:var(--bg);border-radius:var(--r2);padding:8px 10px}
+.ccard-s .sl{font-size:9px;color:var(--tx2);margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em}
+.ccard-s .sv{font-size:13px;font-weight:700}
+.ccard-vig{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;padding:10px;background:var(--az-cl);border-radius:var(--r2);border:1px solid #b5d4f4;margin-top:8px}
+.ccard-vig label{font-size:10px;color:#185FA5;font-weight:700;display:block;margin-bottom:3px}
+.ccard-vig input{font-size:11px;padding:5px 8px;border:1px solid #b5d4f4;border-radius:var(--r2);background:var(--br);width:100%}
+.ckbox{display:flex;align-items:center;gap:6px;font-size:11px;color:#185FA5;font-weight:700;padding-bottom:4px}
+.tar-box{background:var(--bg);border-radius:var(--r2);padding:.875rem;margin-top:10px;display:none;overflow-x:auto}
+.tar-box table{width:100%;border-collapse:collapse;font-size:11px}
+.tar-box th{padding:6px 10px;text-align:left;font-size:10px;color:var(--tx2);font-weight:700;background:var(--br);border-bottom:1px solid var(--bd);text-transform:uppercase}
+.tar-box td{padding:6px 10px;border-bottom:1px solid var(--bd)}
+.loader{text-align:center;padding:2rem;color:var(--tx2);font-size:13px}
+
+/* MODAL SENHA */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--br);border-radius:var(--r);padding:1.5rem;width:380px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.fg{margin-bottom:.875rem}
+.fg label{display:block;font-size:11px;color:var(--tx2);margin-bottom:4px;font-weight:700}
+.fg input{width:100%;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r2);font-size:12px}
+.btn-row-modal{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <img src="https://www.ceneged.com.br/wp-content/uploads/2023/02/Logo-Ceneged-1.png" alt="CENEGED">
+    <button class="btn-toggle-sb" onclick="toggleSidebar()" title="Recolher menu" aria-label="Recolher menu">
+      <i class="ti ti-layout-sidebar-left-collapse" id="icon-toggle"></i>
+    </button>
+  </div>
+  <div class="sb-user">
+    <div class="sb-avatar" id="sb-avatar">CE</div>
+    <div>
+      <div class="sb-uname" id="sb-uname">—</div>
+      <div class="sb-urole" id="sb-urole">—</div>
+    </div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-sec">Importação</div>
+    <a class="sb-item active" id="nav-cadernos" onclick="setTab('cadernos',this)">
+      <i class="ti ti-book" aria-hidden="true"></i><span class="sb-item-span">Caderno de Serviço</span>
+    </a>
+    <a class="sb-item" id="nav-boletim" onclick="setTab('boletim',this)">
+      <i class="ti ti-file-invoice" aria-hidden="true"></i><span class="sb-item-span">Boletim EQTL</span>
+    </a>
+    <a class="sb-item" id="nav-producao" onclick="setTab('producao',this)">
+      <i class="ti ti-upload" aria-hidden="true"></i><span class="sb-item-span">Serviços CNG</span>
+    </a>
+  </div>
+
+  <!-- ATUALIZAÇÃO DE DADOS -->
+  <div style="border-top:1px solid rgba(255,255,255,.08)">
+    <button onclick="toggleStatusDados()" style="width:100%;display:flex;align-items:center;gap:9px;padding:10px 14px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;text-align:left">
+      <i class="ti ti-cloud-upload" style="font-size:16px;flex-shrink:0" aria-hidden="true"></i>
+      <span class="sb-item-span">Atualização de Dados</span>
+      <i class="ti ti-chevron-down" id="icon-status-dados" style="font-size:13px;margin-left:auto;transition:.2s" aria-hidden="true"></i>
+    </button>
+    <div id="painel-status-dados" style="display:none;padding:0 14px 10px">
+      <div style="margin-bottom:10px">
+        <p style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:5px">Caderno de serviço ativo</p>
+        <div id="status-cad-ma" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:2px">MA — carregando...</div>
+        <div id="status-cad-pi" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px">PI — carregando...</div>
+        <div id="status-cad-em" style="font-size:9px;color:rgba(255,255,255,.25)">Carregado em: —</div>
+      </div>
+      <div style="margin-bottom:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06)">
+        <p style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:5px">Boletim EQTL</p>
+        <div id="status-bol-ma" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:2px">MA — carregando...</div>
+        <div id="status-bol-pi" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px">PI — carregando...</div>
+        <div id="status-bol-em" style="font-size:9px;color:rgba(255,255,255,.25)">Carregado em: —</div>
+      </div>
+      <div style="padding-top:8px;border-top:1px solid rgba(255,255,255,.06)">
+        <p style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:5px">Serviços CNG</p>
+        <div id="status-prod-ma" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:2px">MA — carregando...</div>
+        <div id="status-prod-pi" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px">PI — carregando...</div>
+        <div id="status-prod-em" style="font-size:9px;color:rgba(255,255,255,.25)">Carregado em: —</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sb-bottom">
+    <button class="sb-out" onclick="toggleModalSenha()">
+      <i class="ti ti-key" aria-hidden="true"></i><span>Alterar senha</span>
+    </button>
+    <button class="sb-out" onclick="fazerLogout()">
+      <i class="ti ti-logout" aria-hidden="true"></i><span>Sair</span>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main">
+  <div class="main-header">
+    <div class="page-title" id="page-title">Importar Caderno de Serviço</div>
+  </div>
+  <div class="con">
+
+    <!-- ═══ CADERNOS ═══ -->
+    <div id="tab-cadernos">
+      <p class="page-subtitle">Caderno de serviços é o documento formal enviado pela <strong>EQUATORIAL ENERGIA</strong> que apresenta o valor/tarifa de cada serviço, assim como, a previsão de eventos ou a quantidade base de serviços enviadas para a execução e o faturamento previsto.</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+        <div></div>
+        <button class="btn btn-p" onclick="toggleUploadCad()"><i class="ti ti-plus" aria-hidden="true"></i> Novo caderno</button>
+      </div>
+      <div id="upload-cad-box" class="gbox" style="display:none">
+        <h3>Upload do caderno de serviços</h3>
+        <div class="uarea" id="ua-cad" onclick="document.getElementById('uf-cad').click()" ondragover="dragOver(event,'ua-cad')" ondragleave="dragLeave('ua-cad')" ondrop="dropFile(event,'cad')">
+          <i class="ti ti-book" style="font-size:28px;color:var(--tx2)" aria-hidden="true"></i>
+          <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
+          <p style="font-size:10px;margin-top:4px">Caderno_Servicos_CENEGED.xlsx</p>
+          <input type="file" id="uf-cad" accept=".xlsx" onchange="processarUpload(this.files[0],'cad')">
+        </div>
+        <div id="pv-cad" style="display:none;margin-top:1rem">
+          <div class="alerta al-ok"><span>✓</span><span id="cad-st-txt"></span></div>
+          <div class="sec">Tarifas extraídas — confirme antes de ativar</div>
+          <div class="revbox">
+            <table><thead><tr><th>Vigência</th><th>Estado</th><th>Regional</th><th>Serviço</th><th>Tarifa</th><th>Eventos prev.</th><th>Fat. previsto</th></tr></thead>
+            <tbody id="tb-pv-cad"></tbody></table>
+          </div>
+          <div style="margin-top:1rem;padding:12px;background:var(--am-cl);border-radius:var(--r2);border:1px solid #f0c070">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--am)">
+              <input type="checkbox" id="cad-conf" style="width:15px;height:15px;accent-color:var(--vm)">
+              <strong>Confirmo que os valores estão corretos e autorizo a ativação.</strong>
+            </label>
+          </div>
+          <div class="btn-row"><button class="btn btn-s" onclick="cancelarUpload('cad')">Cancelar</button><button class="btn btn-p" id="btn-sv-cad" onclick="salvarCaderno()"><i class="ti ti-check"></i> Ativar caderno</button></div>
+        </div>
+      </div>
+      <div class="sec">Cadernos ativos</div>
+      <div id="lista-cad-ativos"><div class="loader">Carregando...</div></div>
+      <div class="sec-row" style="margin-top:1.5rem">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="sec" style="margin:0">Histórico de cadernos</div>
+          <select id="fil-hist-cad" onchange="carregarCadernos()" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)">
+            <option value="">Todos os estados</option><option value="MA">Maranhão</option><option value="PI">Piauí</option>
+          </select>
+        </div>
+        <button class="btn btn-s btn-sm" onclick="carregarCadernos()"><i class="ti ti-refresh"></i> Atualizar</button>
+      </div>
+      <div id="lista-cad-hist"><div class="loader">Carregando...</div></div>
+    </div>
+
+    <!-- ═══ BOLETIM EQTL ═══ -->
+    <div id="tab-boletim" style="display:none">
+      <p class="page-subtitle">Boletim de Pagamento é a planilha enviada pela <strong>EQUATORIAL ENERGIA</strong> onde registra a quantidade de serviço executada e o valor a ser pago para o fornecedor.</p>
+      <div class="alerta al-info"><span>ℹ</span><span>Envie <strong>um arquivo por vez</strong>. Períodos já importados serão identificados antes de salvar.</span></div>
+      <div class="gbox">
+        <h3>Upload do boletim de pagamento</h3>
+        <div class="uarea" id="ua-bol" onclick="document.getElementById('uf-bol').click()" ondragover="dragOver(event,'ua-bol')" ondragleave="dragLeave('ua-bol')" ondrop="dropFile(event,'bol')">
+          <i class="ti ti-file-invoice" style="font-size:28px;color:var(--tx2)" aria-hidden="true"></i>
+          <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
+          <p style="font-size:10px;margin-top:4px">Boletim_Pagamento_CENEGED.xlsx</p>
+          <input type="file" id="uf-bol" accept=".xlsx" onchange="processarUpload(this.files[0],'bol')">
+        </div>
+        <div id="pv-bol" style="display:none;margin-top:1rem">
+          <div class="alerta al-ok"><span>✓</span><span id="bol-st-txt"></span></div>
+          <div id="bol-dup-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="bol-dup-txt"></span></div>
+          <div id="bol-tar-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="bol-tar-txt"></span></div>
+          <div class="sec">Revisão dos dados</div>
+          <div class="revbox">
+            <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Regional</th><th>Serviço</th><th>Tarifa</th><th>Qtd paga</th><th>Valor pago</th><th>Status</th></tr></thead>
+            <tbody id="tb-pv-bol"></tbody></table>
+          </div>
+          <div class="btn-row"><button class="btn btn-s" onclick="cancelarUpload('bol')">Cancelar</button><button class="btn btn-p" id="btn-sv-bol" onclick="salvarBoletim()"><i class="ti ti-check"></i> Confirmar e salvar</button></div>
+        </div>
+      </div>
+      <div class="sec-row">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="sec" style="margin:0">Histórico de boletins</div>
+          <select id="fil-hist-bol" onchange="carregarHistBol()" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)">
+            <option value="">Todos os estados</option><option value="MA">Maranhão</option><option value="PI">Piauí</option>
+          </select>
+        </div>
+        <button class="btn btn-s btn-sm" onclick="carregarHistBol()"><i class="ti ti-refresh"></i> Atualizar</button>
+      </div>
+      <div class="tbox">
+        <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Total pago</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tb-hist-bol"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ═══ SERVIÇOS CNG ═══ -->
+    <div id="tab-producao" style="display:none">
+      <p class="page-subtitle">Registro dos serviços realizados pela <strong>CENEGED</strong>.</p>
+      <div class="alerta al-info"><span>ℹ</span><span>Envie <strong>um arquivo por vez</strong>. Períodos já importados serão identificados antes de salvar.</span></div>
+      <div class="gbox">
+        <h3>Upload da planilha de produção real</h3>
+        <div class="uarea" id="ua-prod" onclick="document.getElementById('uf-prod').click()" ondragover="dragOver(event,'ua-prod')" ondragleave="dragLeave('ua-prod')" ondrop="dropFile(event,'prod')">
+          <i class="ti ti-upload" style="font-size:28px;color:var(--tx2)" aria-hidden="true"></i>
+          <p><strong>Clique para selecionar</strong> ou arraste o arquivo aqui</p>
+          <p style="font-size:10px;margin-top:4px">Producao_Real_Campo_CENEGED.xlsx</p>
+          <input type="file" id="uf-prod" accept=".xlsx" onchange="processarUpload(this.files[0],'prod')">
+        </div>
+        <div id="pv-prod" style="display:none;margin-top:1rem">
+          <div class="alerta al-ok"><span>✓</span><span id="prod-st-txt"></span></div>
+          <div id="prod-dup-al" class="alerta al-warn" style="display:none"><span>⚠</span><span id="prod-dup-txt"></span></div>
+          <div class="sec">Revisão dos dados</div>
+          <div class="revbox">
+            <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Regional</th><th>Serviço</th><th>Qtd executada</th><th>Status</th></tr></thead>
+            <tbody id="tb-pv-prod"></tbody></table>
+          </div>
+          <div class="btn-row"><button class="btn btn-s" onclick="cancelarUpload('prod')">Cancelar</button><button class="btn btn-p" id="btn-sv-prod" onclick="salvarProducao()"><i class="ti ti-check"></i> Confirmar e salvar</button></div>
+        </div>
+      </div>
+      <div class="sec-row">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="sec" style="margin:0">Histórico de lançamentos</div>
+          <select id="fil-hist-prod" onchange="carregarHistProd()" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)">
+            <option value="">Todos os estados</option><option value="MA">Maranhão</option><option value="PI">Piauí</option>
+          </select>
+        </div>
+        <button class="btn btn-s btn-sm" onclick="carregarHistProd()"><i class="ti ti-refresh"></i> Atualizar</button>
+      </div>
+      <div class="tbox">
+        <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody id="tb-hist-prod"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL SENHA -->
+<div class="modal-overlay" id="modal-senha">
+  <div class="modal">
+    <p style="font-size:15px;font-weight:700;margin-bottom:1rem"><i class="ti ti-key"></i> Alterar minha senha</p>
+    <div class="fg"><label>Nova senha</label><input type="password" id="minha-senha" placeholder="Mínimo 6 caracteres"></div>
+    <div class="fg"><label>Confirmar senha</label><input type="password" id="minha-senha-conf" placeholder="Repita a nova senha"></div>
+    <div class="btn-row-modal">
+      <button class="btn btn-s" onclick="toggleModalSenha()">Cancelar</button>
+      <button class="btn btn-p" onclick="alterarMinhaSenha()"><i class="ti ti-device-floppy"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SURL='https://wcefqhivhaejueenburz.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
+const {createClient}=supabase;
+const sb=createClient(SURL,SKEY);
+const INATIVIDADE_MS=60*60*1000;
+const LOGIN_URL='/Painel_Faturamento_v2/index.html';
+
+let perfil=null,role='',userEmail='';
+let dadosProd=[],dadosBol=[],dadosCad=[];
+let svProd=false,svBol=false,svCad=false;
+let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
+
+const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const TABS_LABELS={cadernos:'Importar Caderno de Serviço',boletim:'Importar Boletim EQTL',producao:'Importar Serviços CNG'};
+const fR=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fN=v=>Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+const mA=(m,a)=>String(m).padStart(2,'0')+'/'+a;
+
+// ═══ SESSÃO ═══
+window.addEventListener('load',async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href=LOGIN_URL;return;}
+  const ultima=localStorage.getItem('ceneged_ultima_atividade');
+  if(ultima&&(Date.now()-parseInt(ultima))>INATIVIDADE_MS){
+    await sb.auth.signOut();localStorage.removeItem('ceneged_ultima_atividade');
+    window.location.href=LOGIN_URL;return;
+  }
+  localStorage.setItem('ceneged_ultima_atividade',Date.now().toString());
+  document.addEventListener('click',()=>localStorage.setItem('ceneged_ultima_atividade',Date.now().toString()));
+  await iniciarApp(session.user);
+});
+
+async function iniciarApp(user){
+  userEmail=user.email;
+  const {data}=await sb.from('usuarios_perfil_completo').select('*').eq('id',user.id).single();
+  perfil=data||{role:'viewer'};role=perfil.role||'viewer';
+  if(role!=='admin'&&role!=='analyst'){alert('Sem permissão para acessar esta área.');window.location.href=LOGIN_URL;return;}
+  const partes=(perfil.nome||userEmail).split(' ');
+  const ini=(partes[0][0]+(partes[1]?partes[1][0]:'')).toUpperCase();
+  document.getElementById('sb-avatar').textContent=ini;
+  document.getElementById('sb-uname').textContent=perfil.nome||userEmail.split('@')[0];
+  document.getElementById('sb-urole').textContent={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[role]||'Visualizador';
+  await carregarCache();
+  preencherStatusDados();
+  setTab('cadernos',document.getElementById('nav-cadernos'));
+}
+
+async function fazerLogout(){
+  await sb.auth.signOut();localStorage.removeItem('ceneged_ultima_atividade');
+  window.location.href=LOGIN_URL;
+}
+
+// ═══ CACHE ═══
+async function carregarCache(){
+  const {data:cads}=await sb.from('cadernos').select('*').eq('confirmado',true).order('id');
+  C.cads=cads||[];
+  if(C.cads.length){const {data:tars}=await sb.from('caderno_tarifas').select('*').in('caderno_id',C.cads.map(c=>c.id));C.tars=tars||[];}
+  else C.tars=[];
+  const {data:prod}=await sb.from('producao_real').select('*').eq('ativo',true);C.prod=prod||[];
+  const {data:bols}=await sb.from('boletins').select('*').eq('ativo',true);C.bols=bols||[];
+  if(C.bols.length){const {data:itens}=await sb.from('boletim_itens').select('*').in('boletim_id',C.bols.map(b=>b.id));C.itens=itens||[];}
+  else C.itens=[];
+}
+
+// ═══ SIDEBAR ═══
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar'),main=document.getElementById('main'),icon=document.getElementById('icon-toggle');
+  sb.classList.toggle('recolhida');main.classList.toggle('expandido');
+  icon.className=sb.classList.contains('recolhida')?'ti ti-layout-sidebar-left-expand':'ti ti-layout-sidebar-left-collapse';
+}
+
+// ═══ NAVEGAÇÃO ═══
+function setTab(id,el){
+  document.querySelectorAll('[id^="tab-"]').forEach(t=>t.style.display='none');
+  document.getElementById('tab-'+id).style.display='block';
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('page-title').textContent=TABS_LABELS[id]||id;
+  if(id==='cadernos') carregarCadernos();
+  if(id==='boletim') carregarHistBol();
+  if(id==='producao') carregarHistProd();
+}
+
+// ═══ STATUS DE DADOS ═══
+function toggleStatusDados(){
+  const painel=document.getElementById('painel-status-dados'),icon=document.getElementById('icon-status-dados');
+  const aberto=painel.style.display==='block';
+  painel.style.display=aberto?'none':'block';
+  icon.style.transform=aberto?'rotate(0deg)':'rotate(180deg)';
+}
+
+function preencherStatusDados(){
+  const fDt=ts=>{if(!ts) return '—';const d=new Date(ts);return d.toLocaleDateString('pt-BR')+' - '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});};
+  const fMA=(m,a)=>m&&a?String(m).padStart(2,'0')+'/'+a:'—';
+  const cadMA=C.cads.filter(c=>c.estado==='MA'&&c.ativo).sort((a,b)=>b.id-a.id)[0];
+  const cadPI=C.cads.filter(c=>c.estado==='PI'&&c.ativo).sort((a,b)=>b.id-a.id)[0];
+  document.getElementById('status-cad-ma').textContent='MA — '+(cadMA?.vigencia_inicio||'Sem caderno ativo');
+  document.getElementById('status-cad-pi').textContent='PI — '+(cadPI?.vigencia_inicio||'Sem caderno ativo');
+  document.getElementById('status-cad-em').textContent='Carregado em: '+fDt(cadMA?.importado_em||cadPI?.importado_em);
+  const bolMA=C.bols.filter(b=>b.estado==='MA').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
+  const bolPI=C.bols.filter(b=>b.estado==='PI').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
+  document.getElementById('status-bol-ma').textContent='MA — '+fMA(bolMA?.mes,bolMA?.ano);
+  document.getElementById('status-bol-pi').textContent='PI — '+fMA(bolPI?.mes,bolPI?.ano);
+  document.getElementById('status-bol-em').textContent='Carregado em: '+fDt(bolMA?.importado_em||bolPI?.importado_em);
+  const prodMA=C.prod.filter(p=>p.estado==='MA').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
+  const prodPI=C.prod.filter(p=>p.estado==='PI').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
+  document.getElementById('status-prod-ma').textContent='MA — '+fMA(prodMA?.mes,prodMA?.ano);
+  document.getElementById('status-prod-pi').textContent='PI — '+fMA(prodPI?.mes,prodPI?.ano);
+  document.getElementById('status-prod-em').textContent='Carregado em: '+fDt(prodMA?.importado_em||prodPI?.importado_em);
+}
+
+// ═══ UPLOAD ═══
+function dragOver(e,id){e.preventDefault();document.getElementById(id).classList.add('drag');}
+function dragLeave(id){document.getElementById(id).classList.remove('drag');}
+function dropFile(e,tipo){e.preventDefault();dragLeave('ua-'+tipo);const f=e.dataTransfer.files[0];if(f) processarUpload(f,tipo);}
+
+async function processarUpload(file,tipo){
+  if(!file||!file.name.endsWith('.xlsx')){alert('Selecione um arquivo .xlsx válido.');return;}
+  document.getElementById('uf-'+tipo).value='';
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array'});
+  if(tipo==='prod') parsearProducao(wb);
+  if(tipo==='bol')  parsearBoletim(wb);
+  if(tipo==='cad')  parsearCaderno(wb);
+}
+
+function lerAbas(wb){
+  let rows=[];
+  ['MA','PI'].forEach(est=>{const ws=wb.Sheets[est];if(!ws) return;const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:2});r.forEach(row=>{if(!row.ESTADO) row.ESTADO=est;});rows=[...rows,...r];});
+  return rows;
+}
+
+function parsearProducao(wb){
+  dadosProd=[];let erros=0,dups=[];
+  lerAbas(wb).forEach(r=>{
+    if(!r.MES||!r.ANO||!r.REGIONAL||!r.COD_SERVICO||r.QTD_EXECUTADA===''){erros++;return;}
+    const mes=parseInt(r.MES),ano=parseInt(r.ANO),est=String(r.ESTADO).trim(),reg=String(r.REGIONAL).trim(),cod=String(r.COD_SERVICO).trim();
+    const ja=C.prod.find(p=>p.mes===mes&&p.ano===ano&&p.estado===est&&p.regional===reg&&p.cod_servico===cod);
+    if(ja){const dk=`${mA(mes,ano)} — ${est} — ${reg}`;if(!dups.includes(dk)) dups.push(dk);}
+    dadosProd.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),qde_executada:parseInt(r.QTD_EXECUTADA)||0,_dup:!!ja});
+  });
+  if(!dadosProd.length){alert('Nenhum dado encontrado.');return;}
+  document.getElementById('prod-st-txt').textContent=`${dadosProd.length} registros carregados${erros?` (${erros} ignorados)`:''}`;
+  const da=document.getElementById('prod-dup-al');
+  if(dups.length){document.getElementById('prod-dup-txt').textContent=`Já importados — serão substituídos: ${dups.join(', ')}`;da.style.display='flex';}else da.style.display='none';
+  document.getElementById('tb-pv-prod').innerHTML=dadosProd.map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;font-weight:700">${fN(r.qde_executada)}</td><td>${r._dup?'<span class="pill p-warn">Substituirá</span>':'<span class="pill p-ok">Novo</span>'}</td></tr>`).join('');
+  document.getElementById('pv-prod').style.display='block';
+}
+
+function parsearBoletim(wb){
+  dadosBol=[];let erros=0,dups=[];
+  const tarMap={};C.tars.forEach(t=>tarMap[t.cod_servico+'|'+t.regional]=parseFloat(t.preco_unitario)||0);
+  lerAbas(wb).forEach(r=>{
+    if(!r.MES||!r.ANO||!r.REGIONAL||!r.COD_SERVICO){erros++;return;}
+    const mes=parseInt(r.MES),ano=parseInt(r.ANO),est=String(r.ESTADO).trim(),reg=String(r.REGIONAL).trim(),cod=String(r.COD_SERVICO).trim();
+    const ja=C.bols.find(b=>b.mes===mes&&b.ano===ano&&b.estado===est);
+    if(ja){const dk=`${mA(mes,ano)} — ${est}`;if(!dups.includes(dk)) dups.push(dk);}
+    dadosBol.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO||'0').replace(',','.'))||0,qde_paga:parseInt(r.QDE_PAGA)||0,_dup:!!ja});
+  });
+  if(!dadosBol.length){alert('Nenhum dado encontrado.');return;}
+  const aT=[];dadosBol.forEach(r=>{const tc=tarMap[r.cod_servico+'|'+r.regional];if(tc&&Math.abs(tc-r.preco_unitario)>0.01) aT.push(`${r.regional}: ${r.descricao_servico}`);});
+  const ta=document.getElementById('bol-tar-al');
+  if(aT.length){document.getElementById('bol-tar-txt').innerHTML=`<strong>Tarifas divergentes:</strong> ${aT.slice(0,3).join(', ')}`;ta.style.display='flex';}else ta.style.display='none';
+  document.getElementById('bol-st-txt').textContent=`${dadosBol.length} registros carregados${erros?` (${erros} ignorados)`:''}`;
+  const da=document.getElementById('bol-dup-al');
+  if(dups.length){document.getElementById('bol-dup-txt').textContent=`Período já importado — será substituído: ${dups.join(', ')}`;da.style.display='flex';}else da.style.display='none';
+  document.getElementById('tb-pv-bol').innerHTML=dadosBol.map(r=>{
+    const tc=tarMap[r.cod_servico+'|'+r.regional],dv=tc&&Math.abs(tc-r.preco_unitario)>0.01;
+    return `<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;color:${dv?'#BE2F3B':'inherit'}">${fR(r.preco_unitario)}</td><td style="text-align:right;font-weight:700">${fN(r.qde_paga)}</td><td style="text-align:right">${fR(r.preco_unitario*r.qde_paga)}</td><td>${dv?'<span class="pill p-danger">⚠ Tarifa diverge</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
+  }).join('');
+  document.getElementById('pv-bol').style.display='block';
+}
+
+function parsearCaderno(wb){
+  dadosCad=[];let erros=0;const mapTemp={};
+  lerAbas(wb).forEach(r=>{
+    if(!r.REGIONAL||!r.COD_SERVICO||!r.VIGENCIA_INICIO||r.PRECO_UNITARIO===''||r.EVENTOS_PREVISTOS===''){erros++;return;}
+    const est=String(r.ESTADO||'').trim();const regFinal=est==='PI'?'PIAUÍ':String(r.REGIONAL).trim();const cod=String(r.COD_SERVICO).trim();const k=`${est}|${regFinal}|${cod}`;
+    const item={estado:est,regional:regFinal,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),vigencia_inicio:String(r.VIGENCIA_INICIO).trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO).replace(',','.'))||0,eventos_previstos:parseFloat(String(r.EVENTOS_PREVISTOS).replace(',','.'))||0};
+    if(!mapTemp[k]) mapTemp[k]=item;else if(est==='PI') mapTemp[k].eventos_previstos+=item.eventos_previstos;
+  });
+  dadosCad=Object.values(mapTemp);
+  if(!dadosCad.length){alert('Nenhum dado encontrado. Verifique se o arquivo tem aba MA ou PI.');return;}
+  const vig=dadosCad[0]?.vigencia_inicio||'',est=dadosCad[0]?.estado||'';
+  document.getElementById('cad-st-txt').textContent=`${dadosCad.length} tarifas carregadas — ${est} — Vigência: ${vig}${erros?` (${erros} ignoradas)`:''}`;
+  document.getElementById('tb-pv-cad').innerHTML=dadosCad.map(r=>`<tr><td style="font-weight:700;color:var(--vm)">${r.vigencia_inicio}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right">${fR(r.preco_unitario)}</td><td style="text-align:right">${fN(r.eventos_previstos)}</td><td style="text-align:right;font-weight:700">${fR(r.preco_unitario*r.eventos_previstos)}</td></tr>`).join('');
+  document.getElementById('pv-cad').style.display='block';
+}
+
+function cancelarUpload(tipo){
+  document.getElementById('pv-'+tipo).style.display='none';
+  if(tipo==='prod') dadosProd=[];
+  if(tipo==='bol')  dadosBol=[];
+  if(tipo==='cad')  dadosCad=[];
+}
+
+// ═══ SALVAR ═══
+async function salvarProducao(){
+  if(svProd||!dadosProd.length) return;svProd=true;
+  const btn=document.getElementById('btn-sv-prod');btn.textContent='Salvando...';btn.disabled=true;
+  const user=(await sb.auth.getUser()).data.user;
+  const dadosNorm=dadosProd.map(r=>({...r,regional:r.estado==='PI'?'PIAUÍ':r.regional}));
+  const mapProd={};dadosNorm.forEach(r=>{const k=`${r.mes}|${r.ano}|${r.estado}|${r.regional}|${r.cod_servico}`;if(!mapProd[k]) mapProd[k]={...r};else mapProd[k].qde_executada+=r.qde_executada;});
+  const {error}=await sb.from('producao_real').upsert(Object.values(mapProd).map(r=>({mes:r.mes,ano:r.ano,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,qde_executada:r.qde_executada,ativo:true,importado_por:user.id})),{onConflict:'mes,ano,estado,regional,cod_servico'});
+  if(error) alert('Erro: '+error.message);
+  else{alert(`✓ ${dadosProd.length} registros salvos!`);cancelarUpload('prod');await carregarCache();preencherStatusDados();carregarHistProd();}
+  btn.innerHTML='<i class="ti ti-check"></i> Confirmar e salvar';btn.disabled=false;svProd=false;
+}
+
+async function salvarBoletim(){
+  if(svBol||!dadosBol.length) return;svBol=true;
+  const btn=document.getElementById('btn-sv-bol');btn.textContent='Salvando...';btn.disabled=true;
+  const user=(await sb.auth.getUser()).data.user;
+  const {mes,ano,estado}=dadosBol[0];
+  const ja=C.bols.find(b=>b.mes===mes&&b.ano===ano&&b.estado===estado);
+  if(ja) await sb.from('boletins').delete().eq('id',ja.id);
+  const {data:bol,error:e1}=await sb.from('boletins').insert({mes,ano,estado,ativo:true,importado_por:user.id}).select().single();
+  if(e1||!bol){alert('Erro ao criar boletim.');btn.innerHTML='<i class="ti ti-check"></i> Confirmar e salvar';btn.disabled=false;svBol=false;return;}
+  const mapBol={};dadosBol.forEach(r=>{const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;const k=`${r.estado}|${regFinal}|${r.cod_servico}`;if(!mapBol[k]) mapBol[k]={...r,regional:regFinal,qde_paga:r.qde_paga};else mapBol[k].qde_paga+=r.qde_paga;});
+  const {error:e2}=await sb.from('boletim_itens').insert(Object.values(mapBol).map(r=>({boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga})));
+  if(e2) alert('Erro: '+e2.message);
+  else{alert(`✓ Boletim ${MN[mes]}/${ano} — ${estado} salvo!`);cancelarUpload('bol');await carregarCache();preencherStatusDados();carregarHistBol();}
+  btn.innerHTML='<i class="ti ti-check"></i> Confirmar e salvar';btn.disabled=false;svBol=false;
+}
+
+async function salvarCaderno(){
+  if(svCad) return;
+  if(!document.getElementById('cad-conf').checked){alert('Confirme os dados marcando a caixa.');return;}
+  if(!dadosCad.length) return;svCad=true;
+  const btn=document.getElementById('btn-sv-cad');btn.textContent='Salvando...';btn.disabled=true;
+  const user=(await sb.auth.getUser()).data.user;
+  const {estado,vigencia_inicio}=dadosCad[0];
+  const ativos=C.cads.filter(c=>c.estado===estado&&c.ativo);
+  for(const c of ativos) await sb.from('cadernos').update({ativo:false,data_fim:vigencia_inicio}).eq('id',c.id);
+  const {data:cad,error:e1}=await sb.from('cadernos').insert({estado,nome:`Caderno ${estado} — vigência ${vigencia_inicio}`,vigencia_inicio,ativo:true,confirmado:true,importado_por:user.id}).select().single();
+  if(e1||!cad){alert('Erro: '+(e1?.message||''));btn.innerHTML='<i class="ti ti-check"></i> Ativar caderno';btn.disabled=false;svCad=false;return;}
+  const mapCad={};dadosCad.forEach(r=>{const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;const k=`${r.estado}|${regFinal}|${r.cod_servico}`;if(!mapCad[k]) mapCad[k]={...r,regional:regFinal};else if(r.estado==='PI') mapCad[k].eventos_previstos+=r.eventos_previstos;});
+  const {error:e2}=await sb.from('caderno_tarifas').insert(Object.values(mapCad).map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos})));
+  if(e2){alert('Erro nas tarifas: '+e2.message);await sb.from('cadernos').delete().eq('id',cad.id);}
+  else{alert(`✓ Caderno ativado com ${dadosCad.length} tarifas!`);document.getElementById('cad-conf').checked=false;cancelarUpload('cad');document.getElementById('upload-cad-box').style.display='none';await carregarCache();preencherStatusDados();carregarCadernos();}
+  btn.innerHTML='<i class="ti ti-check"></i> Ativar caderno';btn.disabled=false;svCad=false;
+}
+
+// ═══ HISTÓRICOS ═══
+async function carregarHistProd(){
+  const filtEst=document.getElementById('fil-hist-prod')?.value||'';
+  let q=sb.from('producao_real').select('mes,ano,estado,qde_executada,importado_em,ativo').order('ano',{ascending:false}).order('mes',{ascending:false});
+  if(filtEst) q=q.eq('estado',filtEst);
+  const {data:prod}=await q;
+  const tb=document.getElementById('tb-hist-prod');
+  if(!prod?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum lançamento encontrado.</td></tr>';return;}
+  const ag={};prod.forEach(r=>{const k=`${r.ano}|${String(r.mes).padStart(2,'0')}|${r.estado}`;if(!ag[k]) ag[k]={mes:r.mes,ano:r.ano,estado:r.estado,total:0,em:r.importado_em,ativo:r.ativo!==false};ag[k].total+=r.qde_executada;});
+  const ordenado=Object.entries(ag).sort((a,b)=>b[0].localeCompare(a[0])).map(e=>e[1]);
+  tb.innerHTML=ordenado.map(r=>`<tr>
+    <td>${mA(r.mes,r.ano)}</td>
+    <td>${r.estado}</td>
+    <td>${fN(r.total)}</td>
+    <td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'—'}</td>
+    <td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td>
+    <td style="display:flex;gap:6px;align-items:center">
+      ${r.ativo
+        ?`<button class="btn-inativar" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',true)"><i class="ti ti-toggle-left" style="font-size:14px"></i> Inativar</button>`
+        :`<button class="btn-ativar" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',false)"><i class="ti ti-toggle-right" style="font-size:14px"></i> Ativar</button>`
+      }
+      <button class="btn-excluir" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}')"><i class="ti ti-trash" style="font-size:14px"></i> Excluir</button>
+    </td>
+  </tr>`).join('');
+}
+
+async function inativarProd(mes,ano,est,ativo){
+  await sb.from('producao_real').update({ativo:!ativo}).eq('mes',mes).eq('ano',ano).eq('estado',est);
+  await carregarCache();preencherStatusDados();carregarHistProd();
+}
+async function excluirProd(mes,ano,est){
+  if(!confirm(`Excluir ${mA(mes,ano)} — ${est}? Esta ação não pode ser desfeita.`)) return;
+  await sb.from('producao_real').delete().eq('mes',mes).eq('ano',ano).eq('estado',est);
+  await carregarCache();preencherStatusDados();carregarHistProd();
+}
+
+async function carregarHistBol(){
+  const filtEst=document.getElementById('fil-hist-bol')?.value||'';
+  let q=sb.from('boletins').select('*').order('ano',{ascending:false}).order('mes',{ascending:false});
+  if(filtEst) q=q.eq('estado',filtEst);
+  const {data:bols}=await q;
+  const tb=document.getElementById('tb-hist-bol');
+  if(!bols?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum boletim encontrado.</td></tr>';return;}
+  const ordenado=[...bols].sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes);
+  tb.innerHTML='';
+  for(const b of ordenado){
+    const it=C.itens.filter(i=>i.boletim_id===b.id);
+    const tE=it.reduce((s,i)=>s+(i.qde_paga||0),0),tV=it.reduce((s,i)=>s+(parseFloat(i.valor_pago)||0),0);
+    tb.innerHTML+=`<tr>
+      <td>${mA(b.mes,b.ano)}</td>
+      <td>${b.estado}</td>
+      <td>${fN(tE)}</td>
+      <td>${fR(tV)}</td>
+      <td>${b.importado_em?new Date(b.importado_em).toLocaleDateString('pt-BR'):'—'}</td>
+      <td>${b.ativo!==false?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td>
+      <td style="display:flex;gap:6px;align-items:center">
+        ${b.ativo!==false
+          ?`<button class="btn-inativar" onclick="inativarBol(${b.id},true)"><i class="ti ti-toggle-left" style="font-size:14px"></i> Inativar</button>`
+          :`<button class="btn-ativar" onclick="inativarBol(${b.id},false)"><i class="ti ti-toggle-right" style="font-size:14px"></i> Ativar</button>`
+        }
+        <button class="btn-excluir" onclick="excluirBol(${b.id},'${mA(b.mes,b.ano)}','${b.estado}')"><i class="ti ti-trash" style="font-size:14px"></i> Excluir</button>
+      </td>
+    </tr>`;
+  }
+}
+
+async function inativarBol(id,ativo){
+  await sb.from('boletins').update({ativo:!ativo}).eq('id',id);
+  await carregarCache();preencherStatusDados();carregarHistBol();
+}
+async function excluirBol(id,p,e){
+  if(!confirm(`Excluir boletim ${p} — ${e}? Esta ação não pode ser desfeita.`)) return;
+  await sb.from('boletins').delete().eq('id',id);
+  await carregarCache();preencherStatusDados();carregarHistBol();
+}
+
+// ═══ CADERNOS ═══
+function toggleUploadCad(){const b=document.getElementById('upload-cad-box');b.style.display=b.style.display==='none'?'block':'none';}
+function toggleTar(id){const b=document.getElementById('tar-'+id);b.style.display=b.style.display==='block'?'none':'block';}
+
+function carregarCadernos(){
+  const filtEst=document.getElementById('fil-hist-cad')?.value||'';
+  const elAtivos=document.getElementById('lista-cad-ativos');
+  const elHist=document.getElementById('lista-cad-hist');
+  const ativos=C.cads.filter(c=>c.ativo);
+  const historico=[...C.cads].filter(c=>!c.ativo&&(filtEst===''||c.estado===filtEst)).sort((a,b)=>{
+    const va=parseInt((a.vigencia_inicio||'01/2000').split('/').reverse().join(''));
+    const vb=parseInt((b.vigencia_inicio||'01/2000').split('/').reverse().join(''));
+    return vb-va;
+  });
+  const renderCad=(c)=>{
+    const tars=C.tars.filter(t=>t.caderno_id===c.id);
+    const meta=tars.reduce((s,t)=>s+(parseFloat(t.faturamento_previsto)||0),0);
+    const regs=new Set(tars.map(t=>t.regional)).size;
+    const svcs=regs>0?tars.length/regs:0;
+    const conf=c.confirmado?'<span style="color:var(--vd);font-weight:700">✓ Sim</span>':'<span style="color:var(--am);font-weight:700">⚠ Pendente</span>';
+    return `<div class="ccard ${c.ativo?'ativo':''}">
+      <div class="ccard-h">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+            <span class="ccard-t">${c.nome}</span>
+            ${c.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Encerrado</span>'}
+          </div>
+          <div class="ccard-m">${c.estado} · Importado em ${c.importado_em?new Date(c.importado_em).toLocaleDateString('pt-BR'):'—'}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-s btn-sm" onclick="toggleTar(${c.id})"><i class="ti ti-chevron-down"></i> Tarifas</button>
+          <button class="btn btn-s btn-sm" onclick="salvarVig(${c.id})"><i class="ti ti-device-floppy"></i> Salvar</button>
+          ${c.ativo
+            ?`<button class="btn-inativar btn-sm" onclick="inativarCad(${c.id},true)"><i class="ti ti-toggle-left" style="font-size:14px"></i> Inativar</button>`
+            :`<button class="btn-ativar btn-sm" onclick="inativarCad(${c.id},false)"><i class="ti ti-toggle-right" style="font-size:14px"></i> Ativar</button>`
+          }
+          <button class="btn-excluir btn-sm" onclick="excluirCad(${c.id},'${c.nome}')"><i class="ti ti-trash" style="font-size:14px"></i> Excluir</button>
+        </div>
+      </div>
+      <div class="ccard-st">
+        <div class="ccard-s"><div class="sl">Meta mensal</div><div class="sv">${fR(meta)}</div></div>
+        <div class="ccard-s"><div class="sl">Regionais</div><div class="sv">${regs}</div></div>
+        <div class="ccard-s"><div class="sl">Serviços</div><div class="sv">${Math.round(svcs)}</div></div>
+        <div class="ccard-s"><div class="sl">Confirmado</div><div class="sv">${conf}</div></div>
+      </div>
+      <div class="ccard-vig">
+        <div><label>Mês/Ano inicial</label><input type="text" id="vi-${c.id}" value="${c.vigencia_inicio||''}" placeholder="MM/AAAA"></div>
+        <div><label>Mês/Ano final</label><input type="text" id="vf-${c.id}" value="${c.data_fim||''}" placeholder="MM/AAAA"></div>
+        <div><label>Ativo</label><div class="ckbox"><input type="checkbox" id="va-${c.id}" ${c.ativo?'checked':''} style="width:15px;height:15px;accent-color:var(--vm)"><span>Sim</span></div></div>
+      </div>
+      <div class="tar-box" id="tar-${c.id}">
+        <table><thead><tr><th>Regional</th><th>Serviço</th><th style="text-align:right">Tarifa</th><th style="text-align:right">Eventos prev.</th><th style="text-align:right">Fat. previsto</th></tr></thead>
+        <tbody>${tars.map(t=>`<tr><td>${t.regional}</td><td style="font-size:11px">${t.descricao_servico}</td><td style="text-align:right">${fR(t.preco_unitario)}</td><td style="text-align:right">${fN(t.eventos_previstos)}</td><td style="text-align:right;font-weight:700">${fR(t.faturamento_previsto)}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  };
+  elAtivos.innerHTML=ativos.length?ativos.map(c=>renderCad(c)).join(''):'<div class="loader">Nenhum caderno ativo.</div>';
+  elHist.innerHTML=historico.length?historico.map(c=>renderCad(c)).join(''):'<div class="loader">Nenhum caderno encerrado encontrado.</div>';
+}
+
+async function salvarVig(id){
+  const ini=document.getElementById('vi-'+id).value.trim();
+  const fim=document.getElementById('vf-'+id).value.trim();
+  const atv=document.getElementById('va-'+id).checked;
+  await sb.from('cadernos').update({vigencia_inicio:ini,data_fim:fim||null,ativo:atv}).eq('id',id);
+  await carregarCache();preencherStatusDados();carregarCadernos();alert('✓ Vigência atualizada!');
+}
+async function inativarCad(id,ativo){
+  await sb.from('cadernos').update({ativo:!ativo}).eq('id',id);
+  await carregarCache();preencherStatusDados();carregarCadernos();
+}
+async function excluirCad(id,nome){
+  if(!confirm(`Excluir "${nome}"? Esta ação não pode ser desfeita.`)) return;
+  await sb.from('cadernos').delete().eq('id',id);
+  await carregarCache();preencherStatusDados();carregarCadernos();
+}
+
+// ═══ SENHA ═══
+function toggleModalSenha(){const m=document.getElementById('modal-senha');m.classList.toggle('open');document.getElementById('minha-senha').value='';document.getElementById('minha-senha-conf').value='';}
+async function alterarMinhaSenha(){
+  const s1=document.getElementById('minha-senha').value.trim(),s2=document.getElementById('minha-senha-conf').value.trim();
+  if(!s1||s1.length<6){alert('A senha deve ter no mínimo 6 caracteres.');return;}
+  if(s1!==s2){alert('As senhas não coincidem.');return;}
+  const {error}=await sb.auth.updateUser({password:s1});
+  if(error){alert('Erro ao alterar senha: '+error.message);return;}
+  toggleModalSenha();alert('✓ Senha alterada com sucesso!');
+}
+</script>
+</body>
+</html>

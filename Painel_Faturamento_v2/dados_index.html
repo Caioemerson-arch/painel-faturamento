@@ -154,6 +154,10 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     </div>
   </div>
   <div class="sb-nav">
+    <div class="sb-sec">Análises</div>
+    <a class="sb-item" href="/Painel_Faturamento_v2/visoes_index.html">
+      <i class="ti ti-table" aria-hidden="true"></i><span class="sb-item-span">Faturamento Geral</span>
+    </a>
     <div class="sb-sec">Importação</div>
     <a class="sb-item active" id="nav-cadernos" onclick="setTab('cadernos',this)">
       <i class="ti ti-book" aria-hidden="true"></i><span class="sb-item-span">Caderno de Serviço</span>
@@ -163,6 +167,10 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     </a>
     <a class="sb-item" id="nav-producao" onclick="setTab('producao',this)">
       <i class="ti ti-upload" aria-hidden="true"></i><span class="sb-item-span">Serviços CNG</span>
+    </a>
+    <div class="sb-sec" id="sb-sec-admin" style="display:none">Gestão</div>
+    <a class="sb-item" id="nav-admin" href="/Painel_Faturamento_v2/admin_index.html" style="display:none">
+      <i class="ti ti-users" aria-hidden="true"></i><span class="sb-item-span">Gestão de Usuários</span>
     </a>
   </div>
 
@@ -393,6 +401,10 @@ async function iniciarApp(user){
   document.getElementById('sb-avatar').textContent=ini;
   document.getElementById('sb-uname').textContent=perfil.nome||userEmail.split('@')[0];
   document.getElementById('sb-urole').textContent={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[role]||'Visualizador';
+  if(role==='admin'){
+    document.getElementById('sb-sec-admin').style.display='';
+    document.getElementById('nav-admin').style.display='';
+  }
   await carregarCache();
   preencherStatusDados();
   setTab('cadernos',document.getElementById('nav-cadernos'));

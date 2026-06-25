@@ -1395,7 +1395,7 @@ async function carregarUsuarios(){
       <td><strong>${u.nome||'—'}</strong></td>
       <td style="font-size:11px;color:var(--tx2)">${u.email}</td>
       <td>
-        <select id="role-${u.id}" onchange="permCache['${u.id}'].role=this.value" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd)">
+        <select id="role-${u.id}" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd)">
           ${['admin','analyst','viewer'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${rl[r]}</option>`).join('')}
         </select>
       </td>

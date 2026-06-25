@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão de Usuários — CENEGED</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root{
+  --vm:#BE2F3B;--vm-cl:#f9eaea;--az-esc:#1A1A2E;--pt:#2C2C2A;
+  --bg:#f5f4f1;--bd:#e0deda;--tx2:#7B7B7B;--br:#fff;
+  --vd:#1D9E75;--vd-cl:#eaf3de;--az:#378ADD;--az-cl:#e6f1fb;
+  --am:#BA7517;--am-cl:#faeeda;--roxo:#534AB7;--roxo-cl:#EEEDFE;
+  --r:10px;--r2:6px;--sb-w:200px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size:14px}
+
+/* SIDEBAR */
+.sidebar{background:var(--az-esc);display:flex;flex-direction:column;position:fixed;top:0;left:0;width:var(--sb-w);height:100vh;z-index:100;overflow-y:auto;transition:width .2s ease}
+.sidebar.recolhida{width:52px}
+.sidebar.recolhida .sb-uname,.sidebar.recolhida .sb-urole,.sidebar.recolhida .sb-sec,.sidebar.recolhida .sb-item span,.sidebar.recolhida .sb-out span,.sidebar.recolhida .sb-item-span{display:none}
+.sidebar.recolhida .sb-item{justify-content:center;padding:10px 0}
+.sidebar.recolhida .sb-logo img{display:none}
+.sidebar.recolhida .sb-user{justify-content:center;padding:10px 0}
+.sidebar.recolhida .sb-bottom{padding:12px 6px}
+.sidebar.recolhida .sb-out{justify-content:center;padding:6px;width:40px;margin:0 auto 6px}
+.sb-logo{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+.sb-logo img{height:28px;width:auto}
+.btn-toggle-sb{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;padding:4px;border-radius:4px;display:flex;align-items:center;flex-shrink:0}
+.btn-toggle-sb:hover{color:#fff;background:rgba(255,255,255,.1)}
+.sb-user{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--vm);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:700;flex-shrink:0}
+.sb-uname{font-size:11px;color:rgba(255,255,255,.8);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-urole{font-size:9px;color:var(--vm);font-weight:700;margin-top:1px}
+.sb-nav{padding:8px 0;flex:1}
+.sb-sec{font-size:9px;color:rgba(255,255,255,.3);padding:10px 14px 4px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;white-space:nowrap}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12px;color:rgba(255,255,255,.55);cursor:pointer;border-left:2px solid transparent;transition:.15s;text-decoration:none;white-space:nowrap}
+.sb-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.05)}
+.sb-item.active{color:#fff;background:rgba(190,47,59,.18);border-left-color:var(--vm)}
+.sb-item i{font-size:16px;flex-shrink:0}
+.sb-bottom{padding:12px 14px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-out{font-size:11px;color:rgba(255,255,255,.45);background:none;border:1px solid rgba(255,255,255,.12);border-radius:var(--r2);padding:6px 10px;width:100%;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;margin-bottom:6px;white-space:nowrap}
+.sb-out:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.7)}
+
+/* MAIN */
+.main{margin-left:var(--sb-w);display:flex;flex-direction:column;min-height:100vh;transition:margin-left .2s ease}
+.main.expandido{margin-left:52px}
+.main-header{background:var(--br);border-bottom:1px solid var(--bd);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-title{font-size:14px;font-weight:700;color:var(--pt)}
+.con{padding:1.25rem 1.5rem;flex:1}
+
+/* TABELA */
+.tbox{background:var(--br);border-radius:var(--r);border:1px solid var(--bd);overflow:hidden;margin-bottom:1.25rem}
+.tbox table{width:100%;border-collapse:collapse;font-size:12px}
+.tbox thead tr{background:var(--bg)}
+.tbox th{padding:10px 14px;text-align:left;font-weight:700;color:var(--tx2);font-size:10px;text-transform:uppercase;white-space:nowrap}
+.tbox td{padding:10px 14px;border-top:1px solid var(--bd);vertical-align:middle}
+.tbox tr:hover td{background:#fafaf8}
+.pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700}
+.p-ok{background:var(--vd-cl);color:#3B6D11}
+.p-cinza{background:var(--bg);color:var(--tx2)}
+
+/* BOTÕES AÇÃO */
+.btn-ico{width:30px;height:30px;border-radius:6px;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:16px;transition:.15s}
+.btn-ico:hover{opacity:.85}
+.btn-ico-am{background:var(--am-cl);color:#854F0B}
+.btn-ico-vd{background:var(--vd-cl);color:#3B6D11}
+.btn-ico-vm{background:var(--vm-cl);color:#A32D2D}
+.btn-ico-az{background:var(--az-cl);color:#185FA5}
+
+/* BOTÃO PERMISSÕES */
+.btn-perm{font-size:11px;padding:4px 12px;border-radius:20px;background:var(--roxo-cl);color:#3C3489;border:none;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:4px;transition:.15s}
+.btn-perm:hover{background:#CECBF6}
+.btn-perm i{font-size:13px}
+
+/* BOTÃO SALVAR */
+.btn-salvar{font-size:12px;padding:7px 16px;background:var(--vd);color:#fff;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
+.btn-salvar:hover{background:#0F6E56}
+
+/* BOTÕES GERAIS */
+.btn{font-size:12px;padding:7px 16px;border-radius:var(--r2);cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.btn-s{background:var(--br);color:var(--pt);border:1px solid var(--bd)}.btn-s:hover{background:var(--bg)}
+.btn-p{background:var(--vm);color:#fff;border:none}.btn-p:hover{background:#a02632}
+.btn-sm{font-size:10px;padding:4px 10px}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem}
+
+/* PAINEL PERMISSÕES / SENHA */
+.painel-expand{display:none;background:var(--bg);border-top:1px solid var(--bd)}
+.painel-expand.open{display:table-row}
+.painel-inner{padding:16px 20px}
+.perm-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:12px}
+.perm-sec{font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.perm-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--pt);margin-bottom:5px;cursor:pointer}
+.perm-item input{accent-color:var(--roxo);width:13px;height:13px;cursor:pointer}
+
+/* SELECT PERFIL */
+.sel-role{font-size:11px;padding:5px 8px;border:1px solid var(--bd);border-radius:var(--r2);background:var(--br);color:var(--pt);width:100%}
+
+/* MODAL SENHA */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--br);border-radius:var(--r);padding:1.5rem;width:380px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.fg{margin-bottom:.875rem}
+.fg label{display:block;font-size:11px;color:var(--tx2);margin-bottom:4px;font-weight:700}
+.fg input,.fg select{width:100%;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r2);font-size:12px;background:var(--br)}
+
+/* SENHA INLINE */
+.senha-inner{padding:14px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.senha-inner input{font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:var(--r2);width:220px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <img src="https://www.ceneged.com.br/wp-content/uploads/2023/02/Logo-Ceneged-1.png" alt="CENEGED">
+    <button class="btn-toggle-sb" onclick="toggleSidebar()" aria-label="Recolher menu">
+      <i class="ti ti-layout-sidebar-left-collapse" id="icon-toggle"></i>
+    </button>
+  </div>
+  <div class="sb-user">
+    <div class="sb-avatar" id="sb-avatar">CE</div>
+    <div>
+      <div class="sb-uname" id="sb-uname">—</div>
+      <div class="sb-urole" id="sb-urole">—</div>
+    </div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-sec">Administração</div>
+    <a class="sb-item active">
+      <i class="ti ti-users" aria-hidden="true"></i>
+      <span class="sb-item-span">Gestão de Usuários</span>
+    </a>
+  </div>
+
+  <!-- ATUALIZAÇÃO DE DADOS -->
+  <div style="border-top:1px solid rgba(255,255,255,.08)">
+    <button onclick="toggleStatusDados()" style="width:100%;display:flex;align-items:center;gap:9px;padding:10px 14px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;text-align:left">
+      <i class="ti ti-cloud-upload" style="font-size:16px;flex-shrink:0" aria-hidden="true"></i>
+      <span class="sb-item-span">Atualização de Dados</span>
+      <i class="ti ti-chevron-down" id="icon-status-dados" style="font-size:13px;margin-left:auto;transition:.2s" aria-hidden="true"></i>
+    </button>
+    <div id="painel-status-dados" style="display:none;padding:0 14px 10px">
+      <div style="margin-bottom:10px">
+        <p style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:5px">Caderno de serviço ativo</p>
+        <div id="status-cad-ma" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:2px">MA — carregando...</div>
+        <div id="status-cad-pi" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px">PI — carregando...</div>
+        <div id="status-cad-em" style="font-size:9px;color:rgba(255,255,255,.25)">Carregado em: —</div>
+      </div>
+      <div style="margin-bottom:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06)">
+        <p style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:5px">Boletim EQTL</p>
+        <div id="status-bol-ma" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:2px">MA — carregando...</div>
+        <div id="status-bol-pi" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px">PI — carregando...</div>
+        <div id="status-bol-em" style="font-size:9px;color:rgba(255,255,255,.25)">Carregado em: —</div>
+      </div>
+      <div style="padding-top:8px;border-top:1px solid rgba(255,255,255,.06)">
+        <p style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:5px">Serviços CNG</p>
+        <div id="status-prod-ma" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:2px">MA — carregando...</div>
+        <div id="status-prod-pi" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px">PI — carregando...</div>
+        <div id="status-prod-em" style="font-size:9px;color:rgba(255,255,255,.25)">Carregado em: —</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sb-bottom">
+    <button class="sb-out" onclick="toggleModalSenha()">
+      <i class="ti ti-key" aria-hidden="true"></i><span>Alterar senha</span>
+    </button>
+    <button class="sb-out" onclick="fazerLogout()">
+      <i class="ti ti-logout" aria-hidden="true"></i><span>Sair</span>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main">
+  <div class="main-header">
+    <div class="page-title">Gestão de Usuários</div>
+    <button class="btn-salvar" onclick="salvarTodasPermissoes()" id="btn-salvar-geral">
+      <i class="ti ti-device-floppy" aria-hidden="true"></i> Salvar alterações
+    </button>
+  </div>
+
+  <div class="con">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div style="font-size:11px;color:var(--tx2)">Clique em <span style="background:var(--roxo-cl);color:#3C3489;padding:2px 8px;border-radius:20px;font-weight:700;font-size:10px"><i class="ti ti-shield-check" style="font-size:12px"></i> Permissões</span> para expandir as configurações de cada usuário.</div>
+      <button class="btn btn-s btn-sm" onclick="carregarUsuarios()"><i class="ti ti-refresh"></i> Atualizar</button>
+    </div>
+
+    <div class="tbox">
+      <table>
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Perfil</th>
+            <th>Último acesso</th>
+            <th>Status</th>
+            <th>Permissões</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="lista-usuarios">
+          <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ALTERAR PRÓPRIA SENHA -->
+<div class="modal-overlay" id="modal-senha">
+  <div class="modal">
+    <p style="font-size:15px;font-weight:700;margin-bottom:1rem"><i class="ti ti-key"></i> Alterar minha senha</p>
+    <div class="fg"><label>Nova senha</label><input type="password" id="minha-senha" placeholder="Mínimo 6 caracteres"></div>
+    <div class="fg"><label>Confirmar senha</label><input type="password" id="minha-senha-conf" placeholder="Repita a nova senha"></div>
+    <div class="btn-row">
+      <button class="btn btn-s" onclick="toggleModalSenha()">Cancelar</button>
+      <button class="btn btn-p" onclick="alterarMinhaSenha()"><i class="ti ti-device-floppy"></i> Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SURL='https://wcefqhivhaejueenburz.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
+const {createClient}=supabase;
+const sb=createClient(SURL,SKEY);
+const INATIVIDADE_MS=60*60*1000;
+const LOGIN_URL='/Painel_Faturamento_v2/index.html';
+
+let perfil=null,role='',userEmail='';
+let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
+
+const ABAS_DISP=[
+  {id:'resumida',  label:'Análise Faturamento Geral'},
+  {id:'geral',     label:'Análise Mensal'},
+  {id:'regional',  label:'Análise Por Regional'},
+  {id:'servico',   label:'Análise Por Serviço'},
+  {id:'cadernos',  label:'Importar Caderno de Serviço'},
+  {id:'boletim',   label:'Importar Boletim EQTL'},
+  {id:'producao',  label:'Importar Serviços CNG'},
+];
+
+const RL={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'};
+const fDt=ts=>{if(!ts) return '—';const d=new Date(ts);return d.toLocaleDateString('pt-BR')+' - '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});};
+const fMA=(m,a)=>m&&a?String(m).padStart(2,'0')+'/'+a:'—';
+
+// ═══ SESSÃO ═══
+window.addEventListener('load',async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href=LOGIN_URL;return;}
+  const ultima=localStorage.getItem('ceneged_ultima_atividade');
+  if(ultima&&(Date.now()-parseInt(ultima))>INATIVIDADE_MS){
+    await sb.auth.signOut();localStorage.removeItem('ceneged_ultima_atividade');
+    window.location.href=LOGIN_URL;return;
+  }
+  localStorage.setItem('ceneged_ultima_atividade',Date.now().toString());
+  document.addEventListener('click',()=>localStorage.setItem('ceneged_ultima_atividade',Date.now().toString()));
+  await iniciarApp(session.user);
+});
+
+async function iniciarApp(user){
+  userEmail=user.email;
+  const {data}=await sb.from('usuarios_perfil_completo').select('*').eq('id',user.id).single();
+  perfil=data||{role:'viewer'};role=perfil.role||'viewer';
+  if(role!=='admin'){alert('Acesso restrito a administradores.');window.location.href=LOGIN_URL;return;}
+  const partes=(perfil.nome||userEmail).split(' ');
+  const ini=(partes[0][0]+(partes[1]?partes[1][0]:'')).toUpperCase();
+  document.getElementById('sb-avatar').textContent=ini;
+  document.getElementById('sb-uname').textContent=perfil.nome||userEmail.split('@')[0];
+  document.getElementById('sb-urole').textContent='Administrador';
+  await carregarCache();
+  preencherStatusDados();
+  await carregarUsuarios();
+}
+
+async function fazerLogout(){
+  await sb.auth.signOut();localStorage.removeItem('ceneged_ultima_atividade');
+  window.location.href=LOGIN_URL;
+}
+
+// ═══ CACHE ═══
+async function carregarCache(){
+  const {data:cads}=await sb.from('cadernos').select('*').eq('confirmado',true).order('id');
+  C.cads=cads||[];
+  if(C.cads.length){const {data:tars}=await sb.from('caderno_tarifas').select('*').in('caderno_id',C.cads.map(c=>c.id));C.tars=tars||[];}
+  else C.tars=[];
+  const {data:prod}=await sb.from('producao_real').select('*').eq('ativo',true);C.prod=prod||[];
+  const {data:bols}=await sb.from('boletins').select('*').eq('ativo',true);C.bols=bols||[];
+  if(C.bols.length){const {data:itens}=await sb.from('boletim_itens').select('*').in('boletim_id',C.bols.map(b=>b.id));C.itens=itens||[];}
+  else C.itens=[];
+}
+
+// ═══ SIDEBAR ═══
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar'),main=document.getElementById('main'),icon=document.getElementById('icon-toggle');
+  sb.classList.toggle('recolhida');main.classList.toggle('expandido');
+  icon.className=sb.classList.contains('recolhida')?'ti ti-layout-sidebar-left-expand':'ti ti-layout-sidebar-left-collapse';
+}
+
+// ═══ STATUS DE DADOS ═══
+function toggleStatusDados(){
+  const painel=document.getElementById('painel-status-dados'),icon=document.getElementById('icon-status-dados');
+  const aberto=painel.style.display==='block';
+  painel.style.display=aberto?'none':'block';
+  icon.style.transform=aberto?'rotate(0deg)':'rotate(180deg)';
+}
+
+function preencherStatusDados(){
+  const cadMA=C.cads.filter(c=>c.estado==='MA'&&c.ativo).sort((a,b)=>b.id-a.id)[0];
+  const cadPI=C.cads.filter(c=>c.estado==='PI'&&c.ativo).sort((a,b)=>b.id-a.id)[0];
+  document.getElementById('status-cad-ma').textContent='MA — '+(cadMA?.vigencia_inicio||'Sem caderno ativo');
+  document.getElementById('status-cad-pi').textContent='PI — '+(cadPI?.vigencia_inicio||'Sem caderno ativo');
+  document.getElementById('status-cad-em').textContent='Carregado em: '+fDt(cadMA?.importado_em||cadPI?.importado_em);
+  const bolMA=C.bols.filter(b=>b.estado==='MA').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
+  const bolPI=C.bols.filter(b=>b.estado==='PI').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
+  document.getElementById('status-bol-ma').textContent='MA — '+fMA(bolMA?.mes,bolMA?.ano);
+  document.getElementById('status-bol-pi').textContent='PI — '+fMA(bolPI?.mes,bolPI?.ano);
+  document.getElementById('status-bol-em').textContent='Carregado em: '+fDt(bolMA?.importado_em||bolPI?.importado_em);
+  const prodMA=C.prod.filter(p=>p.estado==='MA').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
+  const prodPI=C.prod.filter(p=>p.estado==='PI').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
+  document.getElementById('status-prod-ma').textContent='MA — '+fMA(prodMA?.mes,prodMA?.ano);
+  document.getElementById('status-prod-pi').textContent='PI — '+fMA(prodPI?.mes,prodPI?.ano);
+  document.getElementById('status-prod-em').textContent='Carregado em: '+fDt(prodMA?.importado_em||prodPI?.importado_em);
+}
+
+// ═══ USUÁRIOS ═══
+async function carregarUsuarios(){
+  const el=document.getElementById('lista-usuarios');
+  el.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Carregando...</td></tr>';
+  const {data:users}=await sb.from('usuarios_perfil_completo').select('*').order('criado_em',{ascending:false});
+  if(!users?.length){el.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum usuário encontrado.</td></tr>';return;}
+
+  el.innerHTML=users.map(u=>{
+    const ativo=u.ativo!==false;
+    const abas=u.abas_permitidas||['resumida','geral','regional','servico'];
+    return `
+    <tr id="row-${u.id}">
+      <td><strong>${u.nome||'—'}</strong></td>
+      <td style="font-size:11px;color:var(--tx2)">${u.email}</td>
+      <td>
+        <select class="sel-role" id="role-${u.id}" style="width:130px">
+          ${['admin','analyst','viewer'].map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${RL[r]}</option>`).join('')}
+        </select>
+      </td>
+      <td style="font-size:11px;color:var(--tx2)">${u.last_sign_in_at?new Date(u.last_sign_in_at).toLocaleString('pt-BR'):'Nunca'}</td>
+      <td>${ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td>
+      <td>
+        <button class="btn-perm" onclick="togglePainel('perm-${u.id}','chevron-perm-${u.id}')">
+          <i class="ti ti-shield-check"></i> Permissões
+          <i class="ti ti-chevron-down" id="chevron-perm-${u.id}" style="transition:.2s"></i>
+        </button>
+      </td>
+      <td>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${ativo
+            ?`<button class="btn-ico btn-ico-am" title="Inativar usuário" onclick="toggleAtivo('${u.id}',true)"><i class="ti ti-toggle-left"></i></button>`
+            :`<button class="btn-ico btn-ico-vd" title="Ativar usuário" onclick="toggleAtivo('${u.id}',false)"><i class="ti ti-toggle-right"></i></button>`
+          }
+          <button class="btn-ico btn-ico-vm" title="Excluir usuário" onclick="excluirUser('${u.id}','${u.nome||u.email}')"><i class="ti ti-trash"></i></button>
+          <button class="btn-ico btn-ico-az" title="Alterar senha" onclick="togglePainel('senha-${u.id}','chevron-senha-${u.id}')"><i class="ti ti-key"></i></button>
+        </div>
+      </td>
+    </tr>
+
+    <!-- PAINEL PERMISSÕES -->
+    <tr class="painel-expand" id="perm-${u.id}">
+      <td colspan="7" style="padding:0">
+        <div class="painel-inner">
+          <p style="font-size:12px;font-weight:700;color:var(--pt);margin-bottom:12px">
+            <i class="ti ti-shield-check" style="color:var(--roxo)"></i> Permissões — ${u.nome||u.email}
+          </p>
+          <div class="perm-grid">
+            <div>
+              <div class="perm-sec">Abas permitidas</div>
+              ${ABAS_DISP.map(a=>`
+                <label class="perm-item">
+                  <input type="checkbox" id="aba-${u.id}-${a.id}" ${abas.includes(a.id)?'checked':''}>
+                  ${a.label}
+                </label>`).join('')}
+            </div>
+            <div>
+              <div class="perm-sec">Uploads (analista)</div>
+              <label class="perm-item"><input type="checkbox" id="pp-${u.id}" ${u.perm_producao?'checked':''}> Importar Serviços CNG</label>
+              <label class="perm-item"><input type="checkbox" id="pb-${u.id}" ${u.perm_boletim?'checked':''}> Importar Boletim EQTL</label>
+            </div>
+            <div>
+              <div class="perm-sec">Exportações</div>
+              <label class="perm-item"><input type="checkbox" id="ppdf-${u.id}" ${u.perm_exportar_pdf?'checked':''}> Exportar PDF</label>
+              <label class="perm-item"><input type="checkbox" id="pxls-${u.id}" ${u.perm_exportar_excel?'checked':''}> Exportar Excel</label>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>
+
+    <!-- PAINEL SENHA -->
+    <tr class="painel-expand" id="senha-${u.id}">
+      <td colspan="7" style="padding:0">
+        <div class="senha-inner">
+          <i class="ti ti-key" style="color:var(--az);font-size:16px"></i>
+          <span style="font-size:12px;font-weight:700;color:var(--pt)">Nova senha para ${u.nome||u.email}:</span>
+          <input type="password" id="np-${u.id}" placeholder="Mínimo 6 caracteres">
+          <button class="btn btn-p btn-sm" onclick="redefinirSenha('${u.id}')"><i class="ti ti-device-floppy"></i> Salvar senha</button>
+          <button class="btn btn-s btn-sm" onclick="togglePainel('senha-${u.id}','chevron-senha-${u.id}')">Cancelar</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══ TOGGLE PAINÉIS ═══
+function togglePainel(id,chevronId){
+  const el=document.getElementById(id);
+  const icon=chevronId?document.getElementById(chevronId):null;
+  const aberto=el.classList.contains('open');
+  el.classList.toggle('open');
+  if(icon) icon.style.transform=aberto?'rotate(0deg)':'rotate(180deg)';
+}
+
+// ═══ SALVAR PERMISSÕES (individual via RPC) ═══
+async function salvarPermissoesUsuario(userId){
+  const ABAS_IDS=ABAS_DISP.map(a=>a.id);
+  const abas=ABAS_IDS.filter(a=>{const el=document.getElementById('aba-'+userId+'-'+a);return el&&el.checked;});
+  const role=document.getElementById('role-'+userId)?.value||'viewer';
+  const perm_producao=document.getElementById('pp-'+userId)?.checked||false;
+  const perm_boletim=document.getElementById('pb-'+userId)?.checked||false;
+  const perm_exportar_pdf=document.getElementById('ppdf-'+userId)?.checked||false;
+  const perm_exportar_excel=document.getElementById('pxls-'+userId)?.checked||false;
+  const {error}=await sb.rpc('atualizar_permissoes_usuario',{
+    p_id:userId,p_role:role,p_abas:abas,
+    p_perm_producao:perm_producao,p_perm_boletim:perm_boletim,
+    p_perm_exportar_pdf:perm_exportar_pdf,p_perm_exportar_excel:perm_exportar_excel
+  });
+  return error;
+}
+
+// ═══ SALVAR TODAS (botão do cabeçalho) ═══
+async function salvarTodasPermissoes(){
+  const btn=document.getElementById('btn-salvar-geral');
+  btn.textContent='Salvando...';btn.disabled=true;
+  const rows=document.querySelectorAll('[id^="perm-"]');
+  const ids=[...rows].map(r=>r.id.replace('perm-',''));
+  let erros=0;
+  for(const id of ids){
+    const err=await salvarPermissoesUsuario(id);
+    if(err) erros++;
+  }
+  btn.innerHTML='<i class="ti ti-device-floppy"></i> Salvar alterações';btn.disabled=false;
+  if(erros>0) alert(`⚠ ${erros} usuário(s) com erro ao salvar.`);
+  else{alert('✓ Todas as permissões foram salvas!');await carregarUsuarios();}
+}
+
+// ═══ AÇÕES ═══
+async function toggleAtivo(id,ativo){
+  if(!confirm(ativo?'Desativar este usuário?':'Reativar este usuário?')) return;
+  const {error}=await sb.from('usuarios_perfil').update({ativo:!ativo,atualizado_em:new Date().toISOString()}).eq('id',id);
+  if(error){alert('Erro: '+error.message);return;}
+  await carregarUsuarios();
+}
+
+async function excluirUser(id,nome){
+  if(!confirm(`Excluir permanentemente "${nome}"? Esta ação não pode ser desfeita.`)) return;
+  await sb.from('usuarios_perfil').delete().eq('id',id);
+  await carregarUsuarios();
+}
+
+async function redefinirSenha(userId){
+  const nova=document.getElementById('np-'+userId)?.value?.trim();
+  if(!nova||nova.length<6){alert('A senha deve ter no mínimo 6 caracteres.');return;}
+  const {error}=await sb.rpc('redefinir_senha_usuario',{p_id:userId,p_nova_senha:nova});
+  if(error){alert('Erro ao redefinir senha: '+error.message);return;}
+  document.getElementById('np-'+userId).value='';
+  togglePainel('senha-'+userId,null);
+  alert('✓ Senha redefinida com sucesso!');
+}
+
+// ═══ SENHA PRÓPRIA ═══
+function toggleModalSenha(){
+  const m=document.getElementById('modal-senha');m.classList.toggle('open');
+  document.getElementById('minha-senha').value='';document.getElementById('minha-senha-conf').value='';
+}
+async function alterarMinhaSenha(){
+  const s1=document.getElementById('minha-senha').value.trim(),s2=document.getElementById('minha-senha-conf').value.trim();
+  if(!s1||s1.length<6){alert('A senha deve ter no mínimo 6 caracteres.');return;}
+  if(s1!==s2){alert('As senhas não coincidem.');return;}
+  const {error}=await sb.auth.updateUser({password:s1});
+  if(error){alert('Erro ao alterar senha: '+error.message);return;}
+  toggleModalSenha();alert('✓ Senha alterada com sucesso!');
+}
+</script>
+</body>
+</html>

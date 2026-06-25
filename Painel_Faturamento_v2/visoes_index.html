@@ -171,6 +171,14 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     <a class="sb-item" id="nav-servico" onclick="setTab('servico',this)">
       <i class="ti ti-list-details" aria-hidden="true"></i><span>Por Serviço</span>
     </a>
+    <div class="sb-sec" id="sb-sec-dados" style="display:none">Dados</div>
+    <a class="sb-item" id="nav-dados" href="/Painel_Faturamento_v2/dados_index.html" style="display:none">
+      <i class="ti ti-upload" aria-hidden="true"></i><span>Importação de Dados</span>
+    </a>
+    <div class="sb-sec" id="sb-sec-admin" style="display:none">Gestão</div>
+    <a class="sb-item" id="nav-admin" href="/Painel_Faturamento_v2/admin_index.html" style="display:none">
+      <i class="ti ti-users" aria-hidden="true"></i><span>Gestão de Usuários</span>
+    </a>
   </div>
   <!-- ATUALIZAÇÃO DE DADOS -->
   <div style="border-top:1px solid rgba(255,255,255,.08)">
@@ -522,6 +530,16 @@ async function iniciarApp(user){
   document.getElementById('sb-avatar').textContent=ini;
   document.getElementById('sb-uname').textContent=perfil.nome||userEmail.split('@')[0];
   document.getElementById('sb-urole').textContent={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[role]||'Visualizador';
+  const pp=perfil?.perm_producao||role==='admin';
+  const pb=perfil?.perm_boletim||role==='admin';
+  if(role==='admin'||(role==='analyst'&&(pp||pb))){
+    document.getElementById('sb-sec-dados').style.display='';
+    document.getElementById('nav-dados').style.display='';
+  }
+  if(role==='admin'){
+    document.getElementById('sb-sec-admin').style.display='';
+    document.getElementById('nav-admin').style.display='';
+  }
   preencherPeriodos();
   preencherModalExcel();
   syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();

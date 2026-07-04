@@ -257,6 +257,8 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <option value="PI">Piauí</option>
           <option value="TODOS">Consolidado</option>
         </select>
+        <label>Regional</label>
+        <select id="rs-reg" onchange="carregarResumida()"><option value="">Todas</option></select>
         <label>Ano</label>
         <select id="rs-ano" onchange="carregarResumida()"></select>
         <button class="btn btn-p btn-sm" onclick="carregarResumida()">Atualizar</button>
@@ -283,6 +285,13 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <table id="tb-rs-dif-cad" style="min-width:700px">
           <thead><tr id="tr-rs-dif-cad-head"></tr></thead>
           <tbody id="tb-rs-dif-cad-body"></tbody>
+        </table>
+      </div>
+      <div class="sec">Diferença: Qtd Executado vs Previsto caderno — por serviço e mês</div>
+      <div class="tbox" style="overflow-x:auto">
+        <table id="tb-rs-dif-exec-cad" style="min-width:700px">
+          <thead><tr id="tr-rs-dif-exec-cad-head"></tr></thead>
+          <tbody id="tb-rs-dif-exec-cad-body"></tbody>
         </table>
       </div>
       <div class="sec">Diferença: Qtd executado vs Qtd pago — por serviço e mês</div>
@@ -312,6 +321,8 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         </select>
         <label>Mês</label><select id="g-mes" onchange="carregarGeral()"></select>
         <label>Ano</label><select id="g-ano" onchange="carregarGeral()"></select>
+        <label>Regional</label>
+        <select id="g-reg" onchange="carregarGeral()"><option value="">Todas</option></select>
       </div>
       <div id="g-alerta" class="alerta al-warn" style="display:none">
         <span>⚠</span><span id="g-alerta-txt"></span>
@@ -668,18 +679,19 @@ function preencherPeriodos(){
   const sa=document.getElementById('rs-ano');
   if(sa) sa.innerHTML=[ano-1,ano,ano+1].map(a=>`<option value="${a}" ${a===ano?'selected':''}>${a}</option>`).join('');
 }
-function syncRegsGeral(){const e=document.getElementById('g-est')?.value||'MA';const s=document.getElementById('g-reg-pz');if(s) s.innerHTML='<option value="">Todas regionais</option>'+(REGS[e]||REGS.MA).map(r=>`<option>${r}</option>`).join('');}
+function syncRegsGeral(){const e=document.getElementById('g-est')?.value||'MA';const s=document.getElementById('g-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[e]||REGS.MA)).map(r=>`<option>${r}</option>`).join('');}
 function syncRegsServ(){const e=document.getElementById('s-est')?.value||'MA';const s=document.getElementById('s-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(REGS[e]||REGS.MA).map(r=>`<option>${r}</option>`).join('');}
 function syncRegsReg(){const e=document.getElementById('r-est')?.value||'MA';const s=document.getElementById('r-reg');if(s) s.innerHTML=(REGS[e]||REGS.MA).map(r=>`<option>${r}</option>`).join('');}
-function syncRegsResum(){}
+function syncRegsResum(){const e=document.getElementById('rs-est')?.value||'MA';const s=document.getElementById('rs-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[e]||REGS.MA)).map(r=>`<option>${r}</option>`).join('');}
 
 // ═══ ANÁLISE MENSAL ═══
 async function carregarGeral(){
   const est=document.getElementById('g-est').value;
   const mes=parseInt(document.getElementById('g-mes').value);
   const ano=parseInt(document.getElementById('g-ano').value);
+  const reg=document.getElementById('g-reg')?.value||'';
   syncRegsGeral();atualizarPageSub();
-  const prev=calcPrevisto(est,mes,ano),exec=calcExec(est,mes,ano),pago=calcPago(est,mes,ano);
+  const prev=calcPrevisto(est,mes,ano,reg),exec=calcExec(est,mes,ano,reg),pago=calcPago(est,mes,ano,reg);
   const pct=prev>0?(pago.val/prev*100):0;
   document.getElementById('g-prev').textContent=fR(prev);
   document.getElementById('g-exec').textContent=fR(exec.val);
@@ -697,19 +709,19 @@ async function carregarGeral(){
     document.getElementById('g-alerta-txt').innerHTML=`Divergência: Equatorial pagou <strong>${(exec.evt>0?((pago.evt/exec.evt)*100):0).toFixed(1)}%</strong> da produção real. Diferença de <strong>${fR(Math.abs(dPE))}</strong> não reconhecida.`;
     al.style.display='flex';
   } else al.style.display='none';
-  renderYTD(est,mes,ano);
-  renderGraficoMensal(est,ano);
-  renderGraficoDivMes(est,ano,mes);
-  renderTbEvtReg(est,mes,ano);
-  renderTbFatReg(est,mes,ano);
-  setTimeout(()=>{renderTbYTDReg(est,mes,ano);renderTbDivergRel(est,mes,ano);},100);
-  renderTbTar(est,mes,ano);
-  renderTbProp(est,mes,ano);
+  renderYTD(est,mes,ano,reg);
+  renderGraficoMensal(est,ano,reg);
+  renderGraficoDivMes(est,ano,mes,reg);
+  renderTbEvtReg(est,mes,ano,reg);
+  renderTbFatReg(est,mes,ano,reg);
+  setTimeout(()=>{renderTbYTDReg(est,mes,ano,reg);renderTbDivergRel(est,mes,ano,reg);},100);
+  renderTbTar(est,mes,ano,reg);
+  renderTbProp(est,mes,ano,reg);
 }
 
-function renderYTD(est,mes,ano){
+function renderYTD(est,mes,ano,reg=''){
   let ytdPrev=0,ytdExec=0,ytdPago=0;
-  for(let m=1;m<=mes;m++){ytdPrev+=calcPrevisto(est,m,ano);ytdExec+=calcExec(est,m,ano).val;ytdPago+=calcPago(est,m,ano).val;}
+  for(let m=1;m<=mes;m++){ytdPrev+=calcPrevisto(est,m,ano,reg);ytdExec+=calcExec(est,m,ano,reg).val;ytdPago+=calcPago(est,m,ano,reg).val;}
   const pct=ytdPrev>0?(ytdPago/ytdPrev*100):0;
   const dEP=ytdExec-ytdPrev,dPE=ytdPago-ytdExec;
   document.getElementById('g-ytd-prev').textContent=fR(ytdPrev);
@@ -721,15 +733,15 @@ function renderYTD(est,mes,ano){
   const sp=document.getElementById('g-ytd-pago-s');sp.className='cs '+(dPE>=0?'cp':'cn');sp.textContent=(dPE>=0?'▲ ':'▼ ')+fR(Math.abs(dPE))+(dPE>=0?' acima':' abaixo')+' do executado';
 }
 
-function renderGraficoMensal(est,ano){
+function renderGraficoMensal(est,ano,reg=''){
   const mesAtual=parseInt(document.getElementById('g-mes').value);
   const prev=[],execReal=[],pagoReal=[],execProj=[],pagoProj=[];
   let somaE=0,somaP=0,cnt=0;
-  for(let m=1;m<=mesAtual;m++){const p=calcPrevisto(est,m,ano);if(p>0){somaE+=calcExec(est,m,ano).val/p;somaP+=calcPago(est,m,ano).val/p;cnt++;}}
+  for(let m=1;m<=mesAtual;m++){const p=calcPrevisto(est,m,ano,reg);if(p>0){somaE+=calcExec(est,m,ano,reg).val/p;somaP+=calcPago(est,m,ano,reg).val/p;cnt++;}}
   const pctE=cnt>0?somaE/cnt:0.98,pctP=cnt>0?somaP/cnt:0.97;
   for(let m=1;m<=12;m++){
-    const p=calcPrevisto(est,m,ano);prev.push(p);
-    if(m<=mesAtual){execReal.push(calcExec(est,m,ano).val);pagoReal.push(calcPago(est,m,ano).val);execProj.push(null);pagoProj.push(null);}
+    const p=calcPrevisto(est,m,ano,reg);prev.push(p);
+    if(m<=mesAtual){execReal.push(calcExec(est,m,ano,reg).val);pagoReal.push(calcPago(est,m,ano,reg).val);execProj.push(null);pagoProj.push(null);}
     else{execReal.push(null);pagoReal.push(null);execProj.push(p*pctE);pagoProj.push(p*pctP);}
   }
   if(chMensal) chMensal.destroy();
@@ -742,9 +754,9 @@ function renderGraficoMensal(est,ano){
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+(v/1e6).toFixed(1)+'M',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}});
 }
 
-function renderGraficoDivMes(est,ano,mesAtual){
+function renderGraficoDivMes(est,ano,mesAtual,reg=''){
   const divs=[],cores=[];
-  for(let m=1;m<=12;m++){if(m>mesAtual){divs.push(null);cores.push('transparent');continue;}const ex=calcExec(est,m,ano),pg=calcPago(est,m,ano);const d=pg.val-ex.val;divs.push(d);cores.push(d<0?'#BE2F3B':'#1D9E75');}
+  for(let m=1;m<=12;m++){if(m>mesAtual){divs.push(null);cores.push('transparent');continue;}const ex=calcExec(est,m,ano,reg),pg=calcPago(est,m,ano,reg);const d=pg.val-ex.val;divs.push(d);cores.push(d<0?'#BE2F3B':'#1D9E75');}
   if(chPizza) chPizza.destroy();
   chPizza=new Chart(document.getElementById('ch-div-mes'),{type:'bar',data:{labels:MN.slice(1),datasets:[{label:'Divergência',data:divs,backgroundColor:cores,borderRadius:3,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw===null?'':' R$'+Math.abs(c.raw/1000).toFixed(1)+'k '+(c.raw<0?'abaixo':'acima')}}},scales:{y:{ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}});
   const divReal=divs.filter(d=>d!==null);
@@ -753,8 +765,8 @@ function renderGraficoDivMes(est,ano,mesAtual){
   if(el) el.innerHTML=`<div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px"><div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Acumulado</div><div style="font-size:13px;font-weight:700;color:${acum<0?'#BE2F3B':'#1D9E75'}">${acum<0?'':'+'}${fR(acum)}</div></div><div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px"><div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Média mensal</div><div style="font-size:13px;font-weight:700;color:${media<0?'#BE2F3B':'#1D9E75'}">${media<0?'':'+'}${fR(media)}</div></div><div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px"><div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Meses c/ divergência</div><div style="font-size:13px;font-weight:700;color:${mNeg>0?'#BE2F3B':'#1D9E75'}">${mNeg} de ${divReal.length} meses</div></div>`;
 }
 
-function renderTbEvtReg(est,mes,ano){
-  const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
+function renderTbEvtReg(est,mes,ano,reg=''){
+  const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]));
   const tb=document.getElementById('tb-evt-reg');let html='',totPE=0,totEx=0,totPg=0;
   regs.forEach(reg=>{const pE=calcPrevEvt(est,mes,ano,reg),ex=calcExec(est,mes,ano,reg),pg=calcPago(est,mes,ano,reg);const df=pg.evt-ex.evt,pct=ex.evt>0?((ex.evt-pg.evt)/ex.evt*100):0;const bc=Math.abs(pct)<2?'#1D9E75':pct>5?'#BE2F3B':'#BA7517';const st=Math.abs(pct)<2?'<span class="pill p-ok">Normal</span>':pct>5?'<span class="pill p-danger">Crítico</span>':'<span class="pill p-warn">Atenção</span>';html+=`<tr><td><strong>${reg}</strong></td><td>${fN(pE)}</td><td>${fN(ex.evt)}</td><td>${fN(pg.evt)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fN(df)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${bc}"></div></div><span style="font-size:10px;color:${bc};font-weight:700">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;totPE+=pE;totEx+=ex.evt;totPg+=pg.evt;});
   const totDf=totPg-totEx,totPct=totEx>0?((totEx-totPg)/totEx*100):0;const totBc=Math.abs(totPct)<2?'#1D9E75':totPct>5?'#BE2F3B':'#BA7517';
@@ -762,8 +774,8 @@ function renderTbEvtReg(est,mes,ano){
   tb.innerHTML=html;
 }
 
-function renderTbFatReg(est,mes,ano){
-  const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
+function renderTbFatReg(est,mes,ano,reg=''){
+  const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]));
   const tb=document.getElementById('tb-fat-reg');let html='',totP=0,totE=0,totG=0;
   regs.forEach(reg=>{const prev=calcPrevisto(est,mes,ano,reg),ex=calcExec(est,mes,ano,reg),pg=calcPago(est,mes,ano,reg);const dv=pg.val-ex.val,pct=prev>0?(pg.val/prev*100):0;html+=`<tr><td><strong>${reg}</strong></td><td>${fR(prev)}</td><td>${fR(ex.val)}</td><td>${fR(pg.val)}</td><td style="color:${dv>=0?'#1D9E75':'#BE2F3B'}">${dv>=0?'+':''}${fR(dv)}</td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;totP+=prev;totE+=ex.val;totG+=pg.val;});
   const totDv=totG-totE,totPct=totP>0?(totG/totP*100):0;
@@ -771,8 +783,8 @@ function renderTbFatReg(est,mes,ano){
   tb.innerHTML=html;
 }
 
-function renderTbYTDReg(est,mes,ano){
-  const regs=est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]);
+function renderTbYTDReg(est,mes,ano,reg=''){
+  const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]));
   const tb=document.getElementById('tb-ytd-reg');if(!tb) return;
   if(!C.cads.length&&!C.prod.length&&!C.bols.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados carregados.</td></tr>';return;}
   let html='',totYP=0,totYE=0,totYG=0,totMDiv=0;
@@ -782,15 +794,15 @@ function renderTbYTDReg(est,mes,ano){
   tb.innerHTML=html;
 }
 
-function renderTbTar(est,mes,ano){
-  const tars=getTarifas(est,mes,ano);const itMap={};getItens(est,mes,ano).forEach(i=>{itMap[i.regional+'|'+i.cod_servico]=parseFloat(i.preco_unitario)||0;});
+function renderTbTar(est,mes,ano,reg=''){
+  const tars=getTarifas(est,mes,ano,reg);const itMap={};getItens(est,mes,ano,reg).forEach(i=>{itMap[i.regional+'|'+i.cod_servico]=parseFloat(i.preco_unitario)||0;});
   document.getElementById('tb-tar').innerHTML=tars.map(t=>{const tp=itMap[t.regional+'|'+t.cod_servico]||0,dv=tp-parseFloat(t.preco_unitario),div=Math.abs(dv)>0.01&&tp>0;return `<tr><td style="font-size:11px">${t.descricao_servico}</td><td>${t.regional}</td><td>${fR(t.preco_unitario)}</td><td style="color:${div?'#BE2F3B':'inherit'}">${tp>0?fR(tp):'—'}</td><td style="color:${div?'#BE2F3B':'#1D9E75'}">${tp>0?(dv>=0?'+':'')+fR(dv):'—'}</td><td>${tp>0?(div?'<span class="pill p-danger">⚠ Diverge</span>':'<span class="pill p-ok">Ok</span>'):'<span class="pill p-cinza">Sem dados</span>'}</td></tr>`;}).join('');
 }
 
-function renderTbProp(est,mes,ano){
-  const tars=getTarifas(est,mes,ano);const svcMap={};tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
-  const execMap={};getProd(est,mes,ano).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
-  const pagoMap={};getItens(est,mes,ano).forEach(i=>pagoMap[i.cod_servico]=(pagoMap[i.cod_servico]||0)+(i.qde_paga||0));
+function renderTbProp(est,mes,ano,reg=''){
+  const tars=getTarifas(est,mes,ano,reg);const svcMap={};tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
+  const execMap={};getProd(est,mes,ano,reg).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
+  const pagoMap={};getItens(est,mes,ano,reg).forEach(i=>pagoMap[i.cod_servico]=(pagoMap[i.cod_servico]||0)+(i.qde_paga||0));
   const tP=Object.values(svcMap).reduce((s,v)=>s+v.prev,0),tE=Object.values(execMap).reduce((s,v)=>s+v,0),tG=Object.values(pagoMap).reduce((s,v)=>s+v,0);
   document.getElementById('tb-prop').innerHTML=Object.entries(svcMap).map(([cod,s])=>{const pP=tP>0?(s.prev/tP*100):0,pE=tE>0?((execMap[cod]||0)/tE*100):0,pG=tG>0?((pagoMap[cod]||0)/tG*100):0;const dv=Math.abs(pP-pG);const st=dv>2?'<span class="pill p-danger">Desvio</span>':dv>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>';return `<tr><td style="font-size:11px">${s.desc}</td><td>${pP.toFixed(1)}%</td><td>${pE.toFixed(1)}%</td><td>${pG.toFixed(1)}%</td><td style="color:${dv>2?'#BE2F3B':dv>.5?'#BA7517':'#1D9E75'}">${dv.toFixed(1)}pp</td><td>${st}</td></tr>`;}).join('');
 }
@@ -905,15 +917,16 @@ function renderTbDivergRelReg(est,mes,ano,reg){
 // ═══ ANÁLISE FATURAMENTO GERAL (Visão Resumida) ═══
 function carregarResumida(){
   const est=document.getElementById('rs-est')?.value||'MA';
+  const reg=document.getElementById('rs-reg')?.value||'';
   const ano=parseInt(document.getElementById('rs-ano')?.value||new Date().getFullYear());
   const mesesComDados=[];
-  for(let m=1;m<=12;m++){if(C.prod.some(r=>r.ano===ano&&r.mes===m&&(est==='TODOS'||r.estado===est))||C.bols.some(b=>b.ano===ano&&b.mes===m&&(est==='TODOS'||b.estado===est))) mesesComDados.push(m);}
+  for(let m=1;m<=12;m++){if(C.prod.some(r=>r.ano===ano&&r.mes===m&&(est==='TODOS'||r.estado===est)&&(!reg||r.regional===reg))||C.bols.some(b=>b.ano===ano&&b.mes===m&&(est==='TODOS'||b.estado===est))) mesesComDados.push(m);}
   if(!mesesComDados.length){['tb-rs-fat-body','tb-rs-evt-body','tb-rs-dif-cad-body','tb-rs-dif-exec-body'].forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados para ${ano}.</td></tr>`;});return;}
   // Tabela 1: Faturamento mensal
   const headFat=document.getElementById('tr-rs-fat-head'),bodyFat=document.getElementById('tb-rs-fat-body');
   if(headFat&&bodyFat){
     headFat.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Referência</th>'+mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">${MN[m].substring(0,3)}/${ano}</th>`).join('')+'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
-    const valsPrev=mesesComDados.map(m=>calcPrevisto(est,m,ano)),valsExec=mesesComDados.map(m=>calcExec(est,m,ano).val),valsPago=mesesComDados.map(m=>calcPago(est,m,ano).val);
+    const valsPrev=mesesComDados.map(m=>calcPrevisto(est,m,ano,reg)),valsExec=mesesComDados.map(m=>calcExec(est,m,ano,reg).val),valsPago=mesesComDados.map(m=>calcPago(est,m,ano,reg).val);
     const totPrev=valsPrev.reduce((s,v)=>s+v,0),totExec=valsExec.reduce((s,v)=>s+v,0),totPago=valsPago.reduce((s,v)=>s+v,0);
     const mkPct=(v,p)=>p>0?((v-p)/p*100):0;const fPct=v=>{const c=v>=0?'#1D9E75':'#BE2F3B';return `<span style="color:${c};font-weight:700">${v>=0?'+':''}${v.toFixed(1)}%</span>`;};
     bodyFat.innerHTML=
@@ -924,7 +937,7 @@ function carregarResumida(){
       `<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#185FA5">% Pago vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totPago,totPrev))}</td></tr>`;
   }
   // Tabelas 2, 3 e 4
-  const tars=getTarifas(est,mesesComDados[0],ano);
+  const tars=getTarifas(est,mesesComDados[0],ano,reg);
   const svcs=[...new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico))];
   const headEvt=document.getElementById('tr-rs-evt-head'),bodyEvt=document.getElementById('tb-rs-evt-body');
   if(headEvt&&bodyEvt){
@@ -932,7 +945,7 @@ function carregarResumida(){
     mesesComDados.forEach(m=>{const lbl=`${String(m).padStart(2,'0')}/${String(ano).slice(2)}`;headHtml+=`<th style="font-size:11px;padding:9px 12px;background:#eaf3de;color:#3B6D11;text-align:right">Exec.${lbl}</th><th style="font-size:11px;padding:9px 12px;background:#e6f1fb;color:#185FA5;text-align:right">Pago ${lbl}</th>`;});
     headEvt.innerHTML=headHtml;
     let bodyHtml='',totPrev=0,totExecArr=mesesComDados.map(()=>0),totPagoArr=mesesComDados.map(()=>0);
-    svcs.forEach(key=>{const [cod,desc]=key.split('||');const prevEvt=tars.filter(t=>t.cod_servico===cod).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);totPrev+=prevEvt;let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td><td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fN(prevEvt)}</td>`;mesesComDados.forEach((m,i)=>{const execEvt=getProd(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+r.qde_executada,0),pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);totExecArr[i]+=execEvt;totPagoArr[i]+=pagoEvt;row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#eaf3de33">${fN(execEvt)}</td><td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#e6f1fb33">${fN(pagoEvt)}</td>`;});bodyHtml+=row+'</tr>';});
+    svcs.forEach(key=>{const [cod,desc]=key.split('||');const prevEvt=tars.filter(t=>t.cod_servico===cod).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);totPrev+=prevEvt;let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td><td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fN(prevEvt)}</td>`;mesesComDados.forEach((m,i)=>{const execEvt=getProd(est,m,ano,reg).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+r.qde_executada,0),pagoEvt=getItens(est,m,ano,reg).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);totExecArr[i]+=execEvt;totPagoArr[i]+=pagoEvt;row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#eaf3de33">${fN(execEvt)}</td><td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#e6f1fb33">${fN(pagoEvt)}</td>`;});bodyHtml+=row+'</tr>';});
     let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td><td style="padding:9px 12px;text-align:right">${fN(totPrev)}</td>`;mesesComDados.forEach((_,i)=>{totRow+=`<td style="padding:9px 12px;text-align:right">${fN(totExecArr[i])}</td><td style="padding:9px 12px;text-align:right">${fN(totPagoArr[i])}</td>`;});
     bodyEvt.innerHTML=bodyHtml+totRow+'</tr>';
   }
@@ -941,16 +954,24 @@ function carregarResumida(){
   if(headDC&&bodyDC){
     headDC.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Dif.${String(m).padStart(2,'0')}/${String(ano).slice(2)} x Cad.</th>`).join('')+'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
     let bodyHtml='',totArr=mesesComDados.map(()=>0),totGeral=0;
-    svcs.forEach(key=>{const [cod,desc]=key.split('||');const prevEvt=tars.filter(t=>t.cod_servico===cod).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`,tot=0;mesesComDados.forEach((m,i)=>{const pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);const dif=pagoEvt-prevEvt;totArr[i]+=dif;tot+=dif;totGeral+=dif;const cor=dif>=0?'#1D9E75':'#BE2F3B';row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;});const corTot=tot>=0?'#1D9E75':'#BE2F3B';bodyHtml+=row+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;});
+    svcs.forEach(key=>{const [cod,desc]=key.split('||');const prevEvt=tars.filter(t=>t.cod_servico===cod).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`,tot=0;mesesComDados.forEach((m,i)=>{const pagoEvt=getItens(est,m,ano,reg).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);const dif=pagoEvt-prevEvt;totArr[i]+=dif;tot+=dif;totGeral+=dif;const cor=dif>=0?'#1D9E75':'#BE2F3B';row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;});const corTot=tot>=0?'#1D9E75':'#BE2F3B';bodyHtml+=row+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;});
     let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td>`;totArr.forEach(v=>{const c=v>=0?'#1D9E75':'#BE2F3B';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});const cT=totGeral>=0?'#1D9E75':'#BE2F3B';
     bodyDC.innerHTML=bodyHtml+totRow+`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
   }
-  // Tabela 4: dif exec vs pago
+  // Tabela nova: dif executado vs caderno
+  const headEC=document.getElementById('tr-rs-dif-exec-cad-head'),bodyEC=document.getElementById('tb-rs-dif-exec-cad-body');
+  if(headEC&&bodyEC){
+    headEC.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Dif.${String(m).padStart(2,'0')}/${String(ano).slice(2)} x Cad.</th>`).join('')+'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
+    let bodyHtml='',totArr=mesesComDados.map(()=>0),totGeral=0;
+    svcs.forEach(key=>{const [cod,desc]=key.split('||');const prevEvt=tars.filter(t=>t.cod_servico===cod).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`,tot=0;mesesComDados.forEach((m,i)=>{const execEvt=getProd(est,m,ano,reg).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+r.qde_executada,0);const dif=execEvt-prevEvt;totArr[i]+=dif;tot+=dif;totGeral+=dif;const cor=dif>=0?'#1D9E75':'#BE2F3B';row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;});const corTot=tot>=0?'#1D9E75':'#BE2F3B';bodyHtml+=row+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;});
+    let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td>`;totArr.forEach(v=>{const c=v>=0?'#1D9E75':'#BE2F3B';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});const cT=totGeral>=0?'#1D9E75':'#BE2F3B';
+    bodyEC.innerHTML=bodyHtml+totRow+`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
+  }
   const headDE=document.getElementById('tr-rs-dif-exec-head'),bodyDE=document.getElementById('tb-rs-dif-exec-body');
   if(headDE&&bodyDE){
     headDE.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Exec-Pago ${String(m).padStart(2,'0')}/${String(ano).slice(2)}</th>`).join('')+'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
     let bodyHtml='',totArr=mesesComDados.map(()=>0),totGeral=0;
-    svcs.forEach(key=>{const [cod,desc]=key.split('||');let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`,tot=0;mesesComDados.forEach((m,i)=>{const execEvt=getProd(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+r.qde_executada,0),pagoEvt=getItens(est,m,ano).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);const dif=execEvt-pagoEvt;totArr[i]+=dif;tot+=dif;totGeral+=dif;const cor=dif>0?'#1D9E75':dif<0?'#BE2F3B':'inherit';row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;});const corTot=tot<=0?'#1D9E75':'#BE2F3B';bodyHtml+=row+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;});
+    svcs.forEach(key=>{const [cod,desc]=key.split('||');let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`,tot=0;mesesComDados.forEach((m,i)=>{const execEvt=getProd(est,m,ano,reg).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+r.qde_executada,0),pagoEvt=getItens(est,m,ano,reg).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);const dif=execEvt-pagoEvt;totArr[i]+=dif;tot+=dif;totGeral+=dif;const cor=dif>0?'#1D9E75':dif<0?'#BE2F3B':'inherit';row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:${Math.abs(dif)>100?'700':'400'}">${dif>=0?'+':''}${fN(dif)}</td>`;});const corTot=tot<=0?'#1D9E75':'#BE2F3B';bodyHtml+=row+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${corTot};font-weight:700">${tot>=0?'+':''}${fN(tot)}</td></tr>`;});
     let totRow=`<tr style="background:var(--bg);border-top:2px solid var(--bd);font-weight:700"><td style="padding:9px 12px">TOTAL</td>`;totArr.forEach(v=>{const c=v>0?'#1D9E75':v<0?'#BE2F3B':'inherit';totRow+=`<td style="padding:9px 12px;text-align:right;color:${c}">${v>=0?'+':''}${fN(v)}</td>`;});const cT=totGeral>0?'#1D9E75':totGeral<0?'#BE2F3B':'inherit';
     bodyDE.innerHTML=bodyHtml+totRow+`<td style="padding:9px 12px;text-align:right;color:${cT}">${totGeral>=0?'+':''}${fN(totGeral)}</td></tr>`;
   }

@@ -171,6 +171,9 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     <a class="sb-item" id="nav-servico" onclick="setTab('servico',this)">
       <i class="ti ti-list-details" aria-hidden="true"></i><span>Por Serviço</span>
     </a>
+    <a class="sb-item" id="nav-comparativo" onclick="setTab('comparativo',this)">
+      <i class="ti ti-git-compare" aria-hidden="true"></i><span>Comparativo de Cadernos</span>
+    </a>
     <div class="sb-sec" id="sb-sec-dados" style="display:none">Dados</div>
     <a class="sb-item" id="nav-dados" href="/Painel_Faturamento_v2/dados_index.html" style="display:none">
       <i class="ti ti-upload" aria-hidden="true"></i><span>Importação de Dados</span>
@@ -452,6 +455,50 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <div class="tbox"><table><thead><tr><th>Serviço</th><th>Tarifa</th><th>Prev.(evt)</th><th>%cad</th><th>Exec.(evt)</th><th>%exec</th><th>Pago(evt)</th><th>%pago</th><th>Valor pago</th><th>Alerta</th></tr></thead><tbody id="tb-svc"></tbody></table></div>
     </div>
 
+    <!-- ═══ COMPARATIVO DE CADERNOS ═══ -->
+    <div id="tab-comparativo" style="display:none">
+      <div class="fil">
+        <label>Estado</label>
+        <select id="cmp-est" onchange="carregarComparativo()">
+          <option value="MA">Maranhão</option>
+          <option value="PI">Piauí</option>
+        </select>
+      </div>
+      <div id="cmp-sel-box" style="margin-bottom:1.25rem">
+        <div class="sec">Selecione os cadernos para comparar</div>
+        <div id="cmp-checks" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+      <div id="cmp-resultado" style="display:none">
+        <!-- Cards resumo -->
+        <div id="cmp-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:1.25rem"></div>
+        <!-- Tabela tarifas -->
+        <div class="sec">Evolução das tarifas por serviço</div>
+        <div class="tbox" style="overflow-x:auto">
+          <table id="tb-cmp-tar" style="min-width:500px">
+            <thead><tr id="tr-cmp-tar-head"></tr></thead>
+            <tbody id="tb-cmp-tar-body"></tbody>
+          </table>
+        </div>
+        <!-- Tabela eventos previstos -->
+        <div class="sec">Evolução de eventos previstos por serviço</div>
+        <div class="tbox" style="overflow-x:auto">
+          <table id="tb-cmp-evt" style="min-width:500px">
+            <thead><tr id="tr-cmp-evt-head"></tr></thead>
+            <tbody id="tb-cmp-evt-body"></tbody>
+          </table>
+        </div>
+        <!-- Tabela faturamento previsto -->
+        <div class="sec">Evolução do faturamento previsto por serviço</div>
+        <div class="tbox" style="overflow-x:auto">
+          <table id="tb-cmp-fat" style="min-width:500px">
+            <thead><tr id="tr-cmp-fat-head"></tr></thead>
+            <tbody id="tb-cmp-fat-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="cmp-vazio" class="alerta al-info" style="display:none"><span>ℹ</span><span>Selecione ao menos 2 cadernos para comparar.</span></div>
+    </div>
+
   </div><!-- /con -->
 </div><!-- /main -->
 
@@ -509,7 +556,7 @@ let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
 const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['PIAUÍ']};
 const CS=['#BE2F3B','#378ADD','#1D9E75','#BA7517','#533AB7','#D4537E','#888780','#0F6E56','#7F77DD'];
-const TABS_LABELS={resumida:'Análise Faturamento Geral',geral:'Análise Mensal',regional:'Análise Por Regional',servico:'Análise Por Serviço'};
+const TABS_LABELS={resumida:'Análise Faturamento Geral',geral:'Análise Mensal',regional:'Análise Por Regional',servico:'Análise Por Serviço',comparativo:'Comparativo de Cadernos'};
 const TABS_EXPORT=['resumida','geral','regional','servico'];
 
 // ═══ FORMATAÇÃO ═══
@@ -550,7 +597,8 @@ async function iniciarApp(user){
     'resumida':'nav-resumida',
     'geral':'nav-geral',
     'regional':'nav-regional',
-    'servico':'nav-servico'
+    'servico':'nav-servico',
+    'comparativo':'nav-comparativo'
   };
   Object.entries(mapaNavAbas).forEach(([aba,navId])=>{
     const el=document.getElementById(navId);
@@ -650,6 +698,7 @@ function setTab(id,el){
   if(id==='servico') carregarServico();
   if(id==='regional') carregarRegional();
   if(id==='resumida') carregarResumida();
+  if(id==='comparativo') carregarComparativo();
 }
 
 function atualizarPageSub(){
@@ -1090,6 +1139,114 @@ function preencherStatusDados(){
   document.getElementById('status-prod-ma').textContent='MA — '+fMA(prodMA?.mes,prodMA?.ano);
   document.getElementById('status-prod-pi').textContent='PI — '+fMA(prodPI?.mes,prodPI?.ano);
   document.getElementById('status-prod-em').textContent='Carregado em: '+fDt(prodMA?.importado_em||prodPI?.importado_em);
+}
+
+// ═══ COMPARATIVO DE CADERNOS ═══
+const CMP_CORES=['#534AB7','#378ADD','#1D9E75','#BA7517','#BE2F3B','#D4537E'];
+
+function carregarComparativo(){
+  const est=document.getElementById('cmp-est').value;
+  const cads=C.cads.filter(c=>c.estado===est).sort((a,b)=>{
+    const va=parseInt((a.vigencia_inicio||'01/2000').split('/').reverse().join(''));
+    const vb=parseInt((b.vigencia_inicio||'01/2000').split('/').reverse().join(''));
+    return va-vb;
+  });
+  const box=document.getElementById('cmp-checks');
+  box.innerHTML=cads.map((c,i)=>`
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--pt);background:var(--br);border:1px solid var(--bd);padding:5px 12px;border-radius:20px;cursor:pointer">
+      <input type="checkbox" value="${c.id}" onchange="renderComparativo()" style="accent-color:${CMP_CORES[i%CMP_CORES.length]};width:13px;height:13px">
+      <span style="color:${CMP_CORES[i%CMP_CORES.length]};font-weight:700">●</span> ${c.vigencia_inicio||'—'}
+    </label>`).join('');
+  document.getElementById('cmp-resultado').style.display='none';
+  document.getElementById('cmp-vazio').style.display='none';
+}
+
+function renderComparativo(){
+  const est=document.getElementById('cmp-est').value;
+  const checks=[...document.querySelectorAll('#cmp-checks input:checked')];
+  const resultado=document.getElementById('cmp-resultado');
+  const vazio=document.getElementById('cmp-vazio');
+
+  if(checks.length<2){resultado.style.display='none';vazio.style.display='flex';return;}
+  resultado.style.display='block';vazio.style.display='none';
+
+  const cadSel=checks.map((cb,idx)=>{
+    const cad=C.cads.find(c=>c.id===parseInt(cb.value));
+    const tars=C.tars.filter(t=>t.caderno_id===cad.id);
+    return {cad,tars,cor:CMP_CORES[idx%CMP_CORES.length]};
+  });
+
+  // Cards resumo
+  const cards=document.getElementById('cmp-cards');
+  cards.innerHTML=cadSel.map(({cad,tars,cor},i)=>{
+    const meta=tars.reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0);
+    const anterior=i>0?cadSel[i-1].tars.reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0):null;
+    const var_=anterior?((meta-anterior)/anterior*100):null;
+    return `<div style="background:var(--br);border-radius:var(--r);padding:1rem;border:1px solid var(--bd);border-top:3px solid ${cor}">
+      <div style="font-size:10px;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Caderno ${cad.vigencia_inicio||'—'}</div>
+      <div style="font-size:18px;font-weight:700;color:var(--pt)">${fR(meta)}</div>
+      ${var_!==null?`<div style="font-size:11px;margin-top:3px;color:${var_>=0?'#1D9E75':'#BE2F3B'}">${var_>=0?'▲':'▼'} ${Math.abs(var_).toFixed(1)}% vs anterior</div>`:'<div style="font-size:11px;color:var(--tx2);margin-top:3px">Base de comparação</div>'}
+    </div>`;
+  }).join('');
+
+  // Serviços únicos
+  const svcsSet=new Set(cadSel.flatMap(({tars})=>tars.map(t=>t.cod_servico+'||'+t.descricao_servico)));
+  const svcs=[...svcsSet];
+
+  // Cabeçalho comum
+  const headHtml='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+
+    cadSel.map(({cad,cor})=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);text-align:right;color:${cor}">${cad.vigencia_inicio||'—'}</th>`).join('')+
+    '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Variação total</th>';
+
+  // Tabela tarifas
+  const thTar=document.getElementById('tr-cmp-tar-head');
+  const tbTar=document.getElementById('tb-cmp-tar-body');
+  thTar.innerHTML=headHtml;
+  tbTar.innerHTML=svcs.map(key=>{
+    const [cod,desc]=key.split('||');
+    const vals=cadSel.map(({tars})=>parseFloat(tars.find(t=>t.cod_servico===cod)?.preco_unitario||0));
+    const var_=vals[0]>0?((vals[vals.length-1]-vals[0])/vals[0]*100):null;
+    const cor=var_===null?'inherit':var_>=0?'#1D9E75':'#BE2F3B';
+    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+
+      vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
+      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${var_!==null?(var_>=0?'▲ +':'▼ ')+Math.abs(var_).toFixed(1)+'%':'—'}</td></tr>`;
+  }).join('');
+
+  // Tabela eventos previstos
+  const thEvt=document.getElementById('tr-cmp-evt-head');
+  const tbEvt=document.getElementById('tb-cmp-evt-body');
+  thEvt.innerHTML=headHtml;
+  let totEvtArr=cadSel.map(()=>0);
+  tbEvt.innerHTML=svcs.map(key=>{
+    const [cod,desc]=key.split('||');
+    const vals=cadSel.map(({tars},i)=>{const v=parseFloat(tars.find(t=>t.cod_servico===cod)?.eventos_previstos||0);totEvtArr[i]+=v;return v;});
+    const var_=vals[0]>0?((vals[vals.length-1]-vals[0])/vals[0]*100):null;
+    const cor=var_===null?'inherit':var_>=0?'#1D9E75':'#BE2F3B';
+    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+
+      vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fN(v)}</td>`).join('')+
+      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${var_!==null?(var_>=0?'▲ +':'▼ ')+Math.abs(var_).toFixed(1)+'%':'—'}</td></tr>`;
+  }).join('');
+  const varTotEvt=totEvtArr[0]>0?((totEvtArr[totEvtArr.length-1]-totEvtArr[0])/totEvtArr[0]*100):null;
+  const corTotEvt=varTotEvt===null?'inherit':varTotEvt>=0?'#1D9E75':'#BE2F3B';
+  tbEvt.innerHTML+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td style="padding:9px 12px;font-weight:700">TOTAL</td>`+totEvtArr.map(v=>`<td style="padding:9px 12px;text-align:right;font-weight:700">${fN(v)}</td>`).join('')+`<td style="padding:9px 12px;text-align:right;font-weight:700;color:${corTotEvt}">${varTotEvt!==null?(varTotEvt>=0?'▲ +':'▼ ')+Math.abs(varTotEvt).toFixed(1)+'%':'—'}</td></tr>`;
+
+  // Tabela faturamento previsto
+  const thFat=document.getElementById('tr-cmp-fat-head');
+  const tbFat=document.getElementById('tb-cmp-fat-body');
+  thFat.innerHTML=headHtml;
+  let totFatArr=cadSel.map(()=>0);
+  tbFat.innerHTML=svcs.map(key=>{
+    const [cod,desc]=key.split('||');
+    const vals=cadSel.map(({tars},i)=>{const t=tars.find(t=>t.cod_servico===cod);const v=(parseFloat(t?.eventos_previstos||0))*(parseFloat(t?.preco_unitario||0));totFatArr[i]+=v;return v;});
+    const var_=vals[0]>0?((vals[vals.length-1]-vals[0])/vals[0]*100):null;
+    const cor=var_===null?'inherit':var_>=0?'#1D9E75':'#BE2F3B';
+    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+
+      vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
+      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${var_!==null?(var_>=0?'▲ +':'▼ ')+Math.abs(var_).toFixed(1)+'%':'—'}</td></tr>`;
+  }).join('');
+  const varTotFat=totFatArr[0]>0?((totFatArr[totFatArr.length-1]-totFatArr[0])/totFatArr[0]*100):null;
+  const corTotFat=varTotFat===null?'inherit':varTotFat>=0?'#1D9E75':'#BE2F3B';
+  tbFat.innerHTML+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td style="padding:9px 12px;font-weight:700">TOTAL</td>`+totFatArr.map(v=>`<td style="padding:9px 12px;text-align:right;font-weight:700">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;text-align:right;font-weight:700;color:${corTotFat}">${varTotFat!==null?(varTotFat>=0?'▲ +':'▼ ')+Math.abs(varTotFat).toFixed(1)+'%':'—'}</td></tr>`;
 }
 
 // ═══ SENHA ═══

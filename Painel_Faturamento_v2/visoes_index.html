@@ -532,20 +532,39 @@ async function iniciarApp(user){
   document.getElementById('sb-urole').textContent={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[role]||'Visualizador';
   const pp=perfil?.perm_producao||role==='admin';
   const pb=perfil?.perm_boletim||role==='admin';
+  const abas=perfil?.abas_permitidas||['resumida','geral','regional','servico'];
+
+  // Aplicar visibilidade das abas no menu lateral
+  const mapaNavAbas={
+    'resumida':'nav-resumida',
+    'geral':'nav-geral',
+    'regional':'nav-regional',
+    'servico':'nav-servico'
+  };
+  Object.entries(mapaNavAbas).forEach(([aba,navId])=>{
+    const el=document.getElementById(navId);
+    if(el) el.style.display=abas.includes(aba)||role==='admin'?'':'none';
+  });
+
+  // Mostrar seção Dados se tiver permissão
   if(role==='admin'||(role==='analyst'&&(pp||pb))){
     document.getElementById('sb-sec-dados').style.display='';
     document.getElementById('nav-dados').style.display='';
   }
+  // Mostrar seção Admin somente para administrador
   if(role==='admin'){
     document.getElementById('sb-sec-admin').style.display='';
     document.getElementById('nav-admin').style.display='';
   }
+
+  // Determinar primeira aba visível para redirecionar
+  const primeiraAba=['resumida','geral','regional','servico'].find(a=>abas.includes(a)||role==='admin')||'resumida';
+  setTab(primeiraAba,document.getElementById('nav-'+primeiraAba));
   preencherPeriodos();
   preencherModalExcel();
   syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();
   await carregarCache();
   preencherStatusDados();
-  setTab('resumida',document.getElementById('nav-resumida'));
 }
 
 async function fazerLogout(){

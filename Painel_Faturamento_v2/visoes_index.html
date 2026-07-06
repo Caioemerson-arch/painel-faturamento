@@ -648,6 +648,19 @@ async function iniciarApp(user){
   syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();
   await carregarCache();
   preencherStatusDados();
+
+  // Aplicar estado selecionado no mapa
+  const estSelecionado=localStorage.getItem('ceneged_estado_selecionado');
+  if(estSelecionado){
+    const sel=document.getElementById('g-est');
+    if(sel) sel.value=estSelecionado;
+    const selS=document.getElementById('s-est');
+    if(selS) selS.value=estSelecionado;
+    const selRs=document.getElementById('rs-est');
+    if(selRs) selRs.value=estSelecionado;
+    syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();
+  }
+
   // Determinar primeira aba visível e carregar após cache pronto
   const primeiraAba=['resumida','geral','regional','servico'].find(a=>abas.includes(a)||role==='admin')||'resumida';
   setTab(primeiraAba,document.getElementById('nav-'+primeiraAba));

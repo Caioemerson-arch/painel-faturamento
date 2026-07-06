@@ -201,7 +201,7 @@ const {createClient}=supabase;
 const sb=createClient(SURL,SKEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:false}});
 
 const INATIVIDADE_MS=10*60*1000; // 10 minutos
-const DESTINO='/Painel_Faturamento_v2/visoes_index.html';
+const DESTINO='/Painel_Faturamento_v2/mapa.html';
 
 // ═══ VERIFICAR SESSÃO ═══
 window.addEventListener('load',async()=>{

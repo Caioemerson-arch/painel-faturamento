@@ -601,10 +601,30 @@ async function salvarCaderno(){
   if(!dadosCad.length) return;svCad=true;
   const btn=document.getElementById('btn-sv-cad');btn.textContent='Salvando...';btn.disabled=true;
   const user=(await sb.auth.getUser()).data.user;
-  const {estado,vigencia_inicio}=dadosCad[0];
-  const ativos=C.cads.filter(c=>c.estado===estado&&c.ativo);
+  const {estado,vigencia_inicio,regional}=dadosCad[0];
+
+  // Para RJ, distinguir por regional (COMERCIAL ou TECNICA)
+  // Para MA e PI, inativar todos os ativos do estado
+  const ativos=C.cads.filter(c=>{
+    if(c.estado!==estado||!c.ativo) return false;
+    if(estado==='RJ'){
+      // Só inativar o caderno da mesma regional
+      const regsDoNovoCad=[...new Set(dadosCad.map(d=>d.regional))];
+      const regsDoAtivo=C.tars.filter(t=>t.caderno_id===c.id).map(t=>t.regional);
+      return regsDoAtivo.some(r=>regsDoNovoCad.includes(r));
+    }
+    return true;
+  });
+
   for(const c of ativos) await sb.from('cadernos').update({ativo:false,data_fim:vigencia_inicio}).eq('id',c.id);
-  const {data:cad,error:e1}=await sb.from('cadernos').insert({estado,nome:`Caderno ${estado} — vigência ${vigencia_inicio}`,vigencia_inicio,ativo:true,confirmado:true,importado_por:user.id}).select().single();
+
+  // Nome do caderno inclui a regional para RJ
+  const regsUnicas=[...new Set(dadosCad.map(d=>d.regional))].join('/');
+  const nomeCad=estado==='RJ'
+    ?`Caderno ${estado} ${regsUnicas} — vigência ${vigencia_inicio}`
+    :`Caderno ${estado} — vigência ${vigencia_inicio}`;
+
+  const {data:cad,error:e1}=await sb.from('cadernos').insert({estado,nome:nomeCad,vigencia_inicio,ativo:true,confirmado:true,importado_por:user.id}).select().single();
   if(e1||!cad){alert('Erro: '+(e1?.message||''));btn.innerHTML='<i class="ti ti-check"></i> Ativar caderno';btn.disabled=false;svCad=false;return;}
   const mapCad={};dadosCad.forEach(r=>{const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;const k=`${r.estado}|${regFinal}|${r.cod_servico}`;if(!mapCad[k]) mapCad[k]={...r,regional:regFinal};else if(r.estado==='PI') mapCad[k].eventos_previstos+=r.eventos_previstos;});
   const {error:e2}=await sb.from('caderno_tarifas').insert(Object.values(mapCad).map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos,processo:r.processo||null})));

@@ -554,7 +554,7 @@ function parsearCaderno(wb){
   dadosCad=Object.values(mapTemp);
   if(!dadosCad.length){alert('Nenhum dado encontrado. Verifique as abas do arquivo (MA, PI, Comercial-RJ ou Tecnica-RJ).');return;}
   const vig=dadosCad[0]?.vigencia_inicio||'',est=dadosCad[0]?.estado||'';
-  document.getElementById('cad-st-txt').textContent=`${dadosCad.length} tarifas carregadas — ${est} — Vigência: ${vig}${erros?` (${erros} ignoradas)`:''}\`;
+  document.getElementById('cad-st-txt').textContent=dadosCad.length+' tarifas carregadas — '+est+' — Vigência: '+vig+(erros?' ('+erros+' ignoradas)':'');
   document.getElementById('tb-pv-cad').innerHTML=dadosCad.map(r=>`<tr><td style="font-weight:700;color:var(--vm)">${r.vigencia_inicio}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px;color:var(--tx2)">${r.processo||'—'}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right">${fR(r.preco_unitario)}</td><td style="text-align:right">${fN(r.eventos_previstos)}</td><td style="text-align:right;font-weight:700">${fR(r.preco_unitario*r.eventos_previstos)}</td></tr>`).join('');
   document.getElementById('pv-cad').style.display='block';
 }

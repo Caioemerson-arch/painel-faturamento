@@ -124,7 +124,21 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 .btn-s{background:var(--br);color:var(--pt);border:1px solid var(--bd)}.btn-s:hover{background:var(--bg)}
 .btn-sm{font-size:10px;padding:4px 10px}
 
-/* MODAL ALTERAR SENHA */
+/* BOTÃO Fx */
+.btn-fx{width:20px;height:20px;border-radius:50%;background:#f0f0ee;color:#7B7B7B;border:none;cursor:pointer;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-style:italic;position:relative;vertical-align:middle;margin-left:6px}
+.btn-fx:hover{background:#e0deda;color:var(--pt)}
+.fx-tooltip{display:none;position:absolute;left:26px;top:50%;transform:translateY(-50%);background:var(--az-esc);color:#fff;border-radius:var(--r2);padding:10px 14px;font-size:11px;line-height:1.6;width:280px;z-index:999;font-style:normal;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.fx-tooltip strong{display:block;margin-bottom:4px;color:#BE2F3B;font-size:11px}
+.btn-fx:hover .fx-tooltip,.btn-fx:focus .fx-tooltip{display:block}
+
+/* CABEÇALHO — botões padronizados */
+.btn-header{font-size:12px;padding:7px 14px;border-radius:var(--r2);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;height:34px;white-space:nowrap}
+.btn-header-vd{background:var(--vd);color:#fff;border:none}.btn-header-vd:hover{background:#0F6E56}
+.btn-header-vm{background:var(--vm);color:#fff;border:none}.btn-header-vm:hover{background:#a02632}
+.btn-header-s{background:var(--br);color:var(--pt);border:1px solid var(--bd)}.btn-header-s:hover{background:var(--bg)}
+
+/* MENSAGEM SEM DADOS */
+.msg-apuracao{text-align:center;padding:2rem;color:var(--tx2);font-size:13px;font-style:italic;background:var(--br);border-radius:var(--r);border:1px solid var(--bd);margin-bottom:1.25rem}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:var(--br);border-radius:var(--r);padding:1.5rem;width:380px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
@@ -233,10 +247,13 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <div class="page-sub" id="page-sub">—</div>
     </div>
     <div class="header-actions">
-      <button class="btn-xls" id="btn-xls" style="display:none" onclick="abrirModalExcel()">
+      <button class="btn-header btn-header-s" id="btn-atualizar" onclick="recarregarAba()" style="display:none">
+        <i class="ti ti-refresh" aria-hidden="true"></i> Atualizar
+      </button>
+      <button class="btn-header btn-header-vd" id="btn-xls" style="display:none" onclick="abrirModalExcel()">
         <i class="ti ti-file-spreadsheet" aria-hidden="true"></i> Exportar Excel
       </button>
-      <button class="btn-pdf" id="btn-pdf" style="display:none" onclick="exportarPDF()">
+      <button class="btn-header btn-header-vm" id="btn-pdf" style="display:none" onclick="exportarPDF()">
         <i class="ti ti-file-type-pdf" aria-hidden="true"></i> Exportar PDF
       </button>
     </div>
@@ -264,40 +281,50 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <select id="rs-reg" onchange="carregarResumida()"><option value="">Todas</option></select>
         <label>Ano</label>
         <select id="rs-ano" onchange="carregarResumida()"></select>
-        <button class="btn btn-p btn-sm" onclick="carregarResumida()">Atualizar</button>
-        <button class="btn-pdf" onclick="exportarPDFResumida()" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;padding:7px 14px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer">
-          <i class="ti ti-file-type-pdf" aria-hidden="true"></i> Exportar PDF
-        </button>
+        <label>Mês</label>
+        <select id="rs-mes" onchange="carregarResumida()">
+          <option value="">Todos</option>
+        </select>
       </div>
-      <div class="sec">Faturamento mensal — previsto vs executado vs pago</div>
+      <div class="sec">Faturamento mensal — previsto vs executado vs pago
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos × Tarifa do caderno<br>Executado = Qtd executada × Tarifa do caderno<br>Pago = Qtd paga × Tarifa do boletim<br>% = (Valor − Previsto) / Previsto × 100</div></button>
+      </div>
       <div class="tbox" style="overflow-x:auto">
         <table id="tb-rs-fat" style="min-width:600px">
           <thead><tr id="tr-rs-fat-head"></tr></thead>
           <tbody id="tb-rs-fat-body"></tbody>
         </table>
       </div>
-      <div class="sec">Quantidade de eventos por serviço — previsto e realizado por mês</div>
+      <div class="sec">Quantidade de eventos por serviço — previsto e realizado por mês
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos no caderno por serviço<br>Executado = Qtd executada na produção real<br>Pago = Qtd paga no boletim EQTL</div></button>
+      </div>
       <div class="tbox" style="overflow-x:auto">
         <table id="tb-rs-evt" style="min-width:900px">
           <thead><tr id="tr-rs-evt-head"></tr></thead>
           <tbody id="tb-rs-evt-body"></tbody>
         </table>
       </div>
-      <div class="sec">Diferença: Qtd pago vs Previsto caderno — por serviço e mês</div>
+      <div class="sec">Diferença: Qtd pago vs Previsto caderno — por serviço e mês
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Diferença = Qtd paga (boletim) − Qtd prevista (caderno)<br>Verde = pago acima do previsto<br>Vermelho = pago abaixo do previsto</div></button>
+      </div>
       <div class="tbox" style="overflow-x:auto">
         <table id="tb-rs-dif-cad" style="min-width:700px">
           <thead><tr id="tr-rs-dif-cad-head"></tr></thead>
           <tbody id="tb-rs-dif-cad-body"></tbody>
         </table>
       </div>
-      <div class="sec">Diferença: Qtd Executado vs Previsto caderno — por serviço e mês</div>
+      <div class="sec">Diferença: Qtd Executado vs Previsto caderno — por serviço e mês
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Diferença = Qtd executada (campo) − Qtd prevista (caderno)<br>Verde = executado acima do previsto<br>Vermelho = executado abaixo do previsto</div></button>
+      </div>
       <div class="tbox" style="overflow-x:auto">
         <table id="tb-rs-dif-exec-cad" style="min-width:700px">
           <thead><tr id="tr-rs-dif-exec-cad-head"></tr></thead>
           <tbody id="tb-rs-dif-exec-cad-body"></tbody>
         </table>
       </div>
-      <div class="sec">Diferença: Qtd executado vs Qtd pago — por serviço e mês</div>
+      <div class="sec">Diferença: Qtd executado vs Qtd pago — por serviço e mês
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Diferença = Qtd executada (campo) − Qtd paga (boletim)<br>Verde = mais executado que pago (divergência favorável ao campo)<br>Vermelho = mais pago que executado</div></button>
+      </div>
       <div class="tbox" style="overflow-x:auto">
         <table id="tb-rs-dif-exec" style="min-width:700px">
           <thead><tr id="tr-rs-dif-exec-head"></tr></thead>
@@ -616,14 +643,14 @@ async function iniciarApp(user){
     document.getElementById('nav-admin').style.display='';
   }
 
-  // Determinar primeira aba visível para redirecionar
-  const primeiraAba=['resumida','geral','regional','servico'].find(a=>abas.includes(a)||role==='admin')||'resumida';
-  setTab(primeiraAba,document.getElementById('nav-'+primeiraAba));
   preencherPeriodos();
   preencherModalExcel();
   syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();
   await carregarCache();
   preencherStatusDados();
+  // Determinar primeira aba visível e carregar após cache pronto
+  const primeiraAba=['resumida','geral','regional','servico'].find(a=>abas.includes(a)||role==='admin')||'resumida';
+  setTab(primeiraAba,document.getElementById('nav-'+primeiraAba));
 }
 
 async function fazerLogout(){
@@ -714,6 +741,15 @@ function atualizarHeaderActions(){
   const xlsOk=(perfil?.perm_exportar_excel||role==='admin');
   document.getElementById('btn-pdf').style.display=pdfOk?'flex':'none';
   document.getElementById('btn-xls').style.display=xlsOk?'flex':'none';
+  document.getElementById('btn-atualizar').style.display='flex';
+}
+
+function recarregarAba(){
+  if(tabAtual==='resumida') carregarResumida();
+  else if(tabAtual==='geral') carregarGeral();
+  else if(tabAtual==='regional') carregarRegional();
+  else if(tabAtual==='servico') carregarServico();
+  else if(tabAtual==='comparativo') carregarComparativo();
 }
 
 // ═══ FILTROS ═══
@@ -968,9 +1004,30 @@ function carregarResumida(){
   const est=document.getElementById('rs-est')?.value||'MA';
   const reg=document.getElementById('rs-reg')?.value||'';
   const ano=parseInt(document.getElementById('rs-ano')?.value||new Date().getFullYear());
-  const mesesComDados=[];
-  for(let m=1;m<=12;m++){if(C.prod.some(r=>r.ano===ano&&r.mes===m&&(est==='TODOS'||r.estado===est)&&(!reg||r.regional===reg))||C.bols.some(b=>b.ano===ano&&b.mes===m&&(est==='TODOS'||b.estado===est))) mesesComDados.push(m);}
-  if(!mesesComDados.length){['tb-rs-fat-body','tb-rs-evt-body','tb-rs-dif-cad-body','tb-rs-dif-exec-body'].forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados para ${ano}.</td></tr>`;});return;}
+  const mesFil=parseInt(document.getElementById('rs-mes')?.value||0);
+  const proc=document.getElementById('rs-proc')?.value||'leitura';
+
+  // Preencher select de mês dinamicamente
+  const sMes=document.getElementById('rs-mes');
+  if(sMes&&sMes.options.length<=1){
+    MN.slice(1).forEach((n,i)=>{const o=document.createElement('option');o.value=i+1;o.textContent=n;sMes.appendChild(o);});
+  }
+
+  const tabIds=['tb-rs-fat-body','tb-rs-evt-body','tb-rs-dif-cad-body','tb-rs-dif-exec-cad-body','tb-rs-dif-exec-body'];
+  const headIds=['tr-rs-fat-head','tr-rs-evt-head','tr-rs-dif-cad-head','tr-rs-dif-exec-cad-head','tr-rs-dif-exec-head'];
+
+  // Processo sem dados ainda
+  if(proc!=='leitura'){
+    tabIds.forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:2rem;color:var(--tx2);font-style:italic">Dados em apuração, em breve será apresentado.</td></tr>`;});
+    headIds.forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML='';});
+    return;
+  }
+
+  const mesesTodos=[];
+  for(let m=1;m<=12;m++){if(C.prod.some(r=>r.ano===ano&&r.mes===m&&(est==='TODOS'||r.estado===est)&&(!reg||r.regional===reg))||C.bols.some(b=>b.ano===ano&&b.mes===m&&(est==='TODOS'||b.estado===est))) mesesTodos.push(m);}
+  const mesesComDados=mesFil?mesesTodos.filter(m=>m===mesFil):mesesTodos;
+
+  if(!mesesComDados.length){tabIds.forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados para ${ano}${mesFil?' — '+MN[mesFil]:''}.</td></tr>`;});return;}
   // Tabela 1: Faturamento mensal
   const headFat=document.getElementById('tr-rs-fat-head'),bodyFat=document.getElementById('tb-rs-fat-body');
   if(headFat&&bodyFat){

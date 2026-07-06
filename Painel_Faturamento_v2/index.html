@@ -9,12 +9,15 @@
 :root{
   --vm:#BE2F3B;--az-esc:#1A1A2E;--pt:#2C2C2A;
   --bg:#f5f4f1;--bd:#e0deda;--tx2:#7B7B7B;--br:#fff;
+  --vd:#1D9E75;--az:#378ADD;--az-cl:#e6f1fb;
   --r:10px;--r2:6px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--az-esc)}
-.lbox{background:var(--br);border-radius:var(--r);padding:2.5rem 2rem;width:380px;box-shadow:0 8px 32px rgba(0,0,0,.3)}
-.llogo{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:2rem}
+
+/* LOGIN */
+.lbox{background:var(--br);border-radius:var(--r);padding:2.5rem 2rem;width:400px;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.llogo{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:1.75rem}
 .llogo img{height:52px;width:auto}
 .llogo p{font-size:12px;color:var(--tx2)}
 .lbox label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;margin-top:14px;font-weight:700}
@@ -23,11 +26,44 @@ body{font-family:Arial,sans-serif;min-height:100vh;display:flex;align-items:cent
 .btn-login{width:100%;margin-top:20px;padding:11px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:700;cursor:pointer}
 .btn-login:hover{background:#a02632}
 #login-erro{color:var(--vm);font-size:12px;margin-top:8px;text-align:center;min-height:18px}
+.lbox-links{display:flex;justify-content:space-between;margin-top:14px;font-size:11px}
+.lbox-links a{color:var(--tx2);text-decoration:none;cursor:pointer}
+.lbox-links a:hover{color:var(--vm);text-decoration:underline}
 .carregando{text-align:center;color:rgba(255,255,255,.5);font-size:13px}
+
+/* MODAIS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--br);border-radius:var(--r);padding:2rem;width:100%;max-width:560px;box-shadow:0 8px 32px rgba(0,0,0,.3);max-height:90vh;display:flex;flex-direction:column}
+.modal h2{font-size:16px;font-weight:700;color:var(--pt);margin-bottom:1rem;display:flex;align-items:center;gap:8px}
+.modal-body{overflow-y:auto;flex:1;font-size:13px;line-height:1.7;color:var(--pt);padding-right:4px}
+.modal-body h3{font-size:13px;font-weight:700;margin:1rem 0 4px;color:var(--az-esc)}
+.modal-body p{margin-bottom:8px}
+.modal-footer{margin-top:1.25rem;display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--bd);padding-top:1rem}
+.btn-p{padding:9px 20px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer}
+.btn-p:hover{background:#a02632}
+.btn-s{padding:9px 20px;background:var(--br);color:var(--pt);border:1px solid var(--bd);border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer}
+.btn-s:hover{background:var(--bg)}
+
+/* CONFIDENCIALIDADE */
+.conf-box{border:2px solid var(--vm);border-radius:var(--r2);padding:1rem;background:#fff8f8;margin-bottom:1rem}
+.conf-box p{font-size:13px;line-height:1.6;color:var(--pt)}
+.conf-check{display:flex;align-items:flex-start;gap:8px;margin-top:1rem;font-size:12px;color:var(--pt);cursor:pointer}
+.conf-check input{accent-color:var(--vm);width:15px;height:15px;flex-shrink:0;margin-top:1px}
+
+/* FORMULÁRIO SOLICITAÇÃO */
+.fg{margin-bottom:1rem}
+.fg label{display:block;font-size:12px;color:var(--tx2);margin-bottom:4px;font-weight:700}
+.fg input,.fg select{width:100%;padding:9px 12px;border:1px solid var(--bd);border-radius:var(--r2);font-size:13px;color:var(--pt);background:var(--br)}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--vm)}
+.obrig{color:var(--vm)}
+#sol-ok{display:none;text-align:center;padding:1.5rem 0;color:var(--vd)}
+#sol-ok p{font-size:13px;margin-top:8px}
 </style>
 </head>
 <body>
 
+<!-- TELA DE LOGIN -->
 <div class="lbox" id="box-login" style="display:none">
   <div class="llogo">
     <img src="https://www.ceneged.com.br/wp-content/uploads/2023/02/Logo-Ceneged.png" alt="CENEGED">
@@ -39,91 +75,238 @@ body{font-family:Arial,sans-serif;min-height:100vh;display:flex;align-items:cent
   <input type="password" id="li-senha" placeholder="••••••••" autocomplete="current-password">
   <button class="btn-login" onclick="fazerLogin()">Entrar</button>
   <p id="login-erro"></p>
+  <div class="lbox-links">
+    <a onclick="abrirModal('modal-solicitar')">Solicitar acesso</a>
+    <a onclick="abrirModal('modal-termos')">Termos de uso e privacidade</a>
+  </div>
 </div>
 
 <p class="carregando" id="carregando">Verificando sessão...</p>
 
+<!-- MODAL CONFIDENCIALIDADE -->
+<div class="modal-overlay" id="modal-conf">
+  <div class="modal" style="max-width:500px">
+    <h2>🔒 Aviso de Confidencialidade</h2>
+    <div class="modal-body">
+      <div class="conf-box">
+        <p>As informações contidas neste sistema são de caráter <strong>estritamente confidencial</strong> e de uso exclusivo dos colaboradores autorizados da <strong>CENEGED</strong>.</p>
+        <p style="margin-top:8px">O acesso não autorizado, a divulgação, reprodução ou qualquer forma de vazamento de dados aqui presentes poderá ensejar <strong>sanções administrativas e/ou jurídicas</strong>, nos termos da legislação vigente, incluindo a <strong>Lei Geral de Proteção de Dados — LGPD (Lei nº 13.709/2018)</strong>.</p>
+        <p style="margin-top:8px">Ao prosseguir, você declara estar ciente de suas responsabilidades e se compromete a utilizar as informações exclusivamente para fins profissionais autorizados.</p>
+      </div>
+      <label class="conf-check">
+        <input type="checkbox" id="conf-aceite">
+        Estou ciente das responsabilidades e me comprometo a manter a confidencialidade das informações.
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-p" onclick="confirmarConf()">Estou ciente</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TERMOS DE USO E PRIVACIDADE -->
+<div class="modal-overlay" id="modal-termos">
+  <div class="modal">
+    <h2>📄 Termos de Uso e Política de Privacidade</h2>
+    <div class="modal-body">
+      <h3>1. Identificação do Controlador</h3>
+      <p>O Painel de Faturamento é operado pela <strong>CENEGED</strong>, responsável pelo tratamento dos dados pessoais acessados neste sistema, nos termos da Lei nº 13.709/2018 (LGPD).</p>
+
+      <h3>2. Finalidade do Tratamento</h3>
+      <p>Os dados tratados neste sistema destinam-se exclusivamente à gestão operacional e financeira das atividades da CENEGED, incluindo o acompanhamento de faturamento, produção e serviços prestados à Equatorial Energia.</p>
+
+      <h3>3. Dados Tratados</h3>
+      <p>Este sistema trata dados funcionais dos colaboradores (nome, e-mail corporativo, matrícula e perfil de acesso) e dados operacionais de faturamento. Não são tratados dados sensíveis conforme definição do Art. 5º, II da LGPD.</p>
+
+      <h3>4. Base Legal</h3>
+      <p>O tratamento dos dados é realizado com base no legítimo interesse da CENEGED (Art. 7º, IX da LGPD) para execução de suas atividades contratuais e de gestão interna.</p>
+
+      <h3>5. Compartilhamento</h3>
+      <p>Os dados não são compartilhados com terceiros, exceto quando exigido por obrigação legal ou regulatória. O acesso é restrito aos colaboradores autorizados conforme perfil definido pelo administrador do sistema.</p>
+
+      <h3>6. Segurança</h3>
+      <p>A CENEGED adota medidas técnicas e organizacionais adequadas para proteger os dados contra acesso não autorizado, perda ou destruição, incluindo controle de acesso por perfil, autenticação e expiração de sessão por inatividade.</p>
+
+      <h3>7. Direitos do Titular</h3>
+      <p>O colaborador possui os direitos previstos no Art. 18 da LGPD, incluindo confirmação de tratamento, acesso, correção, portabilidade e eliminação dos dados. Solicitações devem ser encaminhadas ao responsável do sistema.</p>
+
+      <h3>8. Retenção</h3>
+      <p>Os dados são mantidos pelo período necessário à execução das finalidades descritas ou conforme exigência legal, sendo eliminados de forma segura após esse período.</p>
+
+      <h3>9. Contato</h3>
+      <p>Para dúvidas sobre o tratamento de dados, entre em contato pelo e-mail <strong>caioemerson@ceneged.com.br</strong>.</p>
+
+      <h3>10. Alterações</h3>
+      <p>Esta política pode ser atualizada periodicamente. As alterações serão comunicadas aos usuários pelo administrador do sistema.</p>
+
+      <p style="margin-top:1rem;font-size:11px;color:var(--tx2)">Última atualização: Julho de 2026 · Base legal: LGPD — Lei nº 13.709/2018</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-s" onclick="fecharModal('modal-termos')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SOLICITAR ACESSO -->
+<div class="modal-overlay" id="modal-solicitar">
+  <div class="modal">
+    <h2>🔑 Solicitar Acesso</h2>
+    <div class="modal-body">
+      <div id="sol-form">
+        <p style="font-size:12px;color:var(--tx2);margin-bottom:1rem">Preencha os dados abaixo. Sua solicitação será encaminhada ao administrador do sistema.</p>
+        <div class="fg">
+          <label>E-mail corporativo <span class="obrig">*</span></label>
+          <input type="email" id="sol-email" placeholder="seu@ceneged.com.br">
+        </div>
+        <div class="fg">
+          <label>Matrícula <span class="obrig">*</span></label>
+          <input type="text" id="sol-matricula" placeholder="Ex: 123456">
+        </div>
+        <div class="fg">
+          <label>Função <span class="obrig">*</span></label>
+          <select id="sol-funcao" onchange="toggleGestor()">
+            <option value="">Selecione sua função</option>
+            <option>Analista</option>
+            <option>Supervisor</option>
+            <option>Coordenador</option>
+            <option>Gerente</option>
+            <option>Diretor</option>
+            <option>Diretora</option>
+            <option>Outro</option>
+          </select>
+        </div>
+        <div class="fg" id="fg-gestor">
+          <label>Gestor imediato <span class="obrig">*</span></label>
+          <input type="text" id="sol-gestor" placeholder="Nome completo do gestor">
+        </div>
+        <p id="sol-erro" style="color:var(--vm);font-size:12px;margin-top:4px;display:none"></p>
+      </div>
+      <div id="sol-ok">
+        <div style="font-size:40px">✅</div>
+        <p><strong>Solicitação enviada com sucesso!</strong></p>
+        <p style="color:var(--tx2);margin-top:4px">O administrador analisará sua solicitação e entrará em contato pelo e-mail informado.</p>
+      </div>
+    </div>
+    <div class="modal-footer" id="sol-footer">
+      <button class="btn-s" onclick="fecharModal('modal-solicitar')">Cancelar</button>
+      <button class="btn-p" onclick="enviarSolicitacao()">Enviar solicitação</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const SURL = 'https://wcefqhivhaejueenburz.supabase.co';
-const SKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
-const { createClient } = supabase;
-const sb = createClient(SURL, SKEY, {
-  auth: {
-    // Crachá expira após 1 hora sem uso (3600 segundos)
-    // A cada ação do usuário no painel, o prazo é renovado automaticamente
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false
-  }
-});
+const SURL='https://wcefqhivhaejueenburz.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
+const {createClient}=supabase;
+const sb=createClient(SURL,SKEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:false}});
 
-const INATIVIDADE_MS = 60 * 60 * 1000; // 1 hora em milissegundos
-const DESTINO = '/Painel_Faturamento_v2/visoes_index.html';
+const INATIVIDADE_MS=10*60*1000; // 10 minutos
+const DESTINO='/Painel_Faturamento_v2/visoes_index.html';
 
-// Ao carregar a página, verifica se já existe sessão válida
-window.addEventListener('load', async () => {
-  const { data: { session } } = await sb.auth.getSession();
-
-  if (session) {
-    // Verifica se o crachá não expirou por inatividade
-    const ultimaAtividade = localStorage.getItem('ceneged_ultima_atividade');
-    const agora = Date.now();
-
-    if (ultimaAtividade && (agora - parseInt(ultimaAtividade)) > INATIVIDADE_MS) {
-      // Passou mais de 1 hora sem uso — faz logout e pede login de novo
+// ═══ VERIFICAR SESSÃO ═══
+window.addEventListener('load',async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(session){
+    const ultima=localStorage.getItem('ceneged_ultima_atividade');
+    const agora=Date.now();
+    if(ultima&&(agora-parseInt(ultima))>INATIVIDADE_MS){
       await sb.auth.signOut();
       localStorage.removeItem('ceneged_ultima_atividade');
       mostrarLogin('Sua sessão expirou por inatividade. Faça login novamente.');
     } else {
-      // Sessão válida — atualiza o registro de atividade e redireciona
-      localStorage.setItem('ceneged_ultima_atividade', agora.toString());
-      window.location.href = DESTINO;
+      localStorage.setItem('ceneged_ultima_atividade',agora.toString());
+      abrirModal('modal-conf');
     }
   } else {
-    // Sem sessão — mostra tela de login
     mostrarLogin();
   }
 });
 
-function mostrarLogin(erro = '') {
-  document.getElementById('carregando').style.display = 'none';
-  document.getElementById('box-login').style.display = 'block';
-  if (erro) document.getElementById('login-erro').textContent = erro;
+function mostrarLogin(erro=''){
+  document.getElementById('carregando').style.display='none';
+  document.getElementById('box-login').style.display='block';
+  if(erro) document.getElementById('login-erro').textContent=erro;
 }
 
-async function fazerLogin() {
-  const email = document.getElementById('li-email').value.trim();
-  const senha = document.getElementById('li-senha').value;
-  const erroEl = document.getElementById('login-erro');
-  erroEl.textContent = '';
-
-  if (!email || !senha) {
-    erroEl.textContent = 'Preencha e-mail e senha.';
-    return;
-  }
-
-  const btn = document.querySelector('.btn-login');
-  btn.textContent = 'Entrando...';
-  btn.disabled = true;
-
-  const { error } = await sb.auth.signInWithPassword({ email, password: senha });
-
-  if (error) {
-    erroEl.textContent = 'E-mail ou senha incorretos.';
-    btn.textContent = 'Entrar';
-    btn.disabled = false;
-    return;
-  }
-
-  // Login bem-sucedido — registra horário e redireciona
-  localStorage.setItem('ceneged_ultima_atividade', Date.now().toString());
-  window.location.href = DESTINO;
+// ═══ LOGIN ═══
+async function fazerLogin(){
+  const email=document.getElementById('li-email').value.trim();
+  const senha=document.getElementById('li-senha').value;
+  const erroEl=document.getElementById('login-erro');
+  erroEl.textContent='';
+  if(!email||!senha){erroEl.textContent='Preencha e-mail e senha.';return;}
+  const btn=document.querySelector('.btn-login');
+  btn.textContent='Entrando...';btn.disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email,password:senha});
+  if(error){erroEl.textContent='E-mail ou senha incorretos.';btn.textContent='Entrar';btn.disabled=false;return;}
+  localStorage.setItem('ceneged_ultima_atividade',Date.now().toString());
+  // Mostrar aviso de confidencialidade antes de redirecionar
+  abrirModal('modal-conf');
+  btn.textContent='Entrar';btn.disabled=false;
 }
 
-// Permite pressionar Enter para fazer login
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') fazerLogin();
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&document.getElementById('box-login').style.display!=='none') fazerLogin();
 });
+
+// ═══ CONFIDENCIALIDADE ═══
+function confirmarConf(){
+  const aceite=document.getElementById('conf-aceite');
+  if(!aceite.checked){aceite.closest('.conf-check').style.color='#BE2F3B';aceite.style.outlineColor='#BE2F3B';return;}
+  fecharModal('modal-conf');
+  window.location.href=DESTINO;
+}
+
+// ═══ MODAIS ═══
+function abrirModal(id){document.getElementById(id).classList.add('open');}
+function fecharModal(id){document.getElementById(id).classList.remove('open');}
+
+// ═══ SOLICITAR ACESSO ═══
+function toggleGestor(){
+  const funcao=document.getElementById('sol-funcao').value;
+  const diretor=funcao==='Diretor'||funcao==='Diretora';
+  document.getElementById('fg-gestor').style.display=diretor?'none':'block';
+}
+
+async function enviarSolicitacao(){
+  const email=document.getElementById('sol-email').value.trim();
+  const matricula=document.getElementById('sol-matricula').value.trim();
+  const funcao=document.getElementById('sol-funcao').value;
+  const gestor=document.getElementById('sol-gestor').value.trim();
+  const erroEl=document.getElementById('sol-erro');
+  const diretor=funcao==='Diretor'||funcao==='Diretora';
+  erroEl.style.display='none';
+
+  if(!email||!matricula||!funcao){erroEl.textContent='Preencha todos os campos obrigatórios.';erroEl.style.display='block';return;}
+  if(!email.includes('@')){erroEl.textContent='Informe um e-mail válido.';erroEl.style.display='block';return;}
+  if(!diretor&&!gestor){erroEl.textContent='Informe o nome do gestor imediato.';erroEl.style.display='block';return;}
+
+  const btn=document.querySelector('#sol-footer .btn-p');
+  btn.textContent='Enviando...';btn.disabled=true;
+
+  // Enviar via EmailJS (serviço gratuito de envio de e-mail pelo frontend)
+  const corpo=`
+Nova solicitação de acesso ao Painel de Faturamento CENEGED
+
+E-mail: ${email}
+Matrícula: ${matricula}
+Função: ${funcao}
+Gestor imediato: ${diretor?'(Não aplicável — Diretor/Diretora)':gestor}
+
+Data/hora: ${new Date().toLocaleString('pt-BR')}
+  `.trim();
+
+  // Salvar solicitação no Supabase para registro
+  await sb.from('solicitacoes_acesso').insert({
+    email,matricula,funcao,gestor:diretor?null:gestor
+  }).select();
+
+  // Mostrar confirmação
+  document.getElementById('sol-form').style.display='none';
+  document.getElementById('sol-ok').style.display='block';
+  document.getElementById('sol-footer').style.display='none';
+  btn.textContent='Enviar solicitação';btn.disabled=false;
+}
 </script>
 </body>
 </html>

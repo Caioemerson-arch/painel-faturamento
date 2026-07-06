@@ -3,21 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Demo — Mapa do Brasil CENEGED</title>
+<title>Selecione o Estado — CENEGED</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:Arial,sans-serif;min-height:100vh;background:#1A1A2E;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
 .topo{text-align:center;margin-bottom:2rem}
+.topo img{height:44px;width:auto;margin-bottom:1rem;display:block;margin-left:auto;margin-right:auto}
 .topo h1{font-size:22px;font-weight:700;color:#fff;margin-bottom:6px}
 .topo p{font-size:13px;color:rgba(255,255,255,.5)}
 .mapa-box{background:#fff;border-radius:14px;padding:2rem;max-width:540px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.4)}
-#map-svg{width:100%;height:auto}
+#map-svg{width:100%;height:auto;display:block}
 .estado{stroke:#fff;stroke-width:0.8;transition:fill .15s}
 .ativo{fill:#BE2F3B;cursor:pointer}
 .ativo:hover{fill:#9a1f2a}
 .inativo{fill:#e8e8e4;cursor:default}
 .inativo:hover{fill:#d8d8d4}
+.bloqueado{fill:#aaa;cursor:not-allowed;opacity:.5}
 .legenda{display:flex;gap:16px;justify-content:center;margin-top:1rem;flex-wrap:wrap}
 .leg-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#555}
 .leg-cor{width:14px;height:14px;border-radius:3px}
@@ -25,70 +28,172 @@ body{font-family:Arial,sans-serif;min-height:100vh;background:#1A1A2E;display:fl
 .cards{display:flex;gap:10px;justify-content:center;margin-top:1.25rem;flex-wrap:wrap}
 .card-est{padding:10px 20px;border-radius:8px;border:2px solid #BE2F3B;background:#fff5f5;cursor:pointer;text-align:center;transition:.15s;min-width:100px}
 .card-est:hover{background:#fee;box-shadow:0 4px 12px rgba(190,47,59,.2)}
+.card-est.bloqueado{opacity:.4;cursor:not-allowed;border-color:#ccc;background:#f5f5f5}
+.card-est.bloqueado:hover{background:#f5f5f5;box-shadow:none}
 .card-est .sigla{font-size:20px;font-weight:700;color:#BE2F3B}
+.card-est.bloqueado .sigla{color:#aaa}
 .card-est .nome{font-size:10px;color:#888;margin-top:2px}
+.msg-acesso{display:none;text-align:center;margin-top:10px;font-size:12px;color:#BE2F3B;font-weight:700}
+.btn-sair{margin-top:1.5rem;font-size:12px;color:rgba(255,255,255,.4);background:none;border:1px solid rgba(255,255,255,.15);padding:7px 18px;border-radius:6px;cursor:pointer}
+.btn-sair:hover{color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.35)}
+.carregando{color:rgba(255,255,255,.5);font-size:13px;text-align:center}
 </style>
 </head>
 <body>
+
 <div class="topo">
+  <img src="https://www.ceneged.com.br/wp-content/uploads/2023/02/Logo-Ceneged-1.png" alt="CENEGED">
   <h1>Selecione o Estado</h1>
   <p>Clique no mapa ou nos cartões para acessar o painel</p>
 </div>
-<div class="mapa-box">
+
+<div class="mapa-box" id="mapa-box" style="display:none">
   <svg id="map-svg" viewBox="0 0 500 520"></svg>
   <div class="legenda">
     <div class="leg-item"><div class="leg-cor" style="background:#BE2F3B"></div>Estados ativos</div>
     <div class="leg-item"><div class="leg-cor" style="background:#e8e8e4;border:1px solid #ccc"></div>Demais estados</div>
   </div>
   <p class="dica" id="dica">Passe o mouse sobre os estados para destacar</p>
-  <div class="cards">
-    <div class="card-est" onclick="selecionar('MA')"><div class="sigla">MA</div><div class="nome">Maranhão</div></div>
-    <div class="card-est" onclick="selecionar('PI')"><div class="sigla">PI</div><div class="nome">Piauí</div></div>
-    <div class="card-est" onclick="selecionar('RJ')"><div class="sigla">RJ</div><div class="nome">Rio de Janeiro</div></div>
-  </div>
+  <p class="msg-acesso" id="msg-acesso">Você não tem permissão para acessar este estado.</p>
+  <div class="cards" id="cards"></div>
 </div>
 
+<p class="carregando" id="carregando">Carregando...</p>
+
+<button class="btn-sair" onclick="fazerLogout()">Sair</button>
+
 <script>
-const ATIVOS={MA:'Maranhão',PI:'Piauí',RJ:'Rio de Janeiro'};
+const SURL='https://wcefqhivhaejueenburz.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
+const {createClient}=supabase;
+const sb=createClient(SURL,SKEY);
+const INATIVIDADE_MS=10*60*1000;
+const LOGIN_URL='/Painel_Faturamento_v2/index.html';
+const VISOES_URL='/Painel_Faturamento_v2/visoes_index.html';
 const GEO_URL='https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson';
 
-const svg=d3.select('#map-svg');
-const w=500,h=520;
+const ESTADOS_SISTEMA={MA:'Maranhão',PI:'Piauí',RJ:'Rio de Janeiro'};
 
-d3.json(GEO_URL).then(geo=>{
-  const proj=d3.geoMercator().fitSize([w,h],geo);
-  const path=d3.geoPath().projection(proj);
+let estadosPermitidos=[];
+let perfilRole='viewer';
 
-  svg.selectAll('path')
-    .data(geo.features)
-    .enter()
-    .append('path')
-    .attr('class',d=>ATIVOS[d.properties.sigla]?'estado ativo':'estado inativo')
-    .attr('d',path)
-    .on('mouseover',function(e,d){
-      const n=ATIVOS[d.properties.sigla];
-      document.getElementById('dica').textContent=n?`${n} — clique para acessar`:d.properties.name||d.properties.sigla;
-    })
-    .on('mouseout',()=>document.getElementById('dica').textContent='Passe o mouse sobre os estados para destacar')
-    .on('click',(e,d)=>{if(ATIVOS[d.properties.sigla]) selecionar(d.properties.sigla);});
+window.addEventListener('load',async()=>{
+  // Verificar sessão
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href=LOGIN_URL;return;}
+  const ultima=localStorage.getItem('ceneged_ultima_atividade');
+  if(ultima&&(Date.now()-parseInt(ultima))>INATIVIDADE_MS){
+    await sb.auth.signOut();
+    localStorage.removeItem('ceneged_ultima_atividade');
+    window.location.href=LOGIN_URL;return;
+  }
+  localStorage.setItem('ceneged_ultima_atividade',Date.now().toString());
+  document.addEventListener('click',()=>localStorage.setItem('ceneged_ultima_atividade',Date.now().toString()));
 
-  // Labels dos estados ativos
-  svg.selectAll('text')
-    .data(geo.features.filter(d=>ATIVOS[d.properties.sigla]))
-    .enter()
-    .append('text')
-    .attr('x',d=>path.centroid(d)[0])
-    .attr('y',d=>path.centroid(d)[1]+4)
-    .attr('text-anchor','middle')
-    .attr('font-size',10)
-    .attr('font-weight','700')
-    .attr('fill','white')
-    .attr('pointer-events','none')
-    .text(d=>d.properties.sigla);
+  // Carregar perfil
+  const {data:perfil}=await sb.from('usuarios_perfil_completo').select('*').eq('id',session.user.id).single();
+  perfilRole=perfil?.role||'viewer';
+  estadosPermitidos=perfil?.estados_permitidos||Object.keys(ESTADOS_SISTEMA);
+  if(perfilRole==='admin') estadosPermitidos=Object.keys(ESTADOS_SISTEMA);
+
+  // Renderizar mapa e cartões
+  renderizarCartoes();
+  await renderizarMapa();
+
+  document.getElementById('carregando').style.display='none';
+  document.getElementById('mapa-box').style.display='block';
 });
 
-function selecionar(est){
-  document.getElementById('dica').textContent=`✓ Acessando ${ATIVOS[est]}...`;
+function renderizarCartoes(){
+  const box=document.getElementById('cards');
+  box.innerHTML=Object.entries(ESTADOS_SISTEMA).map(([sigla,nome])=>{
+    const temAcesso=estadosPermitidos.includes(sigla);
+    return `<div class="card-est ${temAcesso?'':'bloqueado'}" ${temAcesso?`onclick="selecionar('${sigla}')"`:'title="Sem permissão de acesso"'}>
+      <div class="sigla">${sigla}</div>
+      <div class="nome">${nome}</div>
+    </div>`;
+  }).join('');
+}
+
+async function renderizarMapa(){
+  const svg=d3.select('#map-svg');
+  const w=500,h=520;
+
+  try{
+    const geo=await d3.json(GEO_URL);
+    const proj=d3.geoMercator().fitSize([w,h],geo);
+    const path=d3.geoPath().projection(proj);
+
+    svg.selectAll('path')
+      .data(geo.features)
+      .enter()
+      .append('path')
+      .attr('class',d=>{
+        const sig=d.properties.sigla;
+        if(!ESTADOS_SISTEMA[sig]) return 'estado inativo';
+        if(!estadosPermitidos.includes(sig)) return 'estado bloqueado';
+        return 'estado ativo';
+      })
+      .attr('d',path)
+      .on('mouseover',function(e,d){
+        const sig=d.properties.sigla;
+        const nome=ESTADOS_SISTEMA[sig];
+        if(nome){
+          if(estadosPermitidos.includes(sig)){
+            document.getElementById('dica').textContent=`${nome} — clique para acessar`;
+          } else {
+            document.getElementById('dica').textContent=`${nome} — sem permissão de acesso`;
+          }
+        } else {
+          document.getElementById('dica').textContent=d.properties.name||sig||'';
+        }
+      })
+      .on('mouseout',()=>{
+        document.getElementById('dica').textContent='Passe o mouse sobre os estados para destacar';
+      })
+      .on('click',(e,d)=>{
+        const sig=d.properties.sigla;
+        if(ESTADOS_SISTEMA[sig]&&estadosPermitidos.includes(sig)){
+          selecionar(sig);
+        } else if(ESTADOS_SISTEMA[sig]){
+          const msg=document.getElementById('msg-acesso');
+          msg.style.display='block';
+          setTimeout(()=>msg.style.display='none',3000);
+        }
+      });
+
+    // Labels nos estados ativos
+    svg.selectAll('text')
+      .data(geo.features.filter(d=>ESTADOS_SISTEMA[d.properties.sigla]))
+      .enter()
+      .append('text')
+      .attr('x',d=>path.centroid(d)[0])
+      .attr('y',d=>path.centroid(d)[1]+4)
+      .attr('text-anchor','middle')
+      .attr('font-size',d=>d.properties.sigla==='RJ'?8:10)
+      .attr('font-weight','700')
+      .attr('fill','white')
+      .attr('pointer-events','none')
+      .text(d=>d.properties.sigla);
+
+  } catch(err){
+    svg.append('text').attr('x',250).attr('y',260).attr('text-anchor','middle')
+      .attr('fill','#888').attr('font-size',13)
+      .text('Mapa não disponível — use os cartões abaixo.');
+  }
+}
+
+function selecionar(sigla){
+  document.getElementById('dica').textContent=`✓ Acessando ${ESTADOS_SISTEMA[sigla]}...`;
+  localStorage.setItem('ceneged_estado_selecionado',sigla);
+  setTimeout(()=>window.location.href=VISOES_URL,500);
+}
+
+async function fazerLogout(){
+  await sb.auth.signOut();
+  localStorage.removeItem('ceneged_ultima_atividade');
+  localStorage.removeItem('ceneged_estado_selecionado');
+  window.location.href=LOGIN_URL;
 }
 </script>
 </body>

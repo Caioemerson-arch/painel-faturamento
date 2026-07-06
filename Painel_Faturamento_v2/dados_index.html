@@ -239,7 +239,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <div class="alerta al-ok"><span>✓</span><span id="cad-st-txt"></span></div>
           <div class="sec">Tarifas extraídas — confirme antes de ativar</div>
           <div class="revbox">
-            <table><thead><tr><th>Vigência</th><th>Estado</th><th>Regional</th><th>Serviço</th><th>Tarifa</th><th>Eventos prev.</th><th>Fat. previsto</th></tr></thead>
+            <table><thead><tr><th>Vigência</th><th>Estado</th><th>Regional</th><th>Processo</th><th>Serviço</th><th>Tarifa</th><th>Eventos prev.</th><th>Fat. previsto</th></tr></thead>
             <tbody id="tb-pv-cad"></tbody></table>
           </div>
           <div style="margin-top:1rem;padding:12px;background:var(--am-cl);border-radius:var(--r2);border:1px solid #f0c070">
@@ -492,6 +492,7 @@ async function processarUpload(file,tipo){
 function lerAbas(wb){
   let rows=[];
   ['MA','PI'].forEach(est=>{const ws=wb.Sheets[est];if(!ws) return;const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:2});r.forEach(row=>{if(!row.ESTADO) row.ESTADO=est;});rows=[...rows,...r];});
+  [{aba:'Comercial-RJ',regional:'COMERCIAL'},{aba:'Tecnica-RJ',regional:'TECNICA'}].forEach(({aba,regional})=>{const ws=wb.Sheets[aba];if(!ws) return;const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:2});r.forEach(row=>{row.ESTADO='RJ';if(!row.REGIONAL) row.REGIONAL=regional;});rows=[...rows,...r];});
   return rows;
 }
 
@@ -539,16 +540,22 @@ function parsearBoletim(wb){
 function parsearCaderno(wb){
   dadosCad=[];let erros=0;const mapTemp={};
   lerAbas(wb).forEach(r=>{
-    if(!r.REGIONAL||!r.COD_SERVICO||!r.VIGENCIA_INICIO||r.PRECO_UNITARIO===''||r.EVENTOS_PREVISTOS===''){erros++;return;}
-    const est=String(r.ESTADO||'').trim();const regFinal=est==='PI'?'PIAUÍ':String(r.REGIONAL).trim();const cod=String(r.COD_SERVICO).trim();const k=`${est}|${regFinal}|${cod}`;
-    const item={estado:est,regional:regFinal,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),vigencia_inicio:String(r.VIGENCIA_INICIO).trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO).replace(',','.'))||0,eventos_previstos:parseFloat(String(r.EVENTOS_PREVISTOS).replace(',','.'))||0};
-    if(!mapTemp[k]) mapTemp[k]=item;else if(est==='PI') mapTemp[k].eventos_previstos+=item.eventos_previstos;
+    if(!r.COD_SERVICO||!r.VIGENCIA_INICIO||r.PRECO_UNITARIO===''||r.EVENTOS_PREVISTOS===''){erros++;return;}
+    const est=String(r.ESTADO||'').trim();
+    let regFinal=String(r.REGIONAL||'').trim();
+    if(est==='PI') regFinal='PIAUÍ';
+    const cod=String(r.COD_SERVICO).trim();
+    const proc=String(r.PROCESSO||'').trim();
+    const k=`${est}|${regFinal}|${cod}`;
+    const item={estado:est,regional:regFinal,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),vigencia_inicio:String(r.VIGENCIA_INICIO).trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO).replace(',','.'))||0,eventos_previstos:parseFloat(String(r.EVENTOS_PREVISTOS).replace(',','.'))||0,processo:proc};
+    if(!mapTemp[k]) mapTemp[k]=item;
+    else if(est==='PI') mapTemp[k].eventos_previstos+=item.eventos_previstos;
   });
   dadosCad=Object.values(mapTemp);
-  if(!dadosCad.length){alert('Nenhum dado encontrado. Verifique se o arquivo tem aba MA ou PI.');return;}
+  if(!dadosCad.length){alert('Nenhum dado encontrado. Verifique as abas do arquivo (MA, PI, Comercial-RJ ou Tecnica-RJ).');return;}
   const vig=dadosCad[0]?.vigencia_inicio||'',est=dadosCad[0]?.estado||'';
-  document.getElementById('cad-st-txt').textContent=`${dadosCad.length} tarifas carregadas — ${est} — Vigência: ${vig}${erros?` (${erros} ignoradas)`:''}`;
-  document.getElementById('tb-pv-cad').innerHTML=dadosCad.map(r=>`<tr><td style="font-weight:700;color:var(--vm)">${r.vigencia_inicio}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right">${fR(r.preco_unitario)}</td><td style="text-align:right">${fN(r.eventos_previstos)}</td><td style="text-align:right;font-weight:700">${fR(r.preco_unitario*r.eventos_previstos)}</td></tr>`).join('');
+  document.getElementById('cad-st-txt').textContent=`${dadosCad.length} tarifas carregadas — ${est} — Vigência: ${vig}${erros?` (${erros} ignoradas)`:''}\`;
+  document.getElementById('tb-pv-cad').innerHTML=dadosCad.map(r=>`<tr><td style="font-weight:700;color:var(--vm)">${r.vigencia_inicio}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px;color:var(--tx2)">${r.processo||'—'}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right">${fR(r.preco_unitario)}</td><td style="text-align:right">${fN(r.eventos_previstos)}</td><td style="text-align:right;font-weight:700">${fR(r.preco_unitario*r.eventos_previstos)}</td></tr>`).join('');
   document.getElementById('pv-cad').style.display='block';
 }
 
@@ -600,7 +607,7 @@ async function salvarCaderno(){
   const {data:cad,error:e1}=await sb.from('cadernos').insert({estado,nome:`Caderno ${estado} — vigência ${vigencia_inicio}`,vigencia_inicio,ativo:true,confirmado:true,importado_por:user.id}).select().single();
   if(e1||!cad){alert('Erro: '+(e1?.message||''));btn.innerHTML='<i class="ti ti-check"></i> Ativar caderno';btn.disabled=false;svCad=false;return;}
   const mapCad={};dadosCad.forEach(r=>{const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;const k=`${r.estado}|${regFinal}|${r.cod_servico}`;if(!mapCad[k]) mapCad[k]={...r,regional:regFinal};else if(r.estado==='PI') mapCad[k].eventos_previstos+=r.eventos_previstos;});
-  const {error:e2}=await sb.from('caderno_tarifas').insert(Object.values(mapCad).map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos})));
+  const {error:e2}=await sb.from('caderno_tarifas').insert(Object.values(mapCad).map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos,processo:r.processo||null})));
   if(e2){alert('Erro nas tarifas: '+e2.message);await sb.from('cadernos').delete().eq('id',cad.id);}
   else{alert(`✓ Caderno ativado com ${dadosCad.length} tarifas!`);document.getElementById('cad-conf').checked=false;cancelarUpload('cad');document.getElementById('upload-cad-box').style.display='none';await carregarCache();preencherStatusDados();carregarCadernos();}
   btn.innerHTML='<i class="ti ti-check"></i> Ativar caderno';btn.disabled=false;svCad=false;

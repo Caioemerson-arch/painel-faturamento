@@ -3,207 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Selecione o Estado — CENEGED</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>Demo — Mapa do Brasil CENEGED</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <style>
-:root{
-  --vm:#BE2F3B;--az-esc:#1A1A2E;--pt:#2C2C2A;
-  --bg:#f5f4f1;--bd:#e0deda;--tx2:#7B7B7B;--br:#fff;
-  --vd:#1D9E75;--r:10px;--r2:6px;
-}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;min-height:100vh;background:var(--az-esc);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
-
+body{font-family:Arial,sans-serif;min-height:100vh;background:#1A1A2E;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
 .topo{text-align:center;margin-bottom:2rem}
-.topo img{height:44px;width:auto;margin-bottom:1rem}
 .topo h1{font-size:22px;font-weight:700;color:#fff;margin-bottom:6px}
 .topo p{font-size:13px;color:rgba(255,255,255,.5)}
-
-.mapa-box{background:var(--br);border-radius:14px;padding:2rem;max-width:560px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.4)}
-
-/* MAPA SVG */
-.brasil-map{width:100%;height:auto;display:block}
-.estado{fill:#c8c8c8;stroke:#fff;stroke-width:1.5;cursor:default;transition:.2s}
-.estado.ativo{fill:var(--vm);cursor:pointer}
-.estado.ativo:hover{fill:#9a1f2a;filter:drop-shadow(0 0 8px rgba(190,47,59,.6))}
-.estado.bloqueado{fill:#888;cursor:not-allowed;opacity:.5}
-
-/* CARTÕES */
-.cards-estado{display:flex;gap:10px;margin-top:1.5rem;justify-content:center;flex-wrap:wrap}
-.card-est{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 20px;border-radius:var(--r);border:2px solid var(--bd);cursor:pointer;transition:.2s;background:var(--bg);min-width:120px}
-.card-est.ativo{border-color:var(--vm);background:#fff5f5;cursor:pointer}
-.card-est.ativo:hover{background:#fee;box-shadow:0 4px 16px rgba(190,47,59,.2)}
-.card-est.bloqueado{opacity:.4;cursor:not-allowed}
-.card-est .sigla{font-size:22px;font-weight:700;color:var(--pt)}
-.card-est .nome{font-size:11px;color:var(--tx2)}
-.card-est.ativo .sigla{color:var(--vm)}
-
-.dica{text-align:center;margin-top:1rem;font-size:11px;color:var(--tx2);display:flex;align-items:center;justify-content:center;gap:5px}
-#msg-acesso{display:none;text-align:center;margin-top:1rem;font-size:12px;color:var(--vm);font-weight:700}
-
-.btn-sair{margin-top:1.5rem;font-size:12px;color:rgba(255,255,255,.4);background:none;border:1px solid rgba(255,255,255,.15);padding:7px 18px;border-radius:var(--r2);cursor:pointer}
-.btn-sair:hover{color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.35)}
+.mapa-box{background:#fff;border-radius:14px;padding:2rem;max-width:540px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.4)}
+#map-svg{width:100%;height:auto}
+.estado{stroke:#fff;stroke-width:0.8;transition:fill .15s}
+.ativo{fill:#BE2F3B;cursor:pointer}
+.ativo:hover{fill:#9a1f2a}
+.inativo{fill:#e8e8e4;cursor:default}
+.inativo:hover{fill:#d8d8d4}
+.legenda{display:flex;gap:16px;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#555}
+.leg-cor{width:14px;height:14px;border-radius:3px}
+.dica{text-align:center;margin-top:10px;font-size:12px;color:#888;min-height:20px}
+.cards{display:flex;gap:10px;justify-content:center;margin-top:1.25rem;flex-wrap:wrap}
+.card-est{padding:10px 20px;border-radius:8px;border:2px solid #BE2F3B;background:#fff5f5;cursor:pointer;text-align:center;transition:.15s;min-width:100px}
+.card-est:hover{background:#fee;box-shadow:0 4px 12px rgba(190,47,59,.2)}
+.card-est .sigla{font-size:20px;font-weight:700;color:#BE2F3B}
+.card-est .nome{font-size:10px;color:#888;margin-top:2px}
 </style>
 </head>
 <body>
-
 <div class="topo">
-  <img src="https://www.ceneged.com.br/wp-content/uploads/2023/02/Logo-Ceneged-1.png" alt="CENEGED">
   <h1>Selecione o Estado</h1>
   <p>Clique no mapa ou nos cartões para acessar o painel</p>
 </div>
-
 <div class="mapa-box">
-  <svg class="brasil-map" viewBox="0 0 600 580" xmlns="http://www.w3.org/2000/svg">
-    <!-- Estados não ativos -->
-    <path class="estado" d="M85,120 L110,100 L130,110 L125,140 L100,145 Z" title="AC"/>
-    <path class="estado" d="M130,110 L175,95 L190,120 L165,145 L125,140 Z" title="AM"/>
-    <path class="estado" d="M175,95 L210,85 L225,105 L200,125 L190,120 Z" title="RR"/>
-    <path class="estado" d="M190,120 L225,105 L240,130 L215,150 L200,140 Z" title="PA-N"/>
-    <path class="estado" d="M165,145 L200,140 L215,175 L185,185 L160,170 Z" title="AM-S"/>
-    <path class="estado" d="M125,140 L165,145 L160,170 L130,175 L110,155 Z" title="RO"/>
-    <path class="estado" d="M110,155 L130,175 L120,200 L95,195 L90,170 Z" title="RO-S"/>
-    <path class="estado" d="M200,140 L240,130 L255,160 L230,175 L215,175 Z" title="PA"/>
-    <path class="estado" d="M230,175 L255,160 L275,175 L260,200 L235,200 Z" title="PA-E"/>
-    <path class="estado" d="M215,175 L230,175 L235,200 L210,205 L205,190 Z" title="MT-N"/>
-    <path class="estado" d="M185,185 L215,175 L205,190 L195,215 L175,210 Z" title="MT"/>
-    <path class="estado" d="M120,200 L130,175 L160,170 L175,210 L145,220 L115,215 Z" title="MT-W"/>
-    <!-- Maranhão - ATIVO -->
-    <path class="estado ativo" id="map-MA" onclick="selecionarEstado('MA')" d="M260,145 L300,135 L330,150 L335,185 L310,200 L275,195 L255,175 Z" title="MA">
-      <title>Maranhão</title>
-    </path>
-    <!-- Piauí - ATIVO -->
-    <path class="estado ativo" id="map-PI" onclick="selecionarEstado('PI')" d="M300,135 L335,130 L360,155 L355,190 L335,205 L310,200 L335,185 Z" title="PI">
-      <title>Piauí</title>
-    </path>
-    <!-- Ceará -->
-    <path class="estado" d="M335,130 L375,125 L390,150 L370,170 L350,165 L360,155 Z" title="CE"/>
-    <!-- RN -->
-    <path class="estado" d="M375,125 L405,120 L415,140 L395,150 L390,150 Z" title="RN"/>
-    <!-- PB -->
-    <path class="estado" d="M390,150 L415,140 L420,160 L400,168 Z" title="PB"/>
-    <!-- PE -->
-    <path class="estado" d="M370,170 L400,168 L415,185 L385,192 L355,190 Z" title="PE"/>
-    <!-- AL -->
-    <path class="estado" d="M400,168 L420,160 L425,178 L415,185 Z" title="AL"/>
-    <!-- SE -->
-    <path class="estado" d="M415,185 L425,178 L432,192 L420,198 Z" title="SE"/>
-    <!-- Bahia -->
-    <path class="estado" d="M355,190 L385,192 L420,198 L430,240 L415,275 L385,295 L355,285 L335,260 L330,230 L335,205 Z" title="BA"/>
-    <!-- GO/DF -->
-    <path class="estado" d="M270,240 L305,235 L320,260 L305,280 L270,275 Z" title="GO"/>
-    <!-- MS -->
-    <path class="estado" d="M175,280 L220,270 L240,295 L230,325 L190,330 L165,310 Z" title="MS"/>
-    <!-- MG -->
-    <path class="estado" d="M305,280 L355,285 L385,295 L390,330 L365,360 L325,365 L295,350 L280,315 Z" title="MG"/>
-    <!-- ES -->
-    <path class="estado" d="M385,295 L415,290 L420,320 L400,335 L390,330 Z" title="ES"/>
-    <!-- Rio de Janeiro - ATIVO -->
-    <path class="estado ativo" id="map-RJ" onclick="selecionarEstado('RJ')" d="M365,360 L400,355 L415,375 L395,390 L360,385 Z" title="RJ">
-      <title>Rio de Janeiro</title>
-    </path>
-    <!-- SP -->
-    <path class="estado" d="M280,360 L325,365 L365,360 L360,385 L330,400 L285,395 L265,375 Z" title="SP"/>
-    <!-- PR -->
-    <path class="estado" d="M240,395 L285,395 L295,420 L265,435 L225,425 Z" title="PR"/>
-    <!-- SC -->
-    <path class="estado" d="M225,425 L265,435 L268,455 L235,460 L210,448 Z" title="SC"/>
-    <!-- RS -->
-    <path class="estado" d="M210,448 L235,460 L240,490 L205,505 L180,485 L185,460 Z" title="RS"/>
-    <!-- MT-S/GO-S -->
-    <path class="estado" d="M175,210 L205,190 L210,205 L235,200 L260,200 L275,195 L270,240 L240,255 L200,250 L175,230 Z" title="TO"/>
-    <!-- PA-S / TO -->
-    <path class="estado" d="M235,200 L260,200 L275,195 L270,240 L240,255 L220,235 Z" title="TO-N"/>
-    <!-- MT central -->
-    <path class="estado" d="M115,215 L145,220 L175,210 L175,230 L200,250 L185,275 L150,280 L110,265 L100,240 Z" title="MT-C"/>
-    <!-- MS-W -->
-    <path class="estado" d="M100,240 L110,265 L150,280 L165,310 L140,330 L100,320 L80,290 Z" title="PR-W"/>
-    <!-- SP-W -->
-    <path class="estado" d="M220,270 L270,240 L270,275 L280,315 L265,340 L240,340 L220,315 L215,290 Z" title="SP-W"/>
-    <!-- Labels dos estados ativos -->
-    <text x="285" y="175" font-size="13" font-weight="bold" fill="white" text-anchor="middle" pointer-events="none">MA</text>
-    <text x="335" y="175" font-size="13" font-weight="bold" fill="white" text-anchor="middle" pointer-events="none">PI</text>
-    <text x="388" y="375" font-size="11" font-weight="bold" fill="white" text-anchor="middle" pointer-events="none">RJ</text>
-  </svg>
-
-  <div class="cards-estado">
-    <div class="card-est ativo" id="card-MA" onclick="selecionarEstado('MA')">
-      <span class="sigla">MA</span>
-      <span class="nome">Maranhão</span>
-    </div>
-    <div class="card-est ativo" id="card-PI" onclick="selecionarEstado('PI')">
-      <span class="sigla">PI</span>
-      <span class="nome">Piauí</span>
-    </div>
-    <div class="card-est ativo" id="card-RJ" onclick="selecionarEstado('RJ')">
-      <span class="sigla">RJ</span>
-      <span class="nome">Rio de Janeiro</span>
-    </div>
+  <svg id="map-svg" viewBox="0 0 500 520"></svg>
+  <div class="legenda">
+    <div class="leg-item"><div class="leg-cor" style="background:#BE2F3B"></div>Estados ativos</div>
+    <div class="leg-item"><div class="leg-cor" style="background:#e8e8e4;border:1px solid #ccc"></div>Demais estados</div>
   </div>
-
-  <p class="dica">⊙ Passe o mouse sobre os estados para destacar</p>
-  <p id="msg-acesso">Você não tem permissão para acessar este estado.</p>
+  <p class="dica" id="dica">Passe o mouse sobre os estados para destacar</p>
+  <div class="cards">
+    <div class="card-est" onclick="selecionar('MA')"><div class="sigla">MA</div><div class="nome">Maranhão</div></div>
+    <div class="card-est" onclick="selecionar('PI')"><div class="sigla">PI</div><div class="nome">Piauí</div></div>
+    <div class="card-est" onclick="selecionar('RJ')"><div class="sigla">RJ</div><div class="nome">Rio de Janeiro</div></div>
+  </div>
 </div>
 
-<button class="btn-sair" onclick="fazerLogout()">Sair</button>
-
 <script>
-const SURL='https://wcefqhivhaejueenburz.supabase.co';
-const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
-const {createClient}=supabase;
-const sb=createClient(SURL,SKEY);
-const INATIVIDADE_MS=10*60*1000;
-const LOGIN_URL='/Painel_Faturamento_v2/index.html';
-const VISOES_URL='/Painel_Faturamento_v2/visoes_index.html';
-const ESTADOS_ATIVOS=['MA','PI','RJ'];
+const ATIVOS={MA:'Maranhão',PI:'Piauí',RJ:'Rio de Janeiro'};
+const GEO_URL='https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson';
 
-let estadosPermitidos=[];
+const svg=d3.select('#map-svg');
+const w=500,h=520;
 
-window.addEventListener('load',async()=>{
-  const {data:{session}}=await sb.auth.getSession();
-  if(!session){window.location.href=LOGIN_URL;return;}
-  const ultima=localStorage.getItem('ceneged_ultima_atividade');
-  if(ultima&&(Date.now()-parseInt(ultima))>INATIVIDADE_MS){
-    await sb.auth.signOut();localStorage.removeItem('ceneged_ultima_atividade');
-    window.location.href=LOGIN_URL;return;
-  }
-  localStorage.setItem('ceneged_ultima_atividade',Date.now().toString());
-  document.addEventListener('click',()=>localStorage.setItem('ceneged_ultima_atividade',Date.now().toString()));
+d3.json(GEO_URL).then(geo=>{
+  const proj=d3.geoMercator().fitSize([w,h],geo);
+  const path=d3.geoPath().projection(proj);
 
-  // Carregar perfil e estados permitidos
-  const {data:perfil}=await sb.from('usuarios_perfil_completo').select('*').eq('id',session.user.id).single();
-  estadosPermitidos=perfil?.estados_permitidos||['MA','PI','RJ'];
+  svg.selectAll('path')
+    .data(geo.features)
+    .enter()
+    .append('path')
+    .attr('class',d=>ATIVOS[d.properties.sigla]?'estado ativo':'estado inativo')
+    .attr('d',path)
+    .on('mouseover',function(e,d){
+      const n=ATIVOS[d.properties.sigla];
+      document.getElementById('dica').textContent=n?`${n} — clique para acessar`:d.properties.name||d.properties.sigla;
+    })
+    .on('mouseout',()=>document.getElementById('dica').textContent='Passe o mouse sobre os estados para destacar')
+    .on('click',(e,d)=>{if(ATIVOS[d.properties.sigla]) selecionar(d.properties.sigla);});
 
-  // Aplicar visual conforme permissões
-  ESTADOS_ATIVOS.forEach(est=>{
-    const temAcesso=estadosPermitidos.includes(est)||perfil?.role==='admin';
-    const mapEl=document.getElementById('map-'+est);
-    const cardEl=document.getElementById('card-'+est);
-    if(!temAcesso){
-      if(mapEl){mapEl.classList.remove('ativo');mapEl.classList.add('bloqueado');mapEl.onclick=null;}
-      if(cardEl){cardEl.classList.remove('ativo');cardEl.classList.add('bloqueado');cardEl.onclick=null;}
-    }
-  });
+  // Labels dos estados ativos
+  svg.selectAll('text')
+    .data(geo.features.filter(d=>ATIVOS[d.properties.sigla]))
+    .enter()
+    .append('text')
+    .attr('x',d=>path.centroid(d)[0])
+    .attr('y',d=>path.centroid(d)[1]+4)
+    .attr('text-anchor','middle')
+    .attr('font-size',10)
+    .attr('font-weight','700')
+    .attr('fill','white')
+    .attr('pointer-events','none')
+    .text(d=>d.properties.sigla);
 });
 
-function selecionarEstado(est){
-  const perfil=estadosPermitidos;
-  // Verificar acesso (admin sempre tem acesso)
-  if(!perfil.includes(est)){
-    document.getElementById('msg-acesso').style.display='block';
-    setTimeout(()=>document.getElementById('msg-acesso').style.display='none',3000);
-    return;
-  }
-  // Salvar estado selecionado e ir para visões
-  localStorage.setItem('ceneged_estado_selecionado',est);
-  window.location.href=VISOES_URL;
-}
-
-async function fazerLogout(){
-  await sb.auth.signOut();
-  localStorage.removeItem('ceneged_ultima_atividade');
-  localStorage.removeItem('ceneged_estado_selecionado');
-  window.location.href=LOGIN_URL;
+function selecionar(est){
+  document.getElementById('dica').textContent=`✓ Acessando ${ATIVOS[est]}...`;
 }
 </script>
 </body>

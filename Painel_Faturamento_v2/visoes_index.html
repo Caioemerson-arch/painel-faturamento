@@ -275,6 +275,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <select id="rs-est" onchange="syncRegsResum();carregarResumida()">
           <option value="MA">Maranhão</option>
           <option value="PI">Piauí</option>
+          <option value="RJ">Rio de Janeiro</option>
           <option value="TODOS">Consolidado</option>
         </select>
         <label>Regional</label>
@@ -347,6 +348,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <select id="g-est" onchange="syncRegsGeral();carregarGeral()">
           <option value="MA">Maranhão</option>
           <option value="PI">Piauí</option>
+          <option value="RJ">Rio de Janeiro</option>
           <option value="TODOS">Consolidado</option>
         </select>
         <label>Mês</label><select id="g-mes" onchange="carregarGeral()"></select>
@@ -419,6 +421,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <select id="r-est" onchange="syncRegsReg();carregarRegional()">
           <option value="MA">Maranhão</option>
           <option value="PI">Piauí</option>
+          <option value="RJ">Rio de Janeiro</option>
         </select>
         <label>Regional</label><select id="r-reg" onchange="carregarRegional()"></select>
         <label>Mês</label><select id="r-mes" onchange="carregarRegional()"></select>
@@ -466,6 +469,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <select id="s-est" onchange="syncRegsServ();carregarServico()">
           <option value="MA">Maranhão</option>
           <option value="PI">Piauí</option>
+          <option value="RJ">Rio de Janeiro</option>
           <option value="TODOS">Consolidado</option>
         </select>
         <label>Regional</label><select id="s-reg" onchange="carregarServico()"><option value="">Todas</option></select>
@@ -489,6 +493,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <select id="cmp-est" onchange="carregarComparativo()">
           <option value="MA">Maranhão</option>
           <option value="PI">Piauí</option>
+          <option value="RJ">Rio de Janeiro</option>
         </select>
       </div>
       <div id="cmp-sel-box" style="margin-bottom:1.25rem">
@@ -581,7 +586,7 @@ let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
 
 // ═══ CONSTANTES ═══
 const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['PIAUÍ']};
+const REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['PIAUÍ'],RJ:['COMERCIAL','TECNICA']};
 const CS=['#BE2F3B','#378ADD','#1D9E75','#BA7517','#533AB7','#D4537E','#888780','#0F6E56','#7F77DD'];
 const TABS_LABELS={resumida:'Análise Faturamento Geral',geral:'Análise Mensal',regional:'Análise Por Regional',servico:'Análise Por Serviço',comparativo:'Comparativo de Cadernos'};
 const TABS_EXPORT=['resumida','geral','regional','servico'];
@@ -1167,7 +1172,7 @@ async function exportarRelRegPDF(){
 // ═══ EXCEL ═══
 function preencherModalExcel(){
   const ano=new Date().getFullYear(),mes=new Date().getMonth()+1;
-  const xl=document.getElementById('xl-est');if(xl){xl.innerHTML='<option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option>';xl.addEventListener('change',()=>{const e=xl.value;document.getElementById('xl-reg').innerHTML='<option value="">Todas</option>'+(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');});}
+  const xl=document.getElementById('xl-est');if(xl){xl.innerHTML='<option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="RJ">Rio de Janeiro</option><option value="TODOS">Consolidado</option>';xl.addEventListener('change',()=>{const e=xl.value;document.getElementById('xl-reg').innerHTML='<option value="">Todas</option>'+(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');});}
   ['xl-mes-ini','xl-mes-fim'].forEach(id=>{const s=document.getElementById(id);if(s) s.innerHTML=MN.slice(1).map((n,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${n}</option>`).join('');});
   ['xl-ano-ini','xl-ano-fim'].forEach(id=>{const s=document.getElementById(id);if(s) s.innerHTML=[ano-1,ano,ano+1].map(a=>`<option value="${a}" ${a===ano?'selected':''}>${a}</option>`).join('');});
 }

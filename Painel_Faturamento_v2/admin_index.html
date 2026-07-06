@@ -395,7 +395,13 @@ async function carregarUsuarios(){
                 </label>`).join('')}
             </div>
             <div>
-              <div class="perm-sec">Uploads (analista)</div>
+              <div class="perm-sec">Estados permitidos</div>
+              ${[{id:'MA',label:'Maranhão'},{id:'PI',label:'Piauí'},{id:'RJ',label:'Rio de Janeiro'}].map(e=>`
+                <label class="perm-item">
+                  <input type="checkbox" id="est-${u.id}-${e.id}" ${(u.estados_permitidos||['MA','PI','RJ']).includes(e.id)?'checked':''}>
+                  ${e.label}
+                </label>`).join('')}
+              <div class="perm-sec" style="margin-top:12px">Uploads (analista)</div>
               <label class="perm-item"><input type="checkbox" id="pp-${u.id}" ${u.perm_producao?'checked':''}> Importar Serviços CNG</label>
               <label class="perm-item"><input type="checkbox" id="pb-${u.id}" ${u.perm_boletim?'checked':''}> Importar Boletim EQTL</label>
             </div>
@@ -437,17 +443,24 @@ function togglePainel(id,chevronId){
 async function salvarPermissoesUsuario(userId){
   const ABAS_IDS=ABAS_DISP.map(a=>a.id);
   const abas=ABAS_IDS.filter(a=>{const el=document.getElementById('aba-'+userId+'-'+a);return el&&el.checked;});
+  const estados=['MA','PI','RJ'].filter(e=>{const el=document.getElementById('est-'+userId+'-'+e);return el&&el.checked;});
   const role=document.getElementById('role-'+userId)?.value||'viewer';
   const perm_producao=document.getElementById('pp-'+userId)?.checked||false;
   const perm_boletim=document.getElementById('pb-'+userId)?.checked||false;
   const perm_exportar_pdf=document.getElementById('ppdf-'+userId)?.checked||false;
   const perm_exportar_excel=document.getElementById('pxls-'+userId)?.checked||false;
-  const {error}=await sb.rpc('atualizar_permissoes_usuario',{
+
+  // Salvar permissões via RPC
+  const {error:e1}=await sb.rpc('atualizar_permissoes_usuario',{
     p_id:userId,p_role:role,p_abas:abas,
     p_perm_producao:perm_producao,p_perm_boletim:perm_boletim,
     p_perm_exportar_pdf:perm_exportar_pdf,p_perm_exportar_excel:perm_exportar_excel
   });
-  return error;
+
+  // Salvar estados diretamente
+  const {error:e2}=await sb.from('usuarios_perfil').update({estados_permitidos:estados}).eq('id',userId);
+
+  return e1||e2;
 }
 
 // ═══ SALVAR TODAS (botão do cabeçalho) ═══

@@ -543,7 +543,7 @@ const SURL='https://wcefqhivhaejueenburz.supabase.co';
 const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
 const {createClient}=supabase;
 const sb=createClient(SURL,SKEY);
-const INATIVIDADE_MS=60*60*1000;
+const INATIVIDADE_MS=10*60*1000; // 10 minutos
 const LOGIN_URL='/Painel_Faturamento_v2/index.html';
 
 // ═══ ESTADO ═══

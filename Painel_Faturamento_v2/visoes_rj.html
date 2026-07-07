@@ -481,17 +481,31 @@ window.addEventListener('load',async()=>{
 });
 
 // ═══ CACHE ═══
+async function buscarTodos(tabela, filtros={}){
+  let todos=[], from=0, tam=1000;
+  while(true){
+    let q=sb.from(tabela).select('*').range(from, from+tam-1);
+    Object.entries(filtros).forEach(([k,v])=>{ q=q.eq(k,v); });
+    const {data,error}=await q;
+    if(error||!data||!data.length) break;
+    todos=[...todos,...data];
+    if(data.length<tam) break;
+    from+=tam;
+  }
+  return todos;
+}
+
 async function carregarCache(){
   const [c1,c2,c3,c4,c5]=await Promise.all([
     sb.from('cadernos').select('*').eq('estado',ESTADO).eq('ativo',true),
     sb.from('caderno_tarifas').select('*').eq('estado',ESTADO),
-    sb.from('producao_real').select('*').eq('estado',ESTADO).eq('ativo',true).limit(5000),
+    buscarTodos('producao_real',{estado:ESTADO,ativo:true}),
     sb.from('boletins').select('*').eq('estado',ESTADO),
     sb.from('boletim_itens').select('*')
   ]);
   C.cads=c1.data||[];
   C.tars=c2.data||[];
-  C.prod=c3.data||[];
+  C.prod=Array.isArray(c3)?c3:(c3.data||[]);
   C.bols=c4.data||[];
   C.itens=c5.data||[];
 }
@@ -520,23 +534,17 @@ function calcPrevEvt(mes,ano,reg='',proc=''){
 }
 
 function calcExec(mes,ano,reg='',proc=''){
-  // Para tarifa: respeita filtro de processo (para calcular previsto correto)
-  // Para produção: usa todas da regional (produção não tem processo)
-  // Para o tarMap: usa TODAS as tarifas da regional para encontrar o preço certo
-  const tarMapCompleto={};
-  C.tars.filter(t=>C.cads.map(c=>c.id).includes(t.caderno_id)&&(!reg||t.regional===reg))
-    .forEach(t=>tarMapCompleto[t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
-  // Calcular média por regional como fallback
-  const mediaReg={};
-  ['COMERCIAL','TECNICA'].forEach(r=>{
-    const tr=C.tars.filter(t=>t.regional===r&&C.cads.map(c=>c.id).includes(t.caderno_id));
-    if(tr.length) mediaReg[r]=tr.reduce((s,t)=>s+(parseFloat(t.preco_unitario)||0),0)/tr.length;
-  });
+  // Mapa completo de tarifas da regional (sem filtro de processo)
+  const cadIds=new Set(C.cads.map(c=>c.id));
+  const tarMap={};
+  C.tars.filter(t=>cadIds.has(t.caderno_id)&&(!reg||t.regional===reg))
+    .forEach(t=>tarMap[t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
   let val=0,evt=0;
   getProd(mes,ano,reg,proc).forEach(p=>{
-    let tar=tarMapCompleto[p.regional+'|'+p.cod_servico]||0;
-    if(!tar) tar=mediaReg[p.regional]||0;
-    val+=p.qde_executada*tar;evt+=p.qde_executada;
+    const tar=tarMap[p.regional+'|'+p.cod_servico]||0;
+    // Só calcular faturamento se encontrar tarifa correspondente
+    if(tar>0) val+=p.qde_executada*tar;
+    evt+=p.qde_executada;
   });
   return {val,evt};
 }

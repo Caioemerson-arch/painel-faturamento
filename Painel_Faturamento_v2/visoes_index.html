@@ -714,15 +714,24 @@ function getTarifas(estado,mes,ano,reg='',proc=''){
     if(!ids.has(t.caderno_id)) return false;
     if(estado!=='TODOS'&&t.estado!==estado) return false;
     if(reg&&t.regional!==reg) return false;
-    if(proc&&isRJ(estado)&&t.processo!==proc) return false;
+    // Para RJ: filtrar por processo se especificado
+    if(proc&&isRJ(t.estado)&&t.processo&&t.processo!==proc) return false;
     return true;
   });
 }
+// Mapeamento processo → regional RJ
+const RJ_PROC_REG_V={'ANEXO IV':'COMERCIAL','CORE':'COMERCIAL','LIDE':'COMERCIAL','REN':'COMERCIAL','Linha Morta':'TECNICA','Linha Viva':'TECNICA'};
+
 function getProd(estado,mes,ano,reg='',proc=''){
   return C.prod.filter(r=>{
     if(r.mes!==mes||r.ano!==ano) return false;
     if(estado!=='TODOS'&&r.estado!==estado) return false;
     if(reg&&r.regional!==reg) return false;
+    // Para RJ com processo: filtrar pela regional derivada do processo
+    if(proc&&isRJ(r.estado)){
+      const regEsperada=RJ_PROC_REG_V[proc];
+      if(regEsperada&&r.regional!==regEsperada) return false;
+    }
     return true;
   });
 }
@@ -735,12 +744,25 @@ function calcPrevEvt(est,m,a,r='',proc=''){return getTarifas(est,m,a,r,proc).red
 function calcExec(est,m,a,r='',proc=''){
   const tars=getTarifas(est,m,a,r,proc);
   const tarMap={};tars.forEach(t=>tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
+  // Para RJ: calcular média de preço por regional quando cod_servico não bater
+  const mediaRJ={};
+  if(isRJ(est)){
+    const regsRJ=['COMERCIAL','TECNICA'];
+    regsRJ.forEach(reg=>{
+      const tReg=C.tars.filter(t=>t.estado==='RJ'&&t.regional===reg&&(!proc||t.processo===proc));
+      if(tReg.length) mediaRJ[reg]=tReg.reduce((s,t)=>s+(parseFloat(t.preco_unitario)||0),0)/tReg.length;
+    });
+  }
   let val=0,evt=0;
-  getProd(est,m,a,r,proc).forEach(p=>{const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=p.qde_executada*tar;evt+=p.qde_executada;});
+  getProd(est,m,a,r,proc).forEach(p=>{
+    let tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;
+    if(!tar&&isRJ(est)) tar=mediaRJ[p.regional]||0;
+    val+=p.qde_executada*tar;evt+=p.qde_executada;
+  });
   return {val,evt};
 }
-function calcPago(est,m,a,r=''){
-  if(isRJ(est)) return {val:0,evt:0};
+function calcPago(est,m,a,r='',proc=''){
+  if(isRJ(est)) return calcExec(est,m,a,r,proc); // RJ: Pago = Executado
   let val=0,evt=0;getItens(est,m,a,r).forEach(i=>{val+=(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0);evt+=parseFloat(i.qde_paga)||0;});return {val,evt};
 }
 
@@ -977,7 +999,8 @@ function renderTbProp(est,mes,ano,reg=''){
 
 function renderTbDivergRel(est,mes,ano){
   const el=document.getElementById('relatorio-divergencia');if(!el) return;
-  const THRESHOLD_TAR=0.01;const estados=est==='TODOS'?['MA','PI','RJ']:[est];let htmlTotal='',temDiv=false;
+  if(isRJ(est)){el.innerHTML='<p style="color:var(--tx2);font-style:italic;text-align:center;padding:1rem">Relatório de divergência não disponível para Rio de Janeiro.</p>';return;}
+  const THRESHOLD_TAR=0.01;const estados=est==='TODOS'?['MA','PI']:[est];let htmlTotal='',temDiv=false;
   estados.forEach(estado=>{
     const regs=REGS[estado]||[];const tars=getTarifas(estado,mes,ano);if(!tars.length) return;
     const divPorReg={};
@@ -988,7 +1011,7 @@ function renderTbDivergRel(est,mes,ano){
       if(itensReg.length) divPorReg[reg]=itensReg;});
     if(!Object.keys(divPorReg).length) return;temDiv=true;
     const totalEstado=Object.values(divPorReg).flat().reduce((s,i)=>s+i.totValNaoPago,0);
-    htmlTotal+=`<div style="margin-bottom:1.5rem"><div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--vm);margin-bottom:12px"><strong style="font-size:14px;color:var(--pt)">${estado==='MA'?'Maranhão':'Piauí'} · Jan→${MN[mes]}/${ano}</strong><span style="font-size:13px;font-weight:700;color:${totalEstado<0?'#BE2F3B':'#1D9E75'}">Divergência total: ${totalEstado<0?'':'+'}${fR(totalEstado)}</span></div>`;
+    htmlTotal+=`<div style="margin-bottom:1.5rem"><div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--vm);margin-bottom:12px"><strong style="font-size:14px;color:var(--pt)">${estado==='MA'?'Maranhão':estado==='PI'?'Piauí':'Rio de Janeiro'} · Jan→${MN[mes]}/${ano}</strong><span style="font-size:13px;font-weight:700;color:${totalEstado<0?'#BE2F3B':'#1D9E75'}">Divergência total: ${totalEstado<0?'':'+'}${fR(totalEstado)}</span></div>`;
     Object.entries(divPorReg).forEach(([reg,svcs])=>{const totalReg=svcs.reduce((s,i)=>s+i.totValNaoPago,0);htmlTotal+=`<div style="margin-bottom:14px;padding-left:12px;border-left:3px solid var(--bd)"><p style="font-weight:700;color:var(--pt);margin-bottom:8px">Regional ${reg} <span style="font-weight:400;font-size:12px;color:${totalReg<0?'#BE2F3B':'#1D9E75'}">&nbsp;·&nbsp; ${totalReg<0?'':'+'}${fR(totalReg)}</span></p>`;svcs.forEach(s=>{const dirQtd=s.totDivQtd<0?'a menos':'a mais';const corValor=s.totValNaoPago<0?'#BE2F3B':'#1D9E75';const mesIni='Janeiro';const mesFim=MN[mes];htmlTotal+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px"><span style="font-weight:700;color:var(--pt)">${s.desc}:</span> A ${estado==='RJ'?'contratante':'Equatorial'} pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo entre os meses de <strong>${mesIni} e ${mesFim}</strong>, representando um impacto financeiro de <strong style="color:${corValor}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>.</p>`;});htmlTotal+='</div>';});
     htmlTotal+='</div>';});
   if(!temDiv){el.innerHTML='<p style="color:var(--tx2);text-align:center;padding:1rem">Nenhuma divergência relevante detectada no período.</p>';return;}
@@ -1123,8 +1146,7 @@ function carregarResumida(){
     bodyFat.innerHTML=
       `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vm)">Faturamento Previsto (Caderno)</td>`+valsPrev.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPrev)}</td></tr>`+
       `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vd)">Faturamento Executado (Campo)</td>`+valsExec.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totExec)}</td></tr>`+
-      (isRJ(est)?'':
-      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--az)">Faturamento Pago (Equatorial)</td>`+valsPago.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPago)}</td></tr>`)+
+      (isRJ(est)?'':`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--az)">Faturamento Pago (Equatorial)</td>`+valsPago.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPago)}</td></tr>`)+
       `<tr style="border-top:2px solid var(--vd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#3B6D11">% Exec. vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsExec[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totExec,totPrev))}</td></tr>`+
       (isRJ(est)?'':
       `<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#185FA5">% Pago vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totPago,totPrev))}</td></tr>`);

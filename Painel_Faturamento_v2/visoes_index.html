@@ -48,6 +48,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 .sb-out:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.7)}
 .sidebar.recolhida .sb-bottom{padding:12px 6px}
 .sidebar.recolhida .sb-out{justify-content:center;padding:6px;width:40px;margin:0 auto 6px}
+.sidebar.recolhida #bloco-status-dados{display:none}
 
 /* MAIN */
 .main{margin-left:var(--sb-w);display:flex;flex-direction:column;min-height:100vh;transition:margin-left .2s ease}
@@ -198,7 +199,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     </a>
   </div>
   <!-- ATUALIZAÇÃO DE DADOS -->
-  <div style="border-top:1px solid rgba(255,255,255,.08)">
+  <div style="border-top:1px solid rgba(255,255,255,.08)" id="bloco-status-dados">
     <button onclick="toggleStatusDados()" style="width:100%;display:flex;align-items:center;gap:9px;padding:10px 14px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;text-align:left" id="btn-status-dados">
       <i class="ti ti-cloud-upload" style="font-size:16px;flex-shrink:0" aria-hidden="true"></i>
       <span class="sb-item-span">Atualização de Dados</span>
@@ -230,6 +231,9 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
   </div>
 
   <div class="sb-bottom">
+    <button class="sb-out" onclick="window.location.href='/Painel_Faturamento_v2/mapa.html'" style="color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.25)">
+      <i class="ti ti-arrow-left" aria-hidden="true"></i><span>Área comum</span>
+    </button>
     <button class="sb-out" onclick="toggleModalSenha()">
       <i class="ti ti-key" aria-hidden="true"></i><span>Alterar senha</span>
     </button>

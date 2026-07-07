@@ -838,11 +838,15 @@ function syncProc(prefixo){
   const e=document.getElementById(prefixo+'-est')?.value||'MA';
   const s=document.getElementById(prefixo+'-proc');
   if(!s) return;
-  const procs=PROCS[e]||PROCS.MA;
   const cur=s.value;
-  s.innerHTML=procs.map(p=>`<option value="${p.v}">${p.l}</option>`).join('');
-  // Manter seleção se ainda válida
-  if(procs.find(p=>p.v===cur)) s.value=cur;
+  const procs=PROCS[e]||PROCS.MA;
+  // Para RJ: adicionar opção "Todos" no início
+  if(isRJ(e)){
+    s.innerHTML='<option value="">Todos os processos</option>'+procs.map(p=>`<option value="${p.v}">${p.l}</option>`).join('');
+  } else {
+    s.innerHTML=procs.map(p=>`<option value="${p.v}">${p.l}</option>`).join('');
+  }
+  if(cur&&[...s.options].find(o=>o.value===cur)) s.value=cur;
 }
 function syncRegsGeral(){const e=document.getElementById('g-est')?.value||'MA';const s=document.getElementById('g-reg');if(s){const cur=s.value;s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[e]||[])).map(r=>`<option>${r}</option>`).join('');if(cur&&[...s.options].find(o=>o.value===cur)) s.value=cur;}syncProc('g');}
 function syncRegsServ(){const e=document.getElementById('s-est')?.value||'MA';const s=document.getElementById('s-reg');if(s){const cur=s.value;s.innerHTML='<option value="">Todas</option>'+(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');if(cur&&[...s.options].find(o=>o.value===cur)) s.value=cur;}syncProc('s');}
@@ -858,7 +862,7 @@ async function carregarGeral(){
   const proc=document.getElementById('g-proc')?.value||'';
   syncRegsGeral();atualizarPageSub();
 
-  // Para MA/PI sem dados de processo
+  // Para MA/PI: bloquear processos sem dados ainda
   if(!isRJ(est)&&proc&&proc!=='leitura'){
     const msg='<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--tx2);font-style:italic">Dados em apuração, em breve será apresentado.</td></tr>';
     ['tb-evt-reg','tb-fat-reg','tb-ytd-reg','tb-tar','tb-prop'].forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=msg;});
@@ -1124,8 +1128,8 @@ function carregarResumida(){
   const tabIds=['tb-rs-fat-body','tb-rs-evt-body','tb-rs-dif-cad-body','tb-rs-dif-exec-cad-body','tb-rs-dif-exec-body'];
   const headIds=['tr-rs-fat-head','tr-rs-evt-head','tr-rs-dif-cad-head','tr-rs-dif-exec-cad-head','tr-rs-dif-exec-head'];
 
-  // Processo sem dados ainda
-  if(proc!=='leitura'){
+  // Processo sem dados ainda — apenas para MA/PI
+  if(!isRJ(est)&&proc&&proc!=='leitura'){
     tabIds.forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:2rem;color:var(--tx2);font-style:italic">Dados em apuração, em breve será apresentado.</td></tr>`;});
     headIds.forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML='';});
     return;

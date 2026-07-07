@@ -509,8 +509,12 @@ function parsearProducao(wb){
   if(!rows.length){
     const ws=wb.Sheets['RJ'];
     if(ws){
-      const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:2});
-      r.forEach(row=>{if(!row.ESTADO) row.ESTADO='RJ';if(!row.REGIONAL&&row.PROCESSO) row.REGIONAL=derivarRegionalRJ(row.PROCESSO);});
+      // Linha 1: título, Linha 2: instrução, Linha 3: cabeçalho → range:3
+      const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:3});
+      r.forEach(row=>{
+        if(!row.ESTADO) row.ESTADO='RJ';
+        if(!row.REGIONAL&&row.PROCESSO) row.REGIONAL=derivarRegionalRJ(row.PROCESSO);
+      });
       rows.push(...r);
     } else {
       // Tentar outras abas possíveis exceto Instruções
@@ -518,7 +522,7 @@ function parsearProducao(wb){
       if(abasValidas.length){
         const ws2=wb.Sheets[abasValidas[0]];
         if(ws2){
-          const r=XLSX.utils.sheet_to_json(ws2,{defval:'',range:2});
+          const r=XLSX.utils.sheet_to_json(ws2,{defval:'',range:3});
           r.forEach(row=>{if(!row.ESTADO) row.ESTADO='RJ';if(!row.REGIONAL&&row.PROCESSO) row.REGIONAL=derivarRegionalRJ(row.PROCESSO);});
           rows.push(...r);
         }

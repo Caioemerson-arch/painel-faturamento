@@ -496,20 +496,42 @@ function lerAbas(wb){
   return rows;
 }
 
+// Mapeamento processo → regional para RJ
+const RJ_PROC_REG={'ANEXO IV':'COMERCIAL','CORE':'COMERCIAL','LIDE':'COMERCIAL','REN':'COMERCIAL','Linha Morta':'TECNICA','Linha Viva':'TECNICA'};
+function derivarRegionalRJ(proc){return RJ_PROC_REG[String(proc||'').trim()]||'COMERCIAL';}
+
 function parsearProducao(wb){
   dadosProd=[];let erros=0,dups=[];
-  lerAbas(wb).forEach(r=>{
-    if(!r.MES||!r.ANO||!r.REGIONAL||!r.COD_SERVICO||r.QTD_EXECUTADA===''){erros++;return;}
-    const mes=parseInt(r.MES),ano=parseInt(r.ANO),est=String(r.ESTADO).trim(),reg=String(r.REGIONAL).trim(),cod=String(r.COD_SERVICO).trim();
+  const rows=[];
+  // Ler abas MA e PI normalmente
+  ['MA','PI'].forEach(est=>{const ws=wb.Sheets[est];if(!ws) return;const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:2});r.forEach(row=>{if(!row.ESTADO) row.ESTADO=est;});rows.push(...r);});
+  // Se não encontrou MA ou PI, ler a primeira aba (arquivo RJ)
+  if(!rows.length){
+    const primeiraAba=wb.SheetNames[0];
+    const ws=wb.Sheets[primeiraAba];
+    if(ws){
+      const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:2});
+      r.forEach(row=>{if(!row.ESTADO) row.ESTADO='RJ';if(!row.REGIONAL&&row.PROCESSO) row.REGIONAL=derivarRegionalRJ(row.PROCESSO);});
+      rows.push(...r);
+    }
+  }
+  rows.forEach(r=>{
+    if(!r.MES||!r.ANO||!r.COD_SERVICO||r.QTD_EXECUTADA===''){erros++;return;}
+    const mes=parseInt(r.MES),ano=parseInt(r.ANO),est=String(r.ESTADO||'').trim();
+    let reg=String(r.REGIONAL||'').trim();
+    if(est==='RJ'&&!reg) reg=derivarRegionalRJ(r.PROCESSO);
+    if(est==='PI') reg='PIAUÍ';
+    const cod=String(r.COD_SERVICO).trim();
+    const proc=String(r.PROCESSO||'').trim();
     const ja=C.prod.find(p=>p.mes===mes&&p.ano===ano&&p.estado===est&&p.regional===reg&&p.cod_servico===cod);
     if(ja){const dk=`${mA(mes,ano)} — ${est} — ${reg}`;if(!dups.includes(dk)) dups.push(dk);}
-    dadosProd.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),qde_executada:parseInt(r.QTD_EXECUTADA)||0,_dup:!!ja});
+    dadosProd.push({mes,ano,estado:est,regional:reg,processo:proc,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),qde_executada:parseInt(r.QTD_EXECUTADA)||0,_dup:!!ja});
   });
   if(!dadosProd.length){alert('Nenhum dado encontrado.');return;}
-  document.getElementById('prod-st-txt').textContent=`${dadosProd.length} registros carregados${erros?` (${erros} ignorados)`:''}`;
+  document.getElementById('prod-st-txt').textContent=dadosProd.length+' registros carregados'+(erros?' ('+erros+' ignorados)':'');
   const da=document.getElementById('prod-dup-al');
-  if(dups.length){document.getElementById('prod-dup-txt').textContent=`Já importados — serão substituídos: ${dups.join(', ')}`;da.style.display='flex';}else da.style.display='none';
-  document.getElementById('tb-pv-prod').innerHTML=dadosProd.map(r=>`<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;font-weight:700">${fN(r.qde_executada)}</td><td>${r._dup?'<span class="pill p-warn">Substituirá</span>':'<span class="pill p-ok">Novo</span>'}</td></tr>`).join('');
+  if(dups.length){document.getElementById('prod-dup-txt').textContent='Já importados — serão substituídos: '+dups.join(', ');da.style.display='flex';}else da.style.display='none';
+  document.getElementById('tb-pv-prod').innerHTML=dadosProd.map(r=>'<tr><td>'+mA(r.mes,r.ano)+'</td><td>'+r.estado+'</td><td>'+r.regional+'</td><td style="font-size:11px;color:var(--tx2)">'+(r.processo||'—')+'</td><td style="font-size:11px">'+r.descricao_servico+'</td><td style="text-align:right;font-weight:700">'+fN(r.qde_executada)+'</td><td>'+(r._dup?'<span class="pill p-warn">Substituirá</span>':'<span class="pill p-ok">Novo</span>')+'</td></tr>').join('');
   document.getElementById('pv-prod').style.display='block';
 }
 

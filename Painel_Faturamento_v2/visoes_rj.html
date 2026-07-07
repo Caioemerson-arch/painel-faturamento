@@ -485,7 +485,7 @@ async function carregarCache(){
   const [c1,c2,c3,c4,c5]=await Promise.all([
     sb.from('cadernos').select('*').eq('estado',ESTADO).eq('ativo',true),
     sb.from('caderno_tarifas').select('*').eq('estado',ESTADO),
-    sb.from('producao_real').select('*').eq('estado',ESTADO).eq('ativo',true),
+    sb.from('producao_real').select('*').eq('estado',ESTADO).eq('ativo',true).limit(5000),
     sb.from('boletins').select('*').eq('estado',ESTADO),
     sb.from('boletim_itens').select('*')
   ]);
@@ -503,14 +503,10 @@ function getTarifas(reg='',proc=''){
 }
 
 function getProd(mes,ano,reg='',proc=''){
+  // Produção não tem campo processo — filtrar apenas por regional
   return C.prod.filter(r=>{
     if(r.mes!==mes||r.ano!==ano) return false;
     if(reg&&r.regional!==reg) return false;
-    // Filtrar por processo via regional derivada
-    if(proc){
-      const regEsperada=proc==='Linha Morta'||proc==='Linha Viva'?'TECNICA':'COMERCIAL';
-      if(r.regional!==regEsperada) return false;
-    }
     return true;
   });
 }
@@ -524,17 +520,21 @@ function calcPrevEvt(mes,ano,reg='',proc=''){
 }
 
 function calcExec(mes,ano,reg='',proc=''){
-  const tars=getTarifas(reg,proc);
-  const tarMap={};tars.forEach(t=>tarMap[t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
-  // Calcular média por regional para fallback
+  // Para tarifa: respeita filtro de processo (para calcular previsto correto)
+  // Para produção: usa todas da regional (produção não tem processo)
+  // Para o tarMap: usa TODAS as tarifas da regional para encontrar o preço certo
+  const tarMapCompleto={};
+  C.tars.filter(t=>C.cads.map(c=>c.id).includes(t.caderno_id)&&(!reg||t.regional===reg))
+    .forEach(t=>tarMapCompleto[t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
+  // Calcular média por regional como fallback
   const mediaReg={};
   ['COMERCIAL','TECNICA'].forEach(r=>{
-    const tr=C.tars.filter(t=>t.regional===r&&(!proc||t.processo===proc));
+    const tr=C.tars.filter(t=>t.regional===r&&C.cads.map(c=>c.id).includes(t.caderno_id));
     if(tr.length) mediaReg[r]=tr.reduce((s,t)=>s+(parseFloat(t.preco_unitario)||0),0)/tr.length;
   });
   let val=0,evt=0;
   getProd(mes,ano,reg,proc).forEach(p=>{
-    let tar=tarMap[p.regional+'|'+p.cod_servico]||0;
+    let tar=tarMapCompleto[p.regional+'|'+p.cod_servico]||0;
     if(!tar) tar=mediaReg[p.regional]||0;
     val+=p.qde_executada*tar;evt+=p.qde_executada;
   });

@@ -490,11 +490,15 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     <div id="tab-comparativo" style="display:none">
       <div class="fil">
         <label>Estado</label>
-        <select id="cmp-est" onchange="carregarComparativo()">
+        <select id="cmp-est" onchange="syncCmpFiltros();carregarComparativo()">
           <option value="MA">Maranhão</option>
           <option value="PI">Piauí</option>
           <option value="RJ">Rio de Janeiro</option>
         </select>
+        <label>Processo</label>
+        <select id="cmp-proc" onchange="carregarComparativo()"></select>
+        <label>Regional</label>
+        <select id="cmp-reg" onchange="carregarComparativo()"><option value="">Todas</option></select>
       </div>
       <div id="cmp-sel-box" style="margin-bottom:1.25rem">
         <div class="sec">Selecione os cadernos para comparar</div>
@@ -587,6 +591,11 @@ let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
 // ═══ CONSTANTES ═══
 const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['PIAUÍ'],RJ:['COMERCIAL','TECNICA']};
+const PROCS={MA:[{v:'leitura',l:'Leitura'},{v:'cobranca',l:'Cob. e Negociação'},{v:'atendimento',l:'Atendimento'}],PI:[{v:'leitura',l:'Leitura'},{v:'cobranca',l:'Cob. e Negociação'},{v:'atendimento',l:'Atendimento'}],RJ:[{v:'ANEXO IV',l:'ANEXO IV'},{v:'CORE',l:'CORE'},{v:'LIDE',l:'LIDE'},{v:'REN',l:'REN'},{v:'Linha Morta',l:'Linha Morta'},{v:'Linha Viva',l:'Linha Viva'}]};
+function isRJ(est){return est==='RJ';}
+function procAtual(prefixo){return document.getElementById(prefixo+'-proc')?.value||'';}
+function lblPago(est){return isRJ(est)?null:'Pago (Equatorial)';}
+function lblContratante(est){return isRJ(est)?'Executado (Campo)':'Pago (Equatorial)';}
 const CS=['#BE2F3B','#378ADD','#1D9E75','#BA7517','#533AB7','#D4537E','#888780','#0F6E56','#7F77DD'];
 const TABS_LABELS={resumida:'Análise Faturamento Geral',geral:'Análise Mensal',regional:'Análise Por Regional',servico:'Análise Por Serviço',comparativo:'Comparativo de Cadernos'};
 const TABS_EXPORT=['resumida','geral','regional','servico'];
@@ -650,7 +659,7 @@ async function iniciarApp(user){
 
   preencherPeriodos();
   preencherModalExcel();
-  syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();
+  syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();syncCmpFiltros();
   await carregarCache();
   preencherStatusDados();
 
@@ -663,7 +672,7 @@ async function iniciarApp(user){
     if(selS) selS.value=estSelecionado;
     const selRs=document.getElementById('rs-est');
     if(selRs) selRs.value=estSelecionado;
-    syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();
+    syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();syncCmpFiltros();
   }
 
   // Determinar primeira aba visível e carregar após cache pronto
@@ -699,25 +708,41 @@ function getCadAtivo(estado,mes,ano){
     return mn>=ini&&mn<=fim;
   });
 }
-function getTarifas(estado,mes,ano,reg=''){
+function getTarifas(estado,mes,ano,reg='',proc=''){
   const ids=new Set(getCadAtivo(estado,mes,ano).map(c=>c.id));
-  return C.tars.filter(t=>ids.has(t.caderno_id)&&(estado==='TODOS'||t.estado===estado)&&(!reg||t.regional===reg));
+  return C.tars.filter(t=>{
+    if(!ids.has(t.caderno_id)) return false;
+    if(estado!=='TODOS'&&t.estado!==estado) return false;
+    if(reg&&t.regional!==reg) return false;
+    if(proc&&isRJ(estado)&&t.processo!==proc) return false;
+    return true;
+  });
 }
-function getProd(estado,mes,ano,reg=''){return C.prod.filter(r=>r.mes===mes&&r.ano===ano&&(estado==='TODOS'||r.estado===estado)&&(!reg||r.regional===reg));}
+function getProd(estado,mes,ano,reg='',proc=''){
+  return C.prod.filter(r=>{
+    if(r.mes!==mes||r.ano!==ano) return false;
+    if(estado!=='TODOS'&&r.estado!==estado) return false;
+    if(reg&&r.regional!==reg) return false;
+    return true;
+  });
+}
 function getItens(estado,mes,ano,reg=''){
   const bids=new Set(C.bols.filter(b=>b.mes===mes&&b.ano===ano&&(estado==='TODOS'||b.estado===estado)).map(b=>b.id));
   return C.itens.filter(i=>bids.has(i.boletim_id)&&(!reg||i.regional===reg));
 }
-function calcPrevisto(est,m,a,r=''){return getTarifas(est,m,a,r).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0);}
-function calcPrevEvt(est,m,a,r=''){return getTarifas(est,m,a,r).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);}
-function calcExec(est,m,a,r=''){
-  const tars=getTarifas(est,m,a,r);
+function calcPrevisto(est,m,a,r='',proc=''){return getTarifas(est,m,a,r,proc).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0);}
+function calcPrevEvt(est,m,a,r='',proc=''){return getTarifas(est,m,a,r,proc).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);}
+function calcExec(est,m,a,r='',proc=''){
+  const tars=getTarifas(est,m,a,r,proc);
   const tarMap={};tars.forEach(t=>tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
   let val=0,evt=0;
-  getProd(est,m,a,r).forEach(p=>{const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=p.qde_executada*tar;evt+=p.qde_executada;});
+  getProd(est,m,a,r,proc).forEach(p=>{const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=p.qde_executada*tar;evt+=p.qde_executada;});
   return {val,evt};
 }
-function calcPago(est,m,a,r=''){let val=0,evt=0;getItens(est,m,a,r).forEach(i=>{val+=(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0);evt+=parseFloat(i.qde_paga)||0;});return {val,evt};}
+function calcPago(est,m,a,r=''){
+  if(isRJ(est)) return {val:0,evt:0};
+  let val=0,evt=0;getItens(est,m,a,r).forEach(i=>{val+=(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0);evt+=parseFloat(i.qde_paga)||0;});return {val,evt};
+}
 
 // ═══ SIDEBAR ═══
 function toggleSidebar(){
@@ -787,10 +812,20 @@ function preencherPeriodos(){
   const sa=document.getElementById('rs-ano');
   if(sa) sa.innerHTML=[anoAtual-1,anoAtual,anoAtual+1].map(a=>`<option value="${a}" ${a===anoAtual?'selected':''}>${a}</option>`).join('');
 }
-function syncRegsGeral(){const e=document.getElementById('g-est')?.value||'MA';const s=document.getElementById('g-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[e]||[])).map(r=>`<option>${r}</option>`).join('');}
-function syncRegsServ(){const e=document.getElementById('s-est')?.value||'MA';const s=document.getElementById('s-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');}
-function syncRegsReg(){const e=document.getElementById('r-est')?.value||'MA';const s=document.getElementById('r-reg');if(s) s.innerHTML=(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');}
-function syncRegsResum(){const e=document.getElementById('rs-est')?.value||'MA';const s=document.getElementById('rs-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[e]||[])).map(r=>`<option>${r}</option>`).join('');}
+function syncProc(prefixo){
+  const e=document.getElementById(prefixo+'-est')?.value||'MA';
+  const s=document.getElementById(prefixo+'-proc');
+  if(!s) return;
+  const procs=PROCS[e]||PROCS.MA;
+  const cur=s.value;
+  s.innerHTML=procs.map(p=>`<option value="${p.v}">${p.l}</option>`).join('');
+  // Manter seleção se ainda válida
+  if(procs.find(p=>p.v===cur)) s.value=cur;
+}
+function syncRegsGeral(){const e=document.getElementById('g-est')?.value||'MA';const s=document.getElementById('g-reg');if(s){const cur=s.value;s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[e]||[])).map(r=>`<option>${r}</option>`).join('');if(cur&&[...s.options].find(o=>o.value===cur)) s.value=cur;}syncProc('g');}
+function syncRegsServ(){const e=document.getElementById('s-est')?.value||'MA';const s=document.getElementById('s-reg');if(s){const cur=s.value;s.innerHTML='<option value="">Todas</option>'+(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');if(cur&&[...s.options].find(o=>o.value===cur)) s.value=cur;}syncProc('s');}
+function syncRegsReg(){const e=document.getElementById('r-est')?.value||'MA';const s=document.getElementById('r-reg');if(s){const cur=s.value;s.innerHTML=(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');if(cur&&[...s.options].find(o=>o.value===cur)) s.value=cur;}syncProc('r');}
+function syncRegsResum(){const e=document.getElementById('rs-est')?.value||'MA';const s=document.getElementById('rs-reg');if(s){const cur=s.value;s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[e]||[])).map(r=>`<option>${r}</option>`).join('');if(cur&&[...s.options].find(o=>o.value===cur)) s.value=cur;}syncProc('rs');}
 
 // ═══ ANÁLISE MENSAL ═══
 async function carregarGeral(){
@@ -798,18 +833,22 @@ async function carregarGeral(){
   const mes=parseInt(document.getElementById('g-mes').value);
   const ano=parseInt(document.getElementById('g-ano').value);
   const reg=document.getElementById('g-reg')?.value||'';
-  const proc=document.getElementById('g-proc')?.value||'leitura';
+  const proc=document.getElementById('g-proc')?.value||'';
   syncRegsGeral();atualizarPageSub();
 
-  // Processo sem dados
-  if(proc!=='leitura'){
+  // Para MA/PI sem dados de processo
+  if(!isRJ(est)&&proc&&proc!=='leitura'){
     const msg='<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--tx2);font-style:italic">Dados em apuração, em breve será apresentado.</td></tr>';
     ['tb-evt-reg','tb-fat-reg','tb-ytd-reg','tb-tar','tb-prop'].forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=msg;});
     document.getElementById('relatorio-divergencia').innerHTML='<p style="color:var(--tx2);font-style:italic;text-align:center;padding:1rem">Dados em apuração, em breve será apresentado.</p>';
     document.getElementById('g-alerta').style.display='none';
     return;
   }
-  const prev=calcPrevisto(est,mes,ano,reg),exec=calcExec(est,mes,ano,reg),pago=calcPago(est,mes,ano,reg);
+  // Ocultar/mostrar cards de pago conforme estado
+  const rj=isRJ(est);
+  document.getElementById('g-pago')?.closest('.card')?.style && (document.getElementById('g-pago').closest('.card').style.display=rj?'none':'');
+  document.getElementById('g-ytd-pago')?.closest('.card')?.style && (document.getElementById('g-ytd-pago').closest('.card').style.display=rj?'none':'');
+  const prev=calcPrevisto(est,mes,ano,reg,proc),exec=calcExec(est,mes,ano,reg,proc),pago=calcPago(est,mes,ano,reg);
   const pctExec=prev>0?(exec.val/prev*100):0;
   const pct=prev>0?(pago.val/prev*100):0;
   document.getElementById('g-prev').textContent=fR(prev);
@@ -825,25 +864,25 @@ async function carregarGeral(){
   sp.className='cs '+(dPE>=0?'cp':'cn');
   sp.textContent=(dPE>=0?'▲ ':'▼ ')+fR(Math.abs(dPE))+(dPE>=0?' acima':' abaixo')+' do executado';
   const al=document.getElementById('g-alerta');
-  if(Math.abs(dPE)>1000&&exec.val>0){
+  if(!rj&&Math.abs(dPE)>1000&&exec.val>0){
     const pct=exec.evt>0?((pago.evt/exec.evt)*100):0;
     const direcao=dPE>0?'a mais do executado':'a menor do executado';
-    document.getElementById('g-alerta-txt').innerHTML=`Atenção: Divergência no pagamento, a Equatorial pagou <strong>${pct.toFixed(1)}%</strong> do executado real. Diferença de <strong>${fR(Math.abs(dPE))}</strong> (${direcao}).`;
+    document.getElementById('g-alerta-txt').innerHTML=`Atenção: Divergência no pagamento, ${isRJ(est)?'A contratante pagou':'A Equatorial pagou'} <strong>${pct.toFixed(1)}%</strong> do executado real. Diferença de <strong>${fR(Math.abs(dPE))}</strong> (${direcao}).`;
     al.style.display='flex';
   } else al.style.display='none';
-  renderYTD(est,mes,ano,reg);
+  renderYTD(est,mes,ano,reg,proc);
   renderGraficoMensal(est,ano,reg);
   renderGraficoDivMes(est,ano,mes,reg);
-  renderTbEvtReg(est,mes,ano,reg);
-  renderTbFatReg(est,mes,ano,reg);
-  setTimeout(()=>{renderTbYTDReg(est,mes,ano,reg);renderTbDivergRel(est,mes,ano,reg);},100);
+  renderTbEvtReg(est,mes,ano,reg,proc);
+  renderTbFatReg(est,mes,ano,reg,proc);
+  setTimeout(()=>{renderTbYTDReg(est,mes,ano,reg,proc);if(!isRJ(est)) renderTbDivergRel(est,mes,ano,reg);else document.getElementById('relatorio-divergencia').innerHTML='<p style="color:var(--tx2);font-style:italic;text-align:center;padding:1rem">Relatório não disponível para Rio de Janeiro.</p>';},100);
   renderTbTar(est,mes,ano,reg);
   renderTbProp(est,mes,ano,reg);
 }
 
 function renderYTD(est,mes,ano,reg=''){
   let ytdPrev=0,ytdExec=0,ytdPago=0;
-  for(let m=1;m<=mes;m++){ytdPrev+=calcPrevisto(est,m,ano,reg);ytdExec+=calcExec(est,m,ano,reg).val;ytdPago+=calcPago(est,m,ano,reg).val;}
+  for(let m=1;m<=mes;m++){ytdPrev+=calcPrevisto(est,m,ano,reg,proc||'');ytdExec+=calcExec(est,m,ano,reg,proc||'').val;ytdPago+=isRJ(est)?0:calcPago(est,m,ano,reg).val;}
   const pctExecYTD=ytdPrev>0?(ytdExec/ytdPrev*100):0;
   const pct=ytdPrev>0?(ytdPago/ytdPrev*100):0;
   const dEP=ytdExec-ytdPrev,dPE=ytdPago-ytdExec;
@@ -861,12 +900,13 @@ function renderGraficoMensal(est,ano,reg=''){
   const mesAtual=parseInt(document.getElementById('g-mes').value);
   const prev=[],execReal=[],pagoReal=[],execProj=[],pagoProj=[];
   let somaE=0,somaP=0,cnt=0;
-  for(let m=1;m<=mesAtual;m++){const p=calcPrevisto(est,m,ano,reg);if(p>0){somaE+=calcExec(est,m,ano,reg).val/p;somaP+=calcPago(est,m,ano,reg).val/p;cnt++;}}
+  const _proc=document.getElementById('g-proc')?.value||'';
+  for(let m=1;m<=mesAtual;m++){const p=calcPrevisto(est,m,ano,reg,_proc);if(p>0){somaE+=calcExec(est,m,ano,reg,_proc).val/p;if(!isRJ(est)) somaP+=calcPago(est,m,ano,reg).val/p;cnt++;}}
   const pctE=cnt>0?somaE/cnt:0.98,pctP=cnt>0?somaP/cnt:0.97;
   for(let m=1;m<=12;m++){
-    const p=calcPrevisto(est,m,ano,reg);prev.push(p);
-    if(m<=mesAtual){execReal.push(calcExec(est,m,ano,reg).val);pagoReal.push(calcPago(est,m,ano,reg).val);execProj.push(null);pagoProj.push(null);}
-    else{execReal.push(null);pagoReal.push(null);execProj.push(p*pctE);pagoProj.push(p*pctP);}
+    const p=calcPrevisto(est,m,ano,reg,_proc);prev.push(p);
+    if(m<=mesAtual){execReal.push(calcExec(est,m,ano,reg,_proc).val);pagoReal.push(isRJ(est)?null:calcPago(est,m,ano,reg).val);execProj.push(null);pagoProj.push(null);}
+    else{execReal.push(null);pagoReal.push(null);execProj.push(p*pctE);pagoProj.push(isRJ(est)?null:p*pctP);}
   }
   if(chMensal) chMensal.destroy();
   chMensal=new Chart(document.getElementById('ch-mensal'),{type:'bar',data:{labels:MN.slice(1),datasets:[
@@ -880,7 +920,8 @@ function renderGraficoMensal(est,ano,reg=''){
 
 function renderGraficoDivMes(est,ano,mesAtual,reg=''){
   const divs=[],cores=[];
-  for(let m=1;m<=12;m++){if(m>mesAtual){divs.push(null);cores.push('transparent');continue;}const ex=calcExec(est,m,ano,reg),pg=calcPago(est,m,ano,reg);const d=pg.val-ex.val;divs.push(d);cores.push(d<0?'#BE2F3B':'#1D9E75');}
+  const _procDiv=document.getElementById('g-proc')?.value||'';
+  for(let m=1;m<=12;m++){if(m>mesAtual){divs.push(null);cores.push('transparent');continue;}const ex=calcExec(est,m,ano,reg,_procDiv),pg=isRJ(est)?{val:0}:calcPago(est,m,ano,reg);const d=pg.val-ex.val;divs.push(isRJ(est)?null:d);cores.push(d<0?'#BE2F3B':'#1D9E75');}
   if(chPizza) chPizza.destroy();
   chPizza=new Chart(document.getElementById('ch-div-mes'),{type:'bar',data:{labels:MN.slice(1),datasets:[{label:'Divergência',data:divs,backgroundColor:cores,borderRadius:3,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw===null?'':' R$'+Math.abs(c.raw/1000).toFixed(1)+'k '+(c.raw<0?'abaixo':'acima')}}},scales:{y:{ticks:{callback:v=>'R$'+(v/1000).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}});
   const divReal=divs.filter(d=>d!==null);
@@ -889,33 +930,33 @@ function renderGraficoDivMes(est,ano,mesAtual,reg=''){
   if(el) el.innerHTML=`<div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px"><div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Acumulado</div><div style="font-size:13px;font-weight:700;color:${acum<0?'#BE2F3B':'#1D9E75'}">${acum<0?'':'+'}${fR(acum)}</div></div><div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px"><div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Média mensal</div><div style="font-size:13px;font-weight:700;color:${media<0?'#BE2F3B':'#1D9E75'}">${media<0?'':'+'}${fR(media)}</div></div><div style="flex:1;background:var(--bg);border-radius:var(--r2);padding:8px 10px"><div style="font-size:10px;color:var(--tx2);margin-bottom:2px;text-transform:uppercase">Meses c/ divergência</div><div style="font-size:13px;font-weight:700;color:${mNeg>0?'#BE2F3B':'#1D9E75'}">${mNeg} de ${divReal.length} meses</div></div>`;
 }
 
-function renderTbEvtReg(est,mes,ano,reg=''){
+function renderTbEvtReg(est,mes,ano,reg='',proc=''){
   const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[est]||[]));
   const tb=document.getElementById('tb-evt-reg');
   if(!tb) return;
   tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--tx2)">Calculando...</td></tr>';
   let html='',totPE=0,totEx=0,totPg=0;
-  regs.forEach(reg=>{const pE=calcPrevEvt(est,mes,ano,reg),ex=calcExec(est,mes,ano,reg),pg=calcPago(est,mes,ano,reg);const df=pg.evt-ex.evt,pct=ex.evt>0?((ex.evt-pg.evt)/ex.evt*100):0;const bc=Math.abs(pct)<=1?'#1D9E75':'#BA7517';const st=Math.abs(pct)<=1?'<span class="pill p-ok">Normal</span>':'<span class="pill p-warn">Atenção</span>';html+=`<tr><td><strong>${reg}</strong></td><td>${fN(pE)}</td><td>${fN(ex.evt)}</td><td>${fN(pg.evt)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fN(df)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${bc}"></div></div><span style="font-size:10px;color:${bc};font-weight:700">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;totPE+=pE;totEx+=ex.evt;totPg+=pg.evt;});
+  regs.forEach(reg=>{const pE=calcPrevEvt(est,mes,ano,reg,proc),ex=calcExec(est,mes,ano,reg,proc),pg=isRJ(est)?{evt:0}:calcPago(est,mes,ano,reg);const df=pg.evt-ex.evt,pct=ex.evt>0?((ex.evt-pg.evt)/ex.evt*100):0;const bc=Math.abs(pct)<=1?'#1D9E75':'#BA7517';const st=Math.abs(pct)<=1?'<span class="pill p-ok">Normal</span>':'<span class="pill p-warn">Atenção</span>';html+=`<tr><td><strong>${reg}</strong></td><td>${fN(pE)}</td><td>${fN(ex.evt)}</td><td>${fN(pg.evt)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fN(df)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${bc}"></div></div><span style="font-size:10px;color:${bc};font-weight:700">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;totPE+=pE;totEx+=ex.evt;totPg+=pg.evt;});
   const totDf=totPg-totEx,totPct=totEx>0?((totEx-totPg)/totEx*100):0;const totBc=Math.abs(totPct)<2?'#1D9E75':totPct>5?'#BE2F3B':'#BA7517';
   html+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td><strong>TOTAL</strong></td><td><strong>${fN(totPE)}</strong></td><td><strong>${fN(totEx)}</strong></td><td><strong>${fN(totPg)}</strong></td><td style="color:${totDf>=0?'#1D9E75':'#BE2F3B'};font-weight:700">${totDf>=0?'+':''}${fN(totDf)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(totPct)*10,100)}%;background:${totBc}"></div></div><span style="font-size:10px;color:${totBc};font-weight:700">${totPct.toFixed(1)}%</span></div></td><td></td></tr>`;
   tb.innerHTML=html;
 }
 
-function renderTbFatReg(est,mes,ano,reg=''){
+function renderTbFatReg(est,mes,ano,reg='',proc=''){
   const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[est]||[]));
   const tb=document.getElementById('tb-fat-reg');let html='',totP=0,totE=0,totG=0;
-  regs.forEach(reg=>{const prev=calcPrevisto(est,mes,ano,reg),ex=calcExec(est,mes,ano,reg),pg=calcPago(est,mes,ano,reg);const dv=pg.val-ex.val,pct=prev>0?(pg.val/prev*100):0;html+=`<tr><td><strong>${reg}</strong></td><td>${fR(prev)}</td><td>${fR(ex.val)}</td><td>${fR(pg.val)}</td><td style="color:${dv>=0?'#1D9E75':'#BE2F3B'}">${dv>=0?'+':''}${fR(dv)}</td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;totP+=prev;totE+=ex.val;totG+=pg.val;});
+  regs.forEach(reg=>{const prev=calcPrevisto(est,mes,ano,reg,proc),ex=calcExec(est,mes,ano,reg,proc),pg=isRJ(est)?{val:0}:calcPago(est,mes,ano,reg);const dv=pg.val-ex.val,pct=prev>0?(pg.val/prev*100):0;html+=`<tr><td><strong>${reg}</strong></td><td>${fR(prev)}</td><td>${fR(ex.val)}</td><td>${fR(pg.val)}</td><td style="color:${dv>=0?'#1D9E75':'#BE2F3B'}">${dv>=0?'+':''}${fR(dv)}</td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;totP+=prev;totE+=ex.val;totG+=pg.val;});
   const totDv=totG-totE,totPct=totP>0?(totG/totP*100):0;
   html+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td><strong>TOTAL</strong></td><td><strong>${fR(totP)}</strong></td><td><strong>${fR(totE)}</strong></td><td><strong>${fR(totG)}</strong></td><td style="color:${totDv>=0?'#1D9E75':'#BE2F3B'};font-weight:700">${totDv>=0?'+':''}${fR(totDv)}</td><td><span class="pill ${totPct>=95?'p-ok':totPct>=85?'p-warn':'p-danger'}">${totPct.toFixed(1)}%</span></td></tr>`;
   tb.innerHTML=html;
 }
 
-function renderTbYTDReg(est,mes,ano,reg=''){
+function renderTbYTDReg(est,mes,ano,reg='',proc=''){
   const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[est]||[]));
   const tb=document.getElementById('tb-ytd-reg');if(!tb) return;
   if(!C.cads.length&&!C.prod.length&&!C.bols.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados carregados.</td></tr>';return;}
   let html='',totYP=0,totYE=0,totYG=0,totMDiv=0;
-  regs.forEach(reg=>{let yP=0,yE=0,yG=0,mDiv=0;for(let m=1;m<=mes;m++){const p=calcPrevisto(est,m,ano,reg),ex=calcExec(est,m,ano,reg),pg=calcPago(est,m,ano,reg);yP+=p;yE+=ex.val;yG+=pg.val;if(pg.val<ex.val&&(ex.val>0||pg.val>0)) mDiv++;}const div=yG-yE,pct=yP>0?(yG/yP*100):0;const cor=div>=0?'#1D9E75':'#BE2F3B';html+=`<tr><td><strong>${reg}</strong></td><td>${fR(yP)}</td><td>${fR(yE)}</td><td>${fR(yG)}</td><td style="color:${cor}">${div>=0?'+':''}${fR(div)}</td><td><span class="pill ${mDiv===0?'p-ok':mDiv>=mes?'p-danger':'p-warn'}">${mDiv}/${mes} meses</span></td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;totYP+=yP;totYE+=yE;totYG+=yG;totMDiv+=mDiv;});
+  regs.forEach(reg=>{let yP=0,yE=0,yG=0,mDiv=0;for(let m=1;m<=mes;m++){const p=calcPrevisto(est,m,ano,reg,proc),ex=calcExec(est,m,ano,reg,proc),pg=isRJ(est)?{val:0}:calcPago(est,m,ano,reg);yP+=p;yE+=ex.val;yG+=pg.val;if(pg.val<ex.val&&(ex.val>0||pg.val>0)) mDiv++;}const div=yG-yE,pct=yP>0?(yG/yP*100):0;const cor=div>=0?'#1D9E75':'#BE2F3B';html+=`<tr><td><strong>${reg}</strong></td><td>${fR(yP)}</td><td>${fR(yE)}</td><td>${fR(yG)}</td><td style="color:${cor}">${div>=0?'+':''}${fR(div)}</td><td><span class="pill ${mDiv===0?'p-ok':mDiv>=mes?'p-danger':'p-warn'}">${mDiv}/${mes} meses</span></td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;totYP+=yP;totYE+=yE;totYG+=yG;totMDiv+=mDiv;});
   const totDiv=totYG-totYE,totPct=totYP>0?(totYG/totYP*100):0;
   html+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td><strong>TOTAL</strong></td><td>${fR(totYP)}</td><td>${fR(totYE)}</td><td>${fR(totYG)}</td><td style="color:${totDiv>=0?'#1D9E75':'#BE2F3B'}">${totDiv>=0?'+':''}${fR(totDiv)}</td><td><span class="pill ${totMDiv===0?'p-ok':'p-warn'}">${totMDiv} ocorr.</span></td><td><span class="pill ${totPct>=95?'p-ok':totPct>=85?'p-warn':'p-danger'}">${totPct.toFixed(1)}%</span></td></tr>`;
   tb.innerHTML=html;
@@ -948,7 +989,7 @@ function renderTbDivergRel(est,mes,ano){
     if(!Object.keys(divPorReg).length) return;temDiv=true;
     const totalEstado=Object.values(divPorReg).flat().reduce((s,i)=>s+i.totValNaoPago,0);
     htmlTotal+=`<div style="margin-bottom:1.5rem"><div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--vm);margin-bottom:12px"><strong style="font-size:14px;color:var(--pt)">${estado==='MA'?'Maranhão':'Piauí'} · Jan→${MN[mes]}/${ano}</strong><span style="font-size:13px;font-weight:700;color:${totalEstado<0?'#BE2F3B':'#1D9E75'}">Divergência total: ${totalEstado<0?'':'+'}${fR(totalEstado)}</span></div>`;
-    Object.entries(divPorReg).forEach(([reg,svcs])=>{const totalReg=svcs.reduce((s,i)=>s+i.totValNaoPago,0);htmlTotal+=`<div style="margin-bottom:14px;padding-left:12px;border-left:3px solid var(--bd)"><p style="font-weight:700;color:var(--pt);margin-bottom:8px">Regional ${reg} <span style="font-weight:400;font-size:12px;color:${totalReg<0?'#BE2F3B':'#1D9E75'}">&nbsp;·&nbsp; ${totalReg<0?'':'+'}${fR(totalReg)}</span></p>`;svcs.forEach(s=>{const dirQtd=s.totDivQtd<0?'a menos':'a mais';const corValor=s.totValNaoPago<0?'#BE2F3B':'#1D9E75';const mesIni='Janeiro';const mesFim=MN[mes];htmlTotal+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px"><span style="font-weight:700;color:var(--pt)">${s.desc}:</span> A Equatorial pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo entre os meses de <strong>${mesIni} e ${mesFim}</strong>, representando um impacto financeiro de <strong style="color:${corValor}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>.</p>`;});htmlTotal+='</div>';});
+    Object.entries(divPorReg).forEach(([reg,svcs])=>{const totalReg=svcs.reduce((s,i)=>s+i.totValNaoPago,0);htmlTotal+=`<div style="margin-bottom:14px;padding-left:12px;border-left:3px solid var(--bd)"><p style="font-weight:700;color:var(--pt);margin-bottom:8px">Regional ${reg} <span style="font-weight:400;font-size:12px;color:${totalReg<0?'#BE2F3B':'#1D9E75'}">&nbsp;·&nbsp; ${totalReg<0?'':'+'}${fR(totalReg)}</span></p>`;svcs.forEach(s=>{const dirQtd=s.totDivQtd<0?'a menos':'a mais';const corValor=s.totValNaoPago<0?'#BE2F3B':'#1D9E75';const mesIni='Janeiro';const mesFim=MN[mes];htmlTotal+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px"><span style="font-weight:700;color:var(--pt)">${s.desc}:</span> A ${estado==='RJ'?'contratante':'Equatorial'} pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo entre os meses de <strong>${mesIni} e ${mesFim}</strong>, representando um impacto financeiro de <strong style="color:${corValor}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>.</p>`;});htmlTotal+='</div>';});
     htmlTotal+='</div>';});
   if(!temDiv){el.innerHTML='<p style="color:var(--tx2);text-align:center;padding:1rem">Nenhuma divergência relevante detectada no período.</p>';return;}
   el.innerHTML=htmlTotal;
@@ -958,11 +999,12 @@ function renderTbDivergRel(est,mes,ano){
 function carregarServico(){
   const est=document.getElementById('s-est').value,reg=document.getElementById('s-reg').value;
   const mes=parseInt(document.getElementById('s-mes').value),ano=parseInt(document.getElementById('s-ano').value);
+  const proc=document.getElementById('s-proc')?.value||'';
   syncRegsServ();
-  const tars=getTarifas(est,mes,ano,reg);
+  const tars=getTarifas(est,mes,ano,reg,proc);
   const svcMap={};tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0,tarifa:parseFloat(t.preco_unitario)||0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
-  const execMap={};getProd(est,mes,ano,reg).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
-  const pagoMap={};getItens(est,mes,ano,reg).forEach(i=>{if(!pagoMap[i.cod_servico]) pagoMap[i.cod_servico]={qde:0,val:0};pagoMap[i.cod_servico].qde+=i.qde_paga||0;pagoMap[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
+  const execMap={};getProd(est,mes,ano,reg,proc).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
+  const pagoMap={};if(!isRJ(est)) getItens(est,mes,ano,reg).forEach(i=>{if(!pagoMap[i.cod_servico]) pagoMap[i.cod_servico]={qde:0,val:0};pagoMap[i.cod_servico].qde+=i.qde_paga||0;pagoMap[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
   const tP=Object.values(svcMap).reduce((s,v)=>s+v.prev,0),tE=Object.values(execMap).reduce((s,v)=>s+v,0),tG=Object.values(pagoMap).reduce((s,v)=>s+v.qde,0);
   const tb=document.getElementById('tb-svc'),db=document.getElementById('dist-bars');tb.innerHTML='';db.innerHTML='';
   Object.entries(svcMap).forEach(([cod,s])=>{
@@ -978,20 +1020,21 @@ function carregarServico(){
 function carregarRegional(){
   const est=document.getElementById('r-est').value,reg=document.getElementById('r-reg').value;
   const mes=parseInt(document.getElementById('r-mes').value),ano=parseInt(document.getElementById('r-ano').value);
+  const proc=document.getElementById('r-proc')?.value||'';
   document.getElementById('r-ch-tit').textContent=`Evolução mensal — ${reg}`;
-  const prev=calcPrevisto(est,mes,ano,reg),exec=calcExec(est,mes,ano,reg),pago=calcPago(est,mes,ano,reg);
+  const prev=calcPrevisto(est,mes,ano,reg,proc),exec=calcExec(est,mes,ano,reg,proc),pago=isRJ(est)?{val:0,evt:0}:calcPago(est,mes,ano,reg);
   const pct=prev>0?(pago.val/prev*100):0,dv=pago.val-exec.val;
   const mesAnt=mes===1?12:mes-1,anoAnt=mes===1?ano-1:ano;
-  const prevAnt=calcPrevisto(est,mesAnt,anoAnt,reg),execAnt=calcExec(est,mesAnt,anoAnt,reg),pagoAnt=calcPago(est,mesAnt,anoAnt,reg);
+  const prevAnt=calcPrevisto(est,mesAnt,anoAnt,reg,proc),execAnt=calcExec(est,mesAnt,anoAnt,reg,proc),pagoAnt=isRJ(est)?{val:0}:calcPago(est,mesAnt,anoAnt,reg);
   const varPrev=prevAnt>0?((prev-prevAnt)/prevAnt*100):0,varExec=execAnt.val>0?((exec.val-execAnt.val)/execAnt.val*100):0,varPago=pagoAnt.val>0?((pago.val-pagoAnt.val)/pagoAnt.val*100):0;
   document.getElementById('r-cards').innerHTML=`<div class="card"><div class="cl">Previsto (caderno)</div><div class="cv">${fR(prev)}</div><div class="cs cm">Meta da regional</div></div><div class="card"><div class="cl">Executado (campo)</div><div class="cv">${fR(exec.val)}</div><div class="cs ${exec.val>=prev?'cp':'cw'}">${exec.val>=prev?'▲ Acima':'▼ Abaixo'} da meta</div></div><div class="card vd"><div class="cl">Pago (Equatorial)</div><div class="cv">${fR(pago.val)}</div><div class="cs ${dv>=0?'cp':'cn'}">${fR(Math.abs(dv))} ${dv>=0?'acima':'abaixo'} do exec. · ${pct.toFixed(1)}%</div></div>`;
   const vcEl=document.getElementById('r-var-cards');
   if(vcEl) vcEl.innerHTML=`<div class="card" style="border-top-color:var(--am)"><div class="cl">Variação previsto vs mês ant.</div><div class="cv" style="font-size:16px;color:${varPrev>=0?'#1D9E75':'#BE2F3B'}">${varPrev>=0?'▲':'▼'} ${Math.abs(varPrev).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(prevAnt)}</div></div><div class="card" style="border-top-color:var(--am)"><div class="cl">Variação executado vs mês ant.</div><div class="cv" style="font-size:16px;color:${varExec>=0?'#1D9E75':'#BE2F3B'}">${varExec>=0?'▲':'▼'} ${Math.abs(varExec).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(execAnt.val)}</div></div><div class="card" style="border-top-color:var(--am)"><div class="cl">Variação pago vs mês ant.</div><div class="cv" style="font-size:16px;color:${varPago>=0?'#1D9E75':'#BE2F3B'}">${varPago>=0?'▲':'▼'} ${Math.abs(varPago).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(pagoAnt.val)}</div></div>`;
   const pDiv=exec.evt>0?((exec.evt-pago.evt)/exec.evt*100):0;
   const rAl=document.getElementById('r-alerta');
-  if(Math.abs(pDiv)>2){document.getElementById('r-alerta-txt').innerHTML=`Regional ${reg}: Equatorial pagou <strong>${(100-pDiv).toFixed(1)}%</strong> da produção. Diferença de <strong>${fR(Math.abs(dv))}</strong>.`;rAl.style.display='flex';}
+  if(Math.abs(pDiv)>2){document.getElementById('r-alerta-txt').innerHTML=`Regional ${reg}: ${isRJ(est)?'Contratante':'Equatorial'} pagou <strong>${(100-pDiv).toFixed(1)}%</strong> da produção. Diferença de <strong>${fR(Math.abs(dv))}</strong>.`;rAl.style.display='flex';}
   else rAl.style.display='none';
-  const sP=[],sE=[],sG=[];for(let m=1;m<=12;m++){sP.push(calcPrevisto(est,m,ano,reg));sE.push(calcExec(est,m,ano,reg).val);sG.push(calcPago(est,m,ano,reg).val);}
+  const sP=[],sE=[],sG=[];for(let m=1;m<=12;m++){sP.push(calcPrevisto(est,m,ano,reg,proc));sE.push(calcExec(est,m,ano,reg,proc).val);sG.push(isRJ(est)?0:calcPago(est,m,ano,reg).val);}
   if(chRegM) chRegM.destroy();
   chRegM=new Chart(document.getElementById('ch-reg-m'),{type:'bar',data:{labels:MN.slice(1),datasets:[{label:'Previsto',data:sP,type:'line',borderColor:'#BE2F3B',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2,borderDash:[5,3]},{label:'Executado',data:sE,type:'line',borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2},{label:'Pago',data:sG,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+(v/1e3).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}});
   const pm={};getItens(est,mes,ano,reg).forEach(i=>{if(!pm[i.cod_servico]) pm[i.cod_servico]={desc:i.descricao_servico,val:0};pm[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
@@ -1037,7 +1080,7 @@ function renderTbDivergRelReg(est,mes,ano,reg){
   if(!itens.length){el.innerHTML='<p style="color:var(--tx2);text-align:center;padding:1rem">Nenhuma divergência relevante detectada.</p>';return;}
   const totalReg=itens.reduce((s,i)=>s+i.totValNaoPago,0);
   let html=`<div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid var(--vm);margin-bottom:12px"><strong style="font-size:14px">${reg} · Jan→${MN[mes]}/${ano}</strong><span style="font-size:13px;font-weight:700;color:${totalReg<0?'#BE2F3B':'#1D9E75'}">Divergência total: ${totalReg<0?'':'+'}${fR(totalReg)}</span></div>`;
-  itens.forEach(s=>{const dirQtd=s.totDivQtd<0?'a menos':'a mais',corV=s.totValNaoPago<0?'#BE2F3B':'#1D9E75';html+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px"><span style="font-weight:700;color:var(--pt)">${s.desc}:</span> A Equatorial pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo entre os meses de <strong>Janeiro e ${MN[mes]}</strong>, representando um impacto financeiro de <strong style="color:${corV}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>.</p>`;});
+  itens.forEach(s=>{const dirQtd=s.totDivQtd<0?'a menos':'a mais',corV=s.totValNaoPago<0?'#BE2F3B':'#1D9E75';html+=`<p style="margin-bottom:6px;padding:8px 10px;background:var(--bg);border-radius:var(--r2);font-size:12px"><span style="font-weight:700;color:var(--pt)">${s.desc}:</span> A ${est==='RJ'?'contratante':'Equatorial'} pagou <strong>${fN(Math.abs(s.totDivQtd))} eventos ${dirQtd}</strong> que o executado em campo entre os meses de <strong>Janeiro e ${MN[mes]}</strong>, representando um impacto financeiro de <strong style="color:${corV}">${s.totValNaoPago<0?'':'+'}${fR(s.totValNaoPago)}</strong>.</p>`;});
   el.innerHTML=html;
 }
 
@@ -1074,21 +1117,22 @@ function carregarResumida(){
   const headFat=document.getElementById('tr-rs-fat-head'),bodyFat=document.getElementById('tb-rs-fat-body');
   if(headFat&&bodyFat){
     headFat.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Referência</th>'+mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">${MN[m].substring(0,3)}/${ano}</th>`).join('')+'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
-    const valsPrev=mesesComDados.map(m=>calcPrevisto(est,m,ano,reg)),valsExec=mesesComDados.map(m=>calcExec(est,m,ano,reg).val),valsPago=mesesComDados.map(m=>calcPago(est,m,ano,reg).val);
+    const valsPrev=mesesComDados.map(m=>calcPrevisto(est,m,ano,reg,proc)),valsExec=mesesComDados.map(m=>calcExec(est,m,ano,reg,proc).val),valsPago=isRJ(est)?mesesComDados.map(()=>0):mesesComDados.map(m=>calcPago(est,m,ano,reg).val);
     const totPrev=valsPrev.reduce((s,v)=>s+v,0),totExec=valsExec.reduce((s,v)=>s+v,0),totPago=valsPago.reduce((s,v)=>s+v,0);
     const mkPct=(v,p)=>p>0?((v-p)/p*100):0;const fPct=v=>{const c=v>=0?'#1D9E75':'#BE2F3B';return `<span style="color:${c};font-weight:700">${v>=0?'+':''}${v.toFixed(1)}%</span>`;};
     bodyFat.innerHTML=
       `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vm)">Faturamento Previsto (Caderno)</td>`+valsPrev.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPrev)}</td></tr>`+
       `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vd)">Faturamento Executado (Campo)</td>`+valsExec.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totExec)}</td></tr>`+
-      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--az)">Faturamento Pago (Equatorial)</td>`+valsPago.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPago)}</td></tr>`+
+      (isRJ(est)?'':
+      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--az)">Faturamento Pago (Equatorial)</td>`+valsPago.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPago)}</td></tr>`)+
       `<tr style="border-top:2px solid var(--vd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#3B6D11">% Exec. vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsExec[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totExec,totPrev))}</td></tr>`+
-      `<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#185FA5">% Pago vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totPago,totPrev))}</td></tr>`;
+      (isRJ(est)?'':
+      `<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#185FA5">% Pago vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totPago,totPrev))}</td></tr>`);
   }
   // Tabelas 2, 3 e 4
-  const tars=getTarifas(est,mesesComDados[0],ano,reg);
-  // Limitar serviços para evitar travamento com estados com muitos serviços (ex: RJ com 771)
+  const tars=getTarifas(est,mesesComDados[0],ano,reg,proc);
   const svcsSet=new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico));
-  const svcs=[...svcsSet].slice(0,500); // max 500 serviços por vez
+  const svcs=[...svcsSet];
   const headEvt=document.getElementById('tr-rs-evt-head'),bodyEvt=document.getElementById('tb-rs-evt-body');
   if(headEvt&&bodyEvt){
     let headHtml='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th><th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Prev. Caderno</th>';
@@ -1245,8 +1289,25 @@ function preencherStatusDados(){
 // ═══ COMPARATIVO DE CADERNOS ═══
 const CMP_CORES=['#534AB7','#378ADD','#1D9E75','#BA7517','#BE2F3B','#D4537E'];
 
+function syncCmpFiltros(){
+  const est=document.getElementById('cmp-est')?.value||'MA';
+  const sp=document.getElementById('cmp-proc');
+  const sr=document.getElementById('cmp-reg');
+  if(sp){
+    const procs=PROCS[est]||PROCS.MA;
+    sp.innerHTML='<option value="">Todos</option>'+procs.map(p=>`<option value="${p.v}">${p.l}</option>`).join('');
+  }
+  if(sr){
+    const regs=REGS[est]||[];
+    sr.innerHTML='<option value="">Todas</option>'+regs.map(r=>`<option>${r}</option>`).join('');
+  }
+}
+
 function carregarComparativo(){
   const est=document.getElementById('cmp-est').value;
+  const cmpProc=document.getElementById('cmp-proc')?.value||'';
+  const cmpReg=document.getElementById('cmp-reg')?.value||'';
+  syncCmpFiltros();
   const cads=C.cads.filter(c=>c.estado===est).sort((a,b)=>{
     const va=parseInt((a.vigencia_inicio||'01/2000').split('/').reverse().join(''));
     const vb=parseInt((b.vigencia_inicio||'01/2000').split('/').reverse().join(''));
@@ -1273,7 +1334,7 @@ function renderComparativo(){
 
   const cadSel=checks.map((cb,idx)=>{
     const cad=C.cads.find(c=>c.id===parseInt(cb.value));
-    const tars=C.tars.filter(t=>t.caderno_id===cad.id);
+    const tars=C.tars.filter(t=>t.caderno_id===cad.id&&(!cmpReg||t.regional===cmpReg)&&(!cmpProc||t.processo===cmpProc));
     return {cad,tars,cor:CMP_CORES[idx%CMP_CORES.length]};
   });
 

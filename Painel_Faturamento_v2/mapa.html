@@ -186,7 +186,10 @@ async function renderizarMapa(){
 function selecionar(sigla){
   document.getElementById('dica').textContent=`✓ Acessando ${ESTADOS_SISTEMA[sigla]}...`;
   localStorage.setItem('ceneged_estado_selecionado',sigla);
-  setTimeout(()=>window.location.href=VISOES_URL,500);
+  const destino=sigla==='RJ'
+    ?'/Painel_Faturamento_v2/visoes_rj.html'
+    :VISOES_URL;
+  setTimeout(()=>window.location.href=destino,500);
 }
 
 async function fazerLogout(){

@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel RJ — CENEGED</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+:root{
+  --vm:#BE2F3B;--vm-cl:#f9eaea;--az-esc:#1A1A2E;--pt:#2C2C2A;
+  --bg:#f5f4f1;--bd:#e0deda;--tx2:#7B7B7B;--br:#fff;
+  --vd:#1D9E75;--vd-cl:#eaf3de;--az:#378ADD;--az-cl:#e6f1fb;
+  --am:#BA7517;--am-cl:#faeeda;--r:10px;--r2:6px;--sb-w:200px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size:14px}
+.sidebar{background:var(--az-esc);display:flex;flex-direction:column;position:fixed;top:0;left:0;width:var(--sb-w);height:100vh;z-index:100;overflow-y:auto;transition:width .2s ease}
+.sidebar.recolhida{width:52px}
+.sidebar.recolhida .sb-uname,.sidebar.recolhida .sb-urole,.sidebar.recolhida .sb-sec,.sidebar.recolhida .sb-item span,.sidebar.recolhida .sb-out span{display:none}
+.sidebar.recolhida .sb-item{justify-content:center;padding:10px 0}
+.sidebar.recolhida .sb-logo img{display:none}
+.sidebar.recolhida .sb-user{justify-content:center;padding:10px 0}
+.sb-logo{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+.sb-logo img{height:28px;width:auto}
+.btn-toggle-sb{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;padding:4px;border-radius:4px;display:flex;align-items:center}
+.btn-toggle-sb:hover{color:#fff;background:rgba(255,255,255,.1)}
+.sb-user{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--vm);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:700;flex-shrink:0}
+.sb-uname{font-size:11px;color:rgba(255,255,255,.8);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-urole{font-size:9px;color:var(--vm);font-weight:700;margin-top:1px}
+.sb-nav{padding:8px 0;flex:1}
+.sb-sec{font-size:9px;color:rgba(255,255,255,.3);padding:10px 14px 4px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;white-space:nowrap}
+.sb-item{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12px;color:rgba(255,255,255,.55);cursor:pointer;border-left:2px solid transparent;transition:.15s;text-decoration:none;white-space:nowrap}
+.sb-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.05)}
+.sb-item.active{color:#fff;background:rgba(190,47,59,.18);border-left-color:var(--vm)}
+.sb-item i{font-size:16px;flex-shrink:0}
+.sb-bottom{padding:12px 14px;border-top:1px solid rgba(255,255,255,.08)}
+.sb-out{font-size:11px;color:rgba(255,255,255,.45);background:none;border:1px solid rgba(255,255,255,.12);border-radius:var(--r2);padding:6px 10px;width:100%;cursor:pointer;text-align:left;display:flex;align-items:center;gap:6px;margin-bottom:6px;white-space:nowrap}
+.sb-out:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.7)}
+.sidebar.recolhida .sb-bottom{padding:12px 6px}
+.sidebar.recolhida .sb-out{justify-content:center;padding:6px;width:40px;margin:0 auto 6px}
+.main{margin-left:var(--sb-w);display:flex;flex-direction:column;min-height:100vh;transition:margin-left .2s ease}
+.main.expandido{margin-left:52px}
+.main-header{background:var(--br);border-bottom:1px solid var(--bd);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.page-info .page-title{font-size:14px;font-weight:700;color:var(--pt)}
+.page-info .page-sub{font-size:11px;color:var(--tx2);margin-top:1px}
+.header-actions{display:flex;gap:8px;align-items:center}
+.btn-header{font-size:12px;padding:7px 14px;border-radius:var(--r2);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;height:34px;white-space:nowrap}
+.btn-header-vd{background:var(--vd);color:#fff;border:none}.btn-header-vd:hover{background:#0F6E56}
+.btn-header-vm{background:var(--vm);color:#fff;border:none}.btn-header-vm:hover{background:#a02632}
+.btn-header-s{background:var(--br);color:var(--pt);border:1px solid var(--bd)}.btn-header-s:hover{background:var(--bg)}
+.con{padding:1.25rem 1.5rem;flex:1;min-width:0}
+.fil{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
+.fil label{font-size:11px;color:var(--tx2);font-weight:700;white-space:nowrap}
+.fil select{font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:var(--r2);background:var(--br);color:var(--pt);cursor:pointer}
+.fil select:focus{outline:none;border-color:var(--vm)}
+.fil-sep{width:1px;height:24px;background:var(--bd);margin:0 4px}
+.alerta{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--r2);margin-bottom:1.25rem;font-size:12px}
+.al-warn{background:var(--am-cl);color:var(--am);border:1px solid #f0c070}
+.al-info{background:var(--az-cl);color:#185FA5;border:1px solid #b5d4f4}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.25rem}
+.card{background:var(--br);border-radius:var(--r);padding:1rem 1.1rem;border:1px solid var(--bd);border-top:3px solid var(--vm)}
+.card.vd{border-top-color:var(--vd)}
+.card .cl{font-size:10px;color:var(--tx2);margin-bottom:5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;display:flex;align-items:center;gap:4px}
+.card .cv{font-size:20px;font-weight:700;color:var(--pt)}
+.card .cs{font-size:10px;margin-top:4px}
+.cp{color:var(--vd)}.cw{color:var(--am)}.cm{color:var(--tx2)}.cn{color:var(--vm)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem;min-width:0}
+.row2>*{min-width:0;overflow:hidden}
+.gbox{background:var(--br);border-radius:var(--r);padding:1rem 1.1rem;border:1px solid var(--bd)}
+.gbox h3{font-size:11px;font-weight:700;color:var(--tx2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em;display:flex;align-items:center;gap:6px}
+.gbox h3::before{content:'';display:block;width:3px;height:12px;background:var(--vm);border-radius:2px;flex-shrink:0}
+.leg{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.leg span{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--tx2)}
+.leg i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.sec{font-size:10px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sec::before{content:'';display:block;width:3px;height:10px;background:var(--vm);border-radius:2px}
+.tbox{background:var(--br);border-radius:var(--r);border:1px solid var(--bd);overflow:hidden;margin-bottom:1.25rem;overflow-x:auto}
+.tbox table{width:100%;border-collapse:collapse;font-size:12px;min-width:500px}
+.tbox thead tr{background:var(--bg)}
+.tbox th{padding:9px 12px;text-align:left;font-weight:700;color:var(--tx2);font-size:10px;text-transform:uppercase;white-space:nowrap}
+.tbox td{padding:9px 12px;border-top:1px solid var(--bd);white-space:nowrap}
+.tbox tr:hover td{background:#fafaf8}
+.pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:700}
+.p-ok{background:var(--vd-cl);color:#3B6D11}
+.p-warn{background:var(--am-cl);color:#854F0B}
+.prog{display:flex;align-items:center;gap:6px}
+.prog-t{flex:1;height:5px;background:var(--bg);border-radius:3px;overflow:hidden;min-width:50px}
+.prog-f{height:100%;border-radius:3px}
+.btn-fx{width:20px;height:20px;border-radius:50%;background:#f0f0ee;color:#7B7B7B;border:none;cursor:pointer;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;font-style:italic;position:relative;vertical-align:middle;margin-left:6px}
+.btn-fx:hover{background:#e0deda;color:var(--pt)}
+.fx-tooltip{display:none;position:absolute;left:26px;top:50%;transform:translateY(-50%);background:var(--az-esc);color:#fff;border-radius:var(--r2);padding:10px 14px;font-size:11px;line-height:1.6;width:280px;z-index:999;font-style:normal;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.fx-tooltip strong{display:block;margin-bottom:4px;color:#BE2F3B;font-size:11px}
+.btn-fx:hover .fx-tooltip,.btn-fx:focus .fx-tooltip{display:block}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--br);border-radius:var(--r);padding:1.5rem;width:380px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.fg{margin-bottom:.875rem}
+.fg label{display:block;font-size:11px;color:var(--tx2);margin-bottom:4px;font-weight:700}
+.fg input,.fg select{width:100%;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r2);font-size:12px}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:1rem}
+.btn{font-size:12px;padding:7px 16px;border-radius:var(--r2);cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.btn-p{background:var(--vm);color:#fff;border:none}.btn-p:hover{background:#a02632}
+.btn-s{background:var(--br);color:var(--pt);border:1px solid var(--bd)}.btn-s:hover{background:var(--bg)}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sb-logo">
+    <img src="https://www.ceneged.com.br/wp-content/uploads/2023/02/Logo-Ceneged-1.png" alt="CENEGED">
+    <button class="btn-toggle-sb" onclick="toggleSidebar()" title="Recolher menu">
+      <i class="ti ti-layout-sidebar-left-collapse" id="icon-toggle"></i>
+    </button>
+  </div>
+  <div class="sb-user">
+    <div class="sb-avatar" id="sb-avatar">CE</div>
+    <div>
+      <div class="sb-uname" id="sb-uname">—</div>
+      <div class="sb-urole" id="sb-urole">—</div>
+    </div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-sec">Análises — Rio de Janeiro</div>
+    <a class="sb-item active" id="nav-resumida" onclick="setTab('resumida',this)">
+      <i class="ti ti-table"></i><span>Faturamento Geral</span>
+    </a>
+    <a class="sb-item" id="nav-geral" onclick="setTab('geral',this)">
+      <i class="ti ti-layout-dashboard"></i><span>Análise Mensal</span>
+    </a>
+    <a class="sb-item" id="nav-regional" onclick="setTab('regional',this)">
+      <i class="ti ti-map-pin"></i><span>Por Contrato</span>
+    </a>
+    <a class="sb-item" id="nav-servico" onclick="setTab('servico',this)">
+      <i class="ti ti-list-details"></i><span>Por Serviço</span>
+    </a>
+    <a class="sb-item" id="nav-comparativo" onclick="setTab('comparativo',this)">
+      <i class="ti ti-git-compare"></i><span>Comparativo de Cadernos</span>
+    </a>
+    <div class="sb-sec" id="sb-sec-dados" style="display:none">Dados</div>
+    <a class="sb-item" id="nav-dados" href="/Painel_Faturamento_v2/dados_index.html" style="display:none">
+      <i class="ti ti-upload"></i><span>Importação de Dados</span>
+    </a>
+    <div class="sb-sec" id="sb-sec-admin" style="display:none">Gestão</div>
+    <a class="sb-item" id="nav-admin" href="/Painel_Faturamento_v2/admin_index.html" style="display:none">
+      <i class="ti ti-users"></i><span>Gestão de Usuários</span>
+    </a>
+  </div>
+  <div class="sb-bottom">
+    <button class="sb-out" onclick="voltarMapa()">
+      <i class="ti ti-arrow-left"></i><span>Área comum</span>
+    </button>
+    <button class="sb-out" onclick="toggleModalSenha()">
+      <i class="ti ti-key"></i><span>Alterar senha</span>
+    </button>
+    <button class="sb-out" onclick="fazerLogout()">
+      <i class="ti ti-logout"></i><span>Sair</span>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="main">
+  <div class="main-header">
+    <div class="page-info">
+      <div class="page-title" id="page-title">Análise Faturamento Geral</div>
+      <div class="page-sub" id="page-sub">Rio de Janeiro</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-header btn-header-s" onclick="recarregarAba()">
+        <i class="ti ti-refresh"></i> Atualizar
+      </button>
+      <button class="btn-header btn-header-vd" id="btn-xls" style="display:none" onclick="exportarExcel()">
+        <i class="ti ti-file-spreadsheet"></i> Exportar Excel
+      </button>
+      <button class="btn-header btn-header-vm" id="btn-pdf" style="display:none" onclick="exportarPDF()">
+        <i class="ti ti-file-type-pdf"></i> Exportar PDF
+      </button>
+    </div>
+  </div>
+
+  <div class="con" id="con">
+
+    <!-- ═══ FATURAMENTO GERAL ═══ -->
+    <div id="tab-resumida">
+      <div class="fil">
+        <label>Contrato</label>
+        <select id="rs-reg" onchange="syncRsProc();carregarResumida()">
+          <option value="">Todos</option>
+          <option value="COMERCIAL">Comercial</option>
+          <option value="TECNICA">Técnica</option>
+        </select>
+        <label>Processo</label>
+        <select id="rs-proc" onchange="carregarResumida()">
+          <option value="">Todos os processos</option>
+        </select>
+        <div class="fil-sep"></div>
+        <label>Ano</label>
+        <select id="rs-ano" onchange="carregarResumida()"></select>
+        <label>Mês</label>
+        <select id="rs-mes" onchange="carregarResumida()">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div class="cards">
+        <div class="card">
+          <div class="cl">Faturamento Previsto</div>
+          <div class="cv" id="rs-prev">—</div>
+        </div>
+        <div class="card vd">
+          <div class="cl">Faturamento Executado</div>
+          <div class="cv" id="rs-exec">—</div>
+        </div>
+        <div class="card vd">
+          <div class="cl">% Meta atingida <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Executado / Previsto × 100</div></button></div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+            <div style="font-size:12px;color:var(--tx2)">Executado: <strong id="rs-pct" style="color:var(--pt)">—</strong></div>
+          </div>
+        </div>
+        <div class="card vd">
+          <div class="cl">% Meta acumulada <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Executado acumulado / Previsto acumulado × 100</div></button></div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+            <div style="font-size:12px;color:var(--tx2)">Executado: <strong id="rs-ytd-pct" style="color:var(--pt)">—</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="sec">Faturamento mensal — previsto vs executado
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos × Tarifa do caderno<br>Executado = Qtd executada × Tarifa do caderno<br>% = (Executado − Previsto) / Previsto × 100</div></button>
+      </div>
+      <div class="tbox" style="overflow-x:auto"><table id="tb-rs-fat"><thead><tr id="tr-rs-fat-head"></tr></thead><tbody id="tb-rs-fat-body"></tbody></table></div>
+      <div class="sec">Quantidade de eventos por serviço — previsto e executado por mês
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos no caderno<br>Executado = Qtd executada na produção real</div></button>
+      </div>
+      <div class="tbox" style="overflow-x:auto"><table id="tb-rs-evt"><thead><tr id="tr-rs-evt-head"></tr></thead><tbody id="tb-rs-evt-body"></tbody></table></div>
+      <div class="sec">Diferença: Qtd Executado vs Previsto caderno — por serviço e mês
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Diferença = Qtd executada − Qtd prevista (caderno)<br>Verde = acima do previsto · Vermelho = abaixo</div></button>
+      </div>
+      <div class="tbox" style="overflow-x:auto"><table id="tb-rs-dif"><thead><tr id="tr-rs-dif-head"></tr></thead><tbody id="tb-rs-dif-body"></tbody></table></div>
+    </div>
+
+    <!-- ═══ ANÁLISE MENSAL ═══ -->
+    <div id="tab-geral" style="display:none">
+      <div class="fil">
+        <label>Contrato</label>
+        <select id="g-reg" onchange="syncGProc();carregarGeral()">
+          <option value="">Todos</option>
+          <option value="COMERCIAL">Comercial</option>
+          <option value="TECNICA">Técnica</option>
+        </select>
+        <label>Processo</label>
+        <select id="g-proc" onchange="carregarGeral()"><option value="">Todos os processos</option></select>
+        <div class="fil-sep"></div>
+        <label>Mês</label>
+        <select id="g-mes" onchange="carregarGeral()"></select>
+        <label>Ano</label>
+        <select id="g-ano" onchange="carregarGeral()"></select>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="cl">Previsto (Caderno)</div><div class="cv" id="g-prev">—</div></div>
+        <div class="card vd"><div class="cl">Executado (Campo)</div><div class="cv" id="g-exec">—</div></div>
+        <div class="card vd">
+          <div class="cl">% Meta atingida <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Executado / Previsto × 100</div></button></div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+            <div style="font-size:12px;color:var(--tx2)">Executado: <strong id="g-pct-exec" style="color:var(--pt)">—</strong></div>
+          </div>
+        </div>
+        <div class="card vd">
+          <div class="cl">% Meta acumulada <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Exec. acum. / Prev. acum. × 100</div></button></div>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+            <div style="font-size:12px;color:var(--tx2)">Executado: <strong id="g-ytd-pct-exec" style="color:var(--pt)">—</strong></div>
+          </div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="gbox">
+          <h3>Evolução mensal <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = caderno × tarifa<br>Executado = campo × tarifa</div></button></h3>
+          <div class="leg">
+            <span><i style="background:#BE2F3B"></i>Previsto</span>
+            <span><i style="background:#1D9E75"></i>Executado</span>
+          </div>
+          <canvas id="g-chart-mensal" height="180"></canvas>
+        </div>
+        <div class="gbox">
+          <h3>Divergência mês a mês <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Diferença = Executado − Previsto</div></button></h3>
+          <canvas id="g-chart-div" height="180"></canvas>
+        </div>
+      </div>
+      <div class="sec">Eventos por contrato <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Divergência % = (Prev. − Exec.) / Prev. × 100<br>Normal ≤ 1% · Atenção > 1%</div></button></div>
+      <div class="tbox"><table><thead><tr><th>Contrato</th><th>Prev. Caderno</th><th>Executado</th><th>Diferença</th><th>% Div.</th><th>Status</th></tr></thead><tbody id="tb-evt-reg"></tbody></table></div>
+      <div class="sec">Faturamento por contrato <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Prev. = Eventos prev. × Tarifa<br>Exec. = Qtd exec. × Tarifa</div></button></div>
+      <div class="tbox"><table><thead><tr><th>Contrato</th><th>Previsto</th><th>Executado</th><th>Diferença</th><th>% Meta</th></tr></thead><tbody id="tb-fat-reg"></tbody></table></div>
+      <div class="sec">Acumulado YTD por contrato <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Acumula de Janeiro até o mês selecionado</div></button></div>
+      <div class="tbox"><table><thead><tr><th>Contrato</th><th>Prev. Acum.</th><th>Exec. Acum.</th><th>Diferença</th><th>% Meta Acum.</th></tr></thead><tbody id="tb-ytd-reg"></tbody></table></div>
+    </div>
+
+    <!-- ═══ POR CONTRATO ═══ -->
+    <div id="tab-regional" style="display:none">
+      <div class="fil">
+        <label>Contrato</label>
+        <select id="r-reg" onchange="syncRProc();carregarRegional()">
+          <option value="COMERCIAL">Comercial</option>
+          <option value="TECNICA">Técnica</option>
+        </select>
+        <label>Processo</label>
+        <select id="r-proc" onchange="carregarRegional()"><option value="">Todos</option></select>
+        <label>Mês</label>
+        <select id="r-mes" onchange="carregarRegional()"></select>
+        <label>Ano</label>
+        <select id="r-ano" onchange="carregarRegional()"></select>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="cl">Previsto</div><div class="cv" id="r-prev">—</div></div>
+        <div class="card vd"><div class="cl">Executado</div><div class="cv" id="r-exec">—</div></div>
+        <div class="card vd"><div class="cl">% Meta</div><div class="cv" id="r-pct">—</div></div>
+        <div class="card"><div class="cl">Vs Mês Anterior</div><div class="cv" id="r-var">—</div><div class="cs" id="r-var-s"></div></div>
+      </div>
+      <div class="gbox" style="margin-bottom:1.25rem">
+        <h3 id="r-ch-tit">Evolução mensal</h3>
+        <canvas id="r-chart" height="160"></canvas>
+      </div>
+      <div class="sec">Detalhamento por serviço</div>
+      <div class="tbox" style="overflow-x:auto"><table><thead><tr><th>Serviço</th><th>Processo</th><th>Prev. Caderno</th><th>Executado</th><th>Diferença</th><th>% Meta</th></tr></thead><tbody id="tb-svc-reg"></tbody></table></div>
+    </div>
+
+    <!-- ═══ POR SERVIÇO ═══ -->
+    <div id="tab-servico" style="display:none">
+      <div class="fil">
+        <label>Contrato</label>
+        <select id="s-reg" onchange="syncSProc();carregarServico()">
+          <option value="">Todos</option>
+          <option value="COMERCIAL">Comercial</option>
+          <option value="TECNICA">Técnica</option>
+        </select>
+        <label>Processo</label>
+        <select id="s-proc" onchange="carregarServico()"><option value="">Todos os processos</option></select>
+        <div class="fil-sep"></div>
+        <label>Mês</label>
+        <select id="s-mes" onchange="carregarServico()"></select>
+        <label>Ano</label>
+        <select id="s-ano" onchange="carregarServico()"></select>
+      </div>
+      <div class="sec">Serviços — previsto vs executado</div>
+      <div class="tbox" style="overflow-x:auto">
+        <table><thead><tr><th>Serviço</th><th>Processo</th><th>Prev. Caderno</th><th>Executado</th><th>Diferença</th><th>% Meta</th></tr></thead>
+        <tbody id="tb-servico"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ═══ COMPARATIVO ═══ -->
+    <div id="tab-comparativo" style="display:none">
+      <div class="fil">
+        <label>Contrato</label>
+        <select id="cmp-reg" onchange="syncCmpProc();carregarComparativo()">
+          <option value="">Todos</option>
+          <option value="COMERCIAL">Comercial</option>
+          <option value="TECNICA">Técnica</option>
+        </select>
+        <label>Processo</label>
+        <select id="cmp-proc" onchange="carregarComparativo()"><option value="">Todos os processos</option></select>
+      </div>
+      <div id="cmp-sel-box" style="margin-bottom:1.25rem">
+        <div class="sec">Selecione os cadernos para comparar</div>
+        <div id="cmp-checks" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+      <div id="cmp-resultado" style="display:none">
+        <div id="cmp-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:1.25rem"></div>
+        <div class="sec">Evolução das tarifas por serviço</div>
+        <div class="tbox" style="overflow-x:auto"><table id="tb-cmp-tar"><thead><tr id="tr-cmp-tar-head"></tr></thead><tbody id="tb-cmp-tar-body"></tbody></table></div>
+        <div class="sec">Evolução de eventos previstos por serviço</div>
+        <div class="tbox" style="overflow-x:auto"><table id="tb-cmp-evt"><thead><tr id="tr-cmp-evt-head"></tr></thead><tbody id="tb-cmp-evt-body"></tbody></table></div>
+        <div class="sec">Evolução do faturamento previsto por serviço</div>
+        <div class="tbox" style="overflow-x:auto"><table id="tb-cmp-fat"><thead><tr id="tr-cmp-fat-head"></tr></thead><tbody id="tb-cmp-fat-body"></tbody></table></div>
+      </div>
+      <div id="cmp-vazio" class="alerta al-info" style="display:none"><span>ℹ</span><span>Selecione ao menos 2 cadernos para comparar.</span></div>
+    </div>
+
+  </div><!-- /con -->
+</div><!-- /main -->
+
+<!-- MODAL SENHA -->
+<div class="modal-overlay" id="modal-senha">
+  <div class="modal">
+    <h3 style="font-size:14px;margin-bottom:1rem">Alterar senha</h3>
+    <div class="fg"><label>Nova senha</label><input type="password" id="nova-senha" placeholder="Mínimo 8 caracteres"></div>
+    <div class="fg"><label>Confirmar senha</label><input type="password" id="conf-senha" placeholder="Repita a senha"></div>
+    <p id="senha-msg" style="font-size:11px;color:var(--vm);margin-bottom:8px"></p>
+    <div class="btn-row">
+      <button class="btn btn-s" onclick="fecharModalSenha()">Cancelar</button>
+      <button class="btn btn-p" onclick="alterarSenha()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SURL='https://wcefqhivhaejueenburz.supabase.co';
+const SKEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndjZWZxaGl2aGFlanVlZW5idXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3OTEwNTgsImV4cCI6MjA5NzM2NzA1OH0.omNTpwaPvIzCxHJHnuLT9qSqV8yS-THcWjpe8ZMVKdc';
+const {createClient}=supabase;
+const sb=createClient(SURL,SKEY,{auth:{autoRefreshToken:true,persistSession:true}});
+const INATIVIDADE_MS=10*60*1000;
+const LOGIN_URL='/Painel_Faturamento_v2/index.html';
+const MAPA_URL='/Painel_Faturamento_v2/mapa.html';
+const ESTADO='RJ';
+const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const PROCS_RJ={COMERCIAL:['ANEXO IV','CORE','LIDE','REN'],TECNICA:['Linha Morta','Linha Viva']};
+const PROCS_TODOS=['ANEXO IV','CORE','LIDE','REN','Linha Morta','Linha Viva'];
+const CMP_CORES=['#534AB7','#378ADD','#1D9E75','#BA7517','#BE2F3B','#D4537E'];
+const fR=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL',minimumFractionDigits:2});
+const fN=v=>Math.round(Number(v||0)).toLocaleString('pt-BR');
+const fPct=v=>{const c=v>=0?'#1D9E75':'#BE2F3B';return `<span style="color:${c};font-weight:700">${v>=0?'+':''}${v.toFixed(1)}%</span>`;};
+
+let perfil={},role='viewer',tabAtual='resumida';
+let chartMensal=null,chartDiv=null,chartReg=null;
+let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
+
+// ═══ INATIVIDADE ═══
+document.addEventListener('click',()=>localStorage.setItem('ceneged_ultima_atividade',Date.now().toString()));
+setInterval(()=>{
+  const u=localStorage.getItem('ceneged_ultima_atividade');
+  if(u&&(Date.now()-parseInt(u))>INATIVIDADE_MS) fazerLogout();
+},60000);
+
+// ═══ INIT ═══
+window.addEventListener('load',async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href=LOGIN_URL;return;}
+  const u=localStorage.getItem('ceneged_ultima_atividade');
+  if(u&&(Date.now()-parseInt(u))>INATIVIDADE_MS){await sb.auth.signOut();window.location.href=LOGIN_URL;return;}
+  localStorage.setItem('ceneged_ultima_atividade',Date.now().toString());
+  const {data}=await sb.from('usuarios_perfil_completo').select('*').eq('id',session.user.id).single();
+  perfil=data||{role:'viewer'};role=perfil.role||'viewer';
+  const partes=(perfil.nome||session.user.email).split(' ');
+  const ini=(partes[0][0]+(partes[1]?partes[1][0]:'')).toUpperCase();
+  document.getElementById('sb-avatar').textContent=ini;
+  document.getElementById('sb-uname').textContent=perfil.nome||session.user.email.split('@')[0];
+  document.getElementById('sb-urole').textContent={admin:'Administrador',analyst:'Analista',viewer:'Visualizador'}[role]||'Visualizador';
+  if(role==='admin'||(role==='analyst'&&(perfil.perm_producao||perfil.perm_boletim))){
+    document.getElementById('sb-sec-dados').style.display='';
+    document.getElementById('nav-dados').style.display='';
+  }
+  if(role==='admin'){
+    document.getElementById('sb-sec-admin').style.display='';
+    document.getElementById('nav-admin').style.display='';
+  }
+  if(perfil.perm_exportar_excel||role==='admin') document.getElementById('btn-xls').style.display='flex';
+  if(perfil.perm_exportar_pdf||role==='admin') document.getElementById('btn-pdf').style.display='flex';
+  preencherPeriodos();
+  await carregarCache();
+  setTab('resumida',document.getElementById('nav-resumida'));
+});
+
+// ═══ CACHE ═══
+async function carregarCache(){
+  const [c1,c2,c3,c4,c5]=await Promise.all([
+    sb.from('cadernos').select('*').eq('estado',ESTADO).eq('ativo',true),
+    sb.from('caderno_tarifas').select('*').eq('estado',ESTADO),
+    sb.from('producao_real').select('*').eq('estado',ESTADO).eq('ativo',true),
+    sb.from('boletins').select('*').eq('estado',ESTADO),
+    sb.from('boletim_itens').select('*')
+  ]);
+  C.cads=c1.data||[];
+  C.tars=c2.data||[];
+  C.prod=c3.data||[];
+  C.bols=c4.data||[];
+  C.itens=c5.data||[];
+}
+
+// ═══ CÁLCULOS ═══
+function getTarifas(reg='',proc=''){
+  const ids=new Set(C.cads.map(c=>c.id));
+  return C.tars.filter(t=>ids.has(t.caderno_id)&&(!reg||t.regional===reg)&&(!proc||t.processo===proc));
+}
+
+function getProd(mes,ano,reg='',proc=''){
+  return C.prod.filter(r=>{
+    if(r.mes!==mes||r.ano!==ano) return false;
+    if(reg&&r.regional!==reg) return false;
+    // Filtrar por processo via regional derivada
+    if(proc){
+      const regEsperada=proc==='Linha Morta'||proc==='Linha Viva'?'TECNICA':'COMERCIAL';
+      if(r.regional!==regEsperada) return false;
+    }
+    return true;
+  });
+}
+
+function calcPrev(mes,ano,reg='',proc=''){
+  return getTarifas(reg,proc).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0);
+}
+
+function calcPrevEvt(mes,ano,reg='',proc=''){
+  return getTarifas(reg,proc).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);
+}
+
+function calcExec(mes,ano,reg='',proc=''){
+  const tars=getTarifas(reg,proc);
+  const tarMap={};tars.forEach(t=>tarMap[t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
+  // Calcular média por regional para fallback
+  const mediaReg={};
+  ['COMERCIAL','TECNICA'].forEach(r=>{
+    const tr=C.tars.filter(t=>t.regional===r&&(!proc||t.processo===proc));
+    if(tr.length) mediaReg[r]=tr.reduce((s,t)=>s+(parseFloat(t.preco_unitario)||0),0)/tr.length;
+  });
+  let val=0,evt=0;
+  getProd(mes,ano,reg,proc).forEach(p=>{
+    let tar=tarMap[p.regional+'|'+p.cod_servico]||0;
+    if(!tar) tar=mediaReg[p.regional]||0;
+    val+=p.qde_executada*tar;evt+=p.qde_executada;
+  });
+  return {val,evt};
+}
+
+// ═══ PERÍODOS ═══
+function preencherPeriodos(){
+  const hoje=new Date();
+  const mesAnt=hoje.getMonth()===0?12:hoje.getMonth();
+  const anoAnt=hoje.getMonth()===0?hoje.getFullYear()-1:hoje.getFullYear();
+  ['g','s','r'].forEach(p=>{
+    const sm=document.getElementById(p+'-mes'),sa=document.getElementById(p+'-ano');
+    if(sm) sm.innerHTML=MN.slice(1).map((n,i)=>`<option value="${i+1}"${i+1===mesAnt?' selected':''}>${n}</option>`).join('');
+    if(sa) sa.innerHTML=[hoje.getFullYear()-1,hoje.getFullYear(),hoje.getFullYear()+1].map(a=>`<option value="${a}"${a===anoAnt?' selected':''}>${a}</option>`).join('');
+  });
+  const sra=document.getElementById('rs-ano');
+  if(sra) sra.innerHTML=[hoje.getFullYear()-1,hoje.getFullYear(),hoje.getFullYear()+1].map(a=>`<option value="${a}"${a===hoje.getFullYear()?' selected':''}>${a}</option>`).join('');
+  const srm=document.getElementById('rs-mes');
+  if(srm) srm.innerHTML='<option value="">Todos</option>'+MN.slice(1).map((n,i)=>`<option value="${i+1}">${n}</option>`).join('');
+}
+
+// ═══ SYNC PROCESSOS ═══
+function syncProcs(selId,reg){
+  const s=document.getElementById(selId);if(!s) return;
+  const procs=reg&&PROCS_RJ[reg]?PROCS_RJ[reg]:PROCS_TODOS;
+  const cur=s.value;
+  s.innerHTML='<option value="">Todos os processos</option>'+procs.map(p=>`<option value="${p}">${p}</option>`).join('');
+  if(procs.includes(cur)) s.value=cur; else s.value='';
+}
+function syncRsProc(){syncProcs('rs-proc',document.getElementById('rs-reg').value);}
+function syncGProc(){syncProcs('g-proc',document.getElementById('g-reg').value);}
+function syncRProc(){syncProcs('r-proc',document.getElementById('r-reg').value);}
+function syncSProc(){syncProcs('s-proc',document.getElementById('s-reg').value);}
+function syncCmpProc(){syncProcs('cmp-proc',document.getElementById('cmp-reg').value);}
+
+// ═══ TABS ═══
+const TABS_LABELS={resumida:'Análise Faturamento Geral',geral:'Análise Mensal',regional:'Por Contrato',servico:'Por Serviço',comparativo:'Comparativo de Cadernos'};
+function setTab(id,el){
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.querySelectorAll('[id^="tab-"]').forEach(t=>t.style.display='none');
+  const tab=document.getElementById('tab-'+id);
+  if(tab) tab.style.display='block';
+  tabAtual=id;
+  document.getElementById('page-title').textContent=TABS_LABELS[id]||id;
+  document.getElementById('page-sub').textContent='Rio de Janeiro';
+  if(id==='resumida') carregarResumida();
+  else if(id==='geral') carregarGeral();
+  else if(id==='regional') carregarRegional();
+  else if(id==='servico') carregarServico();
+  else if(id==='comparativo') carregarComparativo();
+}
+
+function recarregarAba(){setTab(tabAtual,document.getElementById('nav-'+tabAtual));}
+
+// ═══ FATURAMENTO GERAL ═══
+function carregarResumida(){
+  const reg=document.getElementById('rs-reg').value;
+  const proc=document.getElementById('rs-proc').value;
+  const ano=parseInt(document.getElementById('rs-ano').value||new Date().getFullYear());
+  const mesFil=parseInt(document.getElementById('rs-mes').value||0);
+
+  const mesesTodos=[];
+  for(let m=1;m<=12;m++){
+    if(C.prod.some(r=>r.ano===ano&&r.mes===m&&(!reg||r.regional===reg))) mesesTodos.push(m);
+  }
+  const meses=mesFil?mesesTodos.filter(m=>m===mesFil):mesesTodos;
+
+  if(!meses.length){
+    ['tb-rs-fat-body','tb-rs-evt-body','tb-rs-dif-body'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados para ${ano}${mesFil?' — '+MN[mesFil]:''}.</td></tr>`;
+    });
+    document.getElementById('rs-prev').textContent='—';
+    document.getElementById('rs-exec').textContent='—';
+    return;
+  }
+
+  // Cards
+  const prev=calcPrev(meses[0],ano,reg,proc);
+  const exec=calcExec(meses[0],ano,reg,proc);
+  document.getElementById('rs-prev').textContent=fR(calcPrev(meses[0],ano,reg,proc));
+  document.getElementById('rs-exec').textContent=fR(exec.val);
+  document.getElementById('rs-pct').textContent=(prev>0?(exec.val/prev*100):0).toFixed(1)+'%';
+  // YTD
+  let ytdP=0,ytdE=0;
+  for(let m=1;m<=meses[meses.length-1];m++){ytdP+=calcPrev(m,ano,reg,proc);ytdE+=calcExec(m,ano,reg,proc).val;}
+  document.getElementById('rs-ytd-pct').textContent=(ytdP>0?(ytdE/ytdP*100):0).toFixed(1)+'%';
+
+  // Cabeçalho tabelas
+  const mkHead=(ids)=>{
+    const thMeses=meses.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">${MN[m].substring(0,3)}/${String(ano).slice(2)}</th>`).join('');
+    ids.forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Referência/Serviço</th>'+thMeses+'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
+    });
+  };
+  mkHead(['tr-rs-fat-head']);
+
+  // Tabela faturamento
+  const valsPrev=meses.map(m=>calcPrev(m,ano,reg,proc));
+  const valsExec=meses.map(m=>calcExec(m,ano,reg,proc).val);
+  const totP=valsPrev.reduce((s,v)=>s+v,0),totE=valsExec.reduce((s,v)=>s+v,0);
+  const mkPct=(v,p)=>p>0?((v-p)/p*100):0;
+  document.getElementById('tb-rs-fat-body').innerHTML=
+    `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vm)">Faturamento Previsto (Caderno)</td>`+valsPrev.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totP)}</td></tr>`+
+    `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vd)">Faturamento Executado (Campo)</td>`+valsExec.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totE)}</td></tr>`+
+    `<tr style="border-top:2px solid var(--vd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#3B6D11">% Exec. vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsExec[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totE,totP))}</td></tr>`;
+
+  // Tabela eventos por serviço
+  const tars=getTarifas(reg,proc);
+  const svcs=[...new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico+'||'+t.processo))];
+  const headEvt='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th><th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Processo</th>'+
+    meses.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);text-align:right;color:#3B6D11">EXEC.${String(m).padStart(2,'0')}/${String(ano).slice(2)}</th>`).join('')+
+    '<th style="font-size:11px;padding:9px 12px;background:var(--bg);text-align:right;color:var(--tx2)">Total</th>';
+  document.getElementById('tr-rs-evt-head').innerHTML=headEvt;
+  document.getElementById('tb-rs-evt-body').innerHTML=svcs.map(key=>{
+    const [cod,desc,pr]=key.split('||');
+    const prevEvt=tars.filter(t=>t.cod_servico===cod&&t.processo===pr).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);
+    let tot=0;
+    const cells=meses.map(m=>{
+      const v=C.prod.filter(p=>p.mes===m&&p.ano===ano&&p.cod_servico===cod&&(!reg||p.regional===reg)).reduce((s,p)=>s+p.qde_executada,0);
+      tot+=v;return `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fN(v)}</td>`;
+    }).join('');
+    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:10px;color:var(--tx2)">${pr||'—'}</td>${cells}<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fN(tot)}</td></tr>`;
+  }).join('');
+
+  // Tabela diferença executado vs previsto caderno
+  const headDif='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th><th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Processo</th>'+
+    meses.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);text-align:right">DIF.${String(m).padStart(2,'0')}/${String(ano).slice(2)} x Cad.</th>`).join('')+
+    '<th style="font-size:11px;padding:9px 12px;background:var(--bg);text-align:right;color:var(--tx2)">Total</th>';
+  document.getElementById('tr-rs-dif-head').innerHTML=headDif;
+  document.getElementById('tb-rs-dif-body').innerHTML=svcs.map(key=>{
+    const [cod,desc,pr]=key.split('||');
+    const prevEvt=tars.filter(t=>t.cod_servico===cod&&t.processo===pr).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);
+    let tot=0;
+    const cells=meses.map(m=>{
+      const exec=C.prod.filter(p=>p.mes===m&&p.ano===ano&&p.cod_servico===cod&&(!reg||p.regional===reg)).reduce((s,p)=>s+p.qde_executada,0);
+      const dif=exec-prevEvt;tot+=dif;
+      const cor=dif>0?'#1D9E75':dif<0?'#BE2F3B':'inherit';
+      return `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor}">${dif>=0?'+':''}${fN(dif)}</td>`;
+    }).join('');
+    const corT=tot>0?'#1D9E75':tot<0?'#BE2F3B':'inherit';
+    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:10px;color:var(--tx2)">${pr||'—'}</td>${cells}<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700;color:${corT}">${tot>=0?'+':''}${fN(tot)}</td></tr>`;
+  }).join('');
+}
+
+// ═══ ANÁLISE MENSAL ═══
+function carregarGeral(){
+  const reg=document.getElementById('g-reg').value;
+  const proc=document.getElementById('g-proc').value;
+  const mes=parseInt(document.getElementById('g-mes').value);
+  const ano=parseInt(document.getElementById('g-ano').value);
+  const regs=reg?[reg]:['COMERCIAL','TECNICA'];
+
+  const prev=calcPrev(mes,ano,reg,proc);
+  const exec=calcExec(mes,ano,reg,proc);
+  document.getElementById('g-prev').textContent=fR(prev);
+  document.getElementById('g-exec').textContent=fR(exec.val);
+  document.getElementById('g-pct-exec').textContent=(prev>0?(exec.val/prev*100):0).toFixed(1)+'%';
+  let ytdP=0,ytdE=0;
+  for(let m=1;m<=mes;m++){ytdP+=calcPrev(m,ano,reg,proc);ytdE+=calcExec(m,ano,reg,proc).val;}
+  document.getElementById('g-ytd-pct-exec').textContent=(ytdP>0?(ytdE/ytdP*100):0).toFixed(1)+'%';
+
+  // Gráficos
+  const mesesAnos=MN.slice(1).map((_,i)=>MN[i+1].substring(0,3));
+  const sPrev=[],sExec=[];
+  for(let m=1;m<=12;m++){sPrev.push(calcPrev(m,ano,reg,proc));sExec.push(calcExec(m,ano,reg,proc).val);}
+  if(chartMensal) chartMensal.destroy();
+  chartMensal=new Chart(document.getElementById('g-chart-mensal'),{type:'bar',data:{labels:mesesAnos,datasets:[
+    {label:'Previsto',data:sPrev,backgroundColor:'rgba(190,47,59,.25)',borderColor:'#BE2F3B',borderWidth:1.5,type:'line',fill:false,tension:.3,pointRadius:3},
+    {label:'Executado',data:sExec,backgroundColor:'rgba(29,158,117,.2)',borderColor:'#1D9E75',borderWidth:1.5,type:'line',fill:false,tension:.3,pointRadius:3}
+  ]},options:{responsive:true,plugins:{legend:{labels:{font:{size:10}}}},scales:{y:{ticks:{callback:v=>fR(v).replace('R$','R$\n'),font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+
+  const divs=sPrev.map((p,i)=>sExec[i]-p);
+  if(chartDiv) chartDiv.destroy();
+  chartDiv=new Chart(document.getElementById('g-chart-div'),{type:'bar',data:{labels:mesesAnos,datasets:[{label:'Divergência',data:divs,backgroundColor:divs.map(d=>d>=0?'rgba(29,158,117,.6)':'rgba(190,47,59,.6)'),borderColor:divs.map(d=>d>=0?'#1D9E75':'#BE2F3B'),borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fR(v).replace('R$',''),font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+
+  // Tabelas por contrato
+  let evtHtml='',fatHtml='',ytdHtml='';
+  regs.forEach(r=>{
+    const pE=calcPrevEvt(mes,ano,r,proc),ex=calcExec(mes,ano,r,proc);
+    const dfEvt=ex.evt-pE,pct=pE>0?((pE-ex.evt)/pE*100):0;
+    const cor=Math.abs(pct)<=1?'#1D9E75':'#BA7517';
+    const st=Math.abs(pct)<=1?'<span class="pill p-ok">Normal</span>':'<span class="pill p-warn">Atenção</span>';
+    evtHtml+=`<tr><td><strong>${r}</strong></td><td>${fN(pE)}</td><td>${fN(ex.evt)}</td><td style="color:${dfEvt>=0?'#1D9E75':'#BE2F3B'}">${dfEvt>=0?'+':''}${fN(dfEvt)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${cor}"></div></div><span style="font-size:10px;color:${cor};font-weight:700">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;
+    const pF=calcPrev(mes,ano,r,proc),exF=calcExec(mes,ano,r,proc);
+    const dfFat=exF.val-pF,pctF=pF>0?(exF.val/pF*100):0;
+    fatHtml+=`<tr><td><strong>${r}</strong></td><td>${fR(pF)}</td><td>${fR(exF.val)}</td><td style="color:${dfFat>=0?'#1D9E75':'#BE2F3B'}">${dfFat>=0?'+':''}${fR(Math.abs(dfFat))}</td><td>${fPct(pctF-100)}</td></tr>`;
+    let yP=0,yE=0;
+    for(let m=1;m<=mes;m++){yP+=calcPrev(m,ano,r,proc);yE+=calcExec(m,ano,r,proc).val;}
+    const pctY=yP>0?(yE/yP*100):0;
+    ytdHtml+=`<tr><td><strong>${r}</strong></td><td>${fR(yP)}</td><td>${fR(yE)}</td><td style="color:${yE>=yP?'#1D9E75':'#BE2F3B'}">${yE>=yP?'+':''}${fR(Math.abs(yE-yP))}</td><td>${fPct(pctY-100)}</td></tr>`;
+  });
+  document.getElementById('tb-evt-reg').innerHTML=evtHtml;
+  document.getElementById('tb-fat-reg').innerHTML=fatHtml;
+  document.getElementById('tb-ytd-reg').innerHTML=ytdHtml;
+}
+
+// ═══ POR CONTRATO ═══
+function carregarRegional(){
+  const reg=document.getElementById('r-reg').value||'COMERCIAL';
+  const proc=document.getElementById('r-proc').value;
+  const mes=parseInt(document.getElementById('r-mes').value);
+  const ano=parseInt(document.getElementById('r-ano').value);
+  document.getElementById('r-ch-tit').textContent=`Evolução mensal — ${reg}`;
+  const prev=calcPrev(mes,ano,reg,proc),exec=calcExec(mes,ano,reg,proc);
+  document.getElementById('r-prev').textContent=fR(prev);
+  document.getElementById('r-exec').textContent=fR(exec.val);
+  document.getElementById('r-pct').textContent=(prev>0?(exec.val/prev*100):0).toFixed(1)+'%';
+  const mesAnt=mes===1?12:mes-1,anoAnt=mes===1?ano-1:ano;
+  const execAnt=calcExec(mesAnt,anoAnt,reg,proc);
+  const varVal=exec.val-execAnt.val;
+  document.getElementById('r-var').textContent=fR(Math.abs(varVal));
+  const vs=document.getElementById('r-var-s');vs.textContent=(varVal>=0?'▲ acima':'▼ abaixo')+' do mês anterior';vs.className='cs '+(varVal>=0?'cp':'cn');
+  // Gráfico
+  const sPrev=[],sExec=[];
+  for(let m=1;m<=12;m++){sPrev.push(calcPrev(m,ano,reg,proc));sExec.push(calcExec(m,ano,reg,proc).val);}
+  if(chartReg) chartReg.destroy();
+  chartReg=new Chart(document.getElementById('r-chart'),{type:'bar',data:{labels:MN.slice(1).map(n=>n.substring(0,3)),datasets:[
+    {label:'Previsto',data:sPrev,backgroundColor:'rgba(190,47,59,.2)',borderColor:'#BE2F3B',borderWidth:1.5,type:'line',fill:false,tension:.3,pointRadius:3},
+    {label:'Executado',data:sExec,backgroundColor:'rgba(29,158,117,.2)',borderColor:'#1D9E75',borderWidth:1.5,type:'line',fill:false,tension:.3,pointRadius:3}
+  ]},options:{responsive:true,plugins:{legend:{labels:{font:{size:10}}}},scales:{y:{ticks:{font:{size:10}}},x:{ticks:{font:{size:10}}}}}});
+  // Tabela serviços
+  const tars=getTarifas(reg,proc);
+  const svcs=[...new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico+'||'+t.processo))];
+  document.getElementById('tb-svc-reg').innerHTML=svcs.map(key=>{
+    const [cod,desc,pr]=key.split('||');
+    const prevE=tars.filter(t=>t.cod_servico===cod&&t.processo===pr).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);
+    const tar=tars.find(t=>t.cod_servico===cod&&t.processo===pr);
+    const prevF=prevE*(parseFloat(tar?.preco_unitario)||0);
+    const execEvt=C.prod.filter(p=>p.mes===mes&&p.ano===ano&&p.cod_servico===cod&&p.regional===reg).reduce((s,p)=>s+p.qde_executada,0);
+    const execF=execEvt*(parseFloat(tar?.preco_unitario)||0);
+    const dif=execF-prevF;
+    const pct=prevF>0?(execF/prevF*100):0;
+    return `<tr><td style="font-size:11px">${desc}</td><td style="font-size:10px;color:var(--tx2)">${pr||'—'}</td><td style="text-align:right">${fR(prevF)}</td><td style="text-align:right">${fR(execF)}</td><td style="text-align:right;color:${dif>=0?'#1D9E75':'#BE2F3B'}">${dif>=0?'+':''}${fR(Math.abs(dif))}</td><td>${fPct(pct-100)}</td></tr>`;
+  }).join('');
+}
+
+// ═══ POR SERVIÇO ═══
+function carregarServico(){
+  const reg=document.getElementById('s-reg').value;
+  const proc=document.getElementById('s-proc').value;
+  const mes=parseInt(document.getElementById('s-mes').value);
+  const ano=parseInt(document.getElementById('s-ano').value);
+  const tars=getTarifas(reg,proc);
+  const svcs=[...new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico+'||'+t.processo+'||'+t.regional))];
+  document.getElementById('tb-servico').innerHTML=svcs.map(key=>{
+    const [cod,desc,pr,r]=key.split('||');
+    const tar=tars.find(t=>t.cod_servico===cod&&t.processo===pr&&t.regional===r);
+    const prevE=parseFloat(tar?.eventos_previstos)||0;
+    const prevF=prevE*(parseFloat(tar?.preco_unitario)||0);
+    const execEvt=C.prod.filter(p=>p.mes===mes&&p.ano===ano&&p.cod_servico===cod&&(!reg||p.regional===r)).reduce((s,p)=>s+p.qde_executada,0);
+    const execF=execEvt*(parseFloat(tar?.preco_unitario)||0);
+    const dif=execF-prevF;
+    const pct=prevF>0?(execF/prevF*100):0;
+    return `<tr><td style="font-size:11px">${desc}</td><td style="font-size:10px;color:var(--tx2)">${pr||'—'}</td><td style="text-align:right">${fR(prevF)}</td><td style="text-align:right">${fR(execF)}</td><td style="text-align:right;color:${dif>=0?'#1D9E75':'#BE2F3B'}">${dif>=0?'+':''}${fR(Math.abs(dif))}</td><td>${fPct(pct-100)}</td></tr>`;
+  }).join('');
+}
+
+// ═══ COMPARATIVO ═══
+const CMP_CORES2=['#534AB7','#378ADD','#1D9E75','#BA7517','#BE2F3B','#D4537E'];
+function carregarComparativo(){
+  const reg=document.getElementById('cmp-reg').value;
+  const proc=document.getElementById('cmp-proc').value;
+  const cads=C.cads.sort((a,b)=>{
+    const va=parseInt((a.vigencia_inicio||'01/2000').split('/').reverse().join(''));
+    const vb=parseInt((b.vigencia_inicio||'01/2000').split('/').reverse().join(''));
+    return va-vb;
+  });
+  const box=document.getElementById('cmp-checks');
+  box.innerHTML=cads.map((c,i)=>`
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--pt);background:var(--br);border:1px solid var(--bd);padding:5px 12px;border-radius:20px;cursor:pointer">
+      <input type="checkbox" value="${c.id}" onchange="renderComparativo()" style="accent-color:${CMP_CORES2[i%CMP_CORES2.length]}">
+      <span style="color:${CMP_CORES2[i%CMP_CORES2.length]};font-weight:700">●</span> ${c.nome}
+    </label>`).join('');
+  document.getElementById('cmp-resultado').style.display='none';
+  document.getElementById('cmp-vazio').style.display='none';
+}
+
+function renderComparativo(){
+  const reg=document.getElementById('cmp-reg').value;
+  const proc=document.getElementById('cmp-proc').value;
+  const checks=[...document.querySelectorAll('#cmp-checks input:checked')];
+  const resultado=document.getElementById('cmp-resultado');
+  const vazio=document.getElementById('cmp-vazio');
+  if(checks.length<2){resultado.style.display='none';vazio.style.display='flex';return;}
+  resultado.style.display='block';vazio.style.display='none';
+  const cadSel=checks.map((cb,idx)=>{
+    const cad=C.cads.find(c=>c.id===parseInt(cb.value));
+    const tars=C.tars.filter(t=>t.caderno_id===cad.id&&(!reg||t.regional===reg)&&(!proc||t.processo===proc));
+    return {cad,tars,cor:CMP_CORES2[idx%CMP_CORES2.length]};
+  });
+  // Cards
+  document.getElementById('cmp-cards').innerHTML=cadSel.map(({cad,tars,cor},i)=>{
+    const meta=tars.reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0);
+    const ant=i>0?cadSel[i-1].tars.reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0):null;
+    const vr=ant?((meta-ant)/ant*100):null;
+    return `<div style="background:var(--br);border-radius:var(--r);padding:1rem;border:1px solid var(--bd);border-top:3px solid ${cor}">
+      <div style="font-size:10px;color:var(--tx2);text-transform:uppercase;margin-bottom:4px">${cad.nome}</div>
+      <div style="font-size:18px;font-weight:700;color:var(--pt)">${fR(meta)}</div>
+      ${vr!==null?`<div style="font-size:11px;margin-top:3px;color:${vr>=0?'#1D9E75':'#BE2F3B'}">${vr>=0?'▲ +':'▼ '}${Math.abs(vr).toFixed(1)}% vs anterior</div>`:'<div style="font-size:11px;color:var(--tx2);margin-top:3px">Base de comparação</div>'}
+    </div>`;
+  }).join('');
+  const svcsSet=new Set(cadSel.flatMap(({tars})=>tars.map(t=>t.cod_servico+'||'+t.descricao_servico)));
+  const svcs=[...svcsSet];
+  const head='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+
+    cadSel.map(({cad,cor})=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);text-align:right;color:${cor}">${cad.vigencia_inicio||'—'}</th>`).join('')+
+    '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Variação total</th>';
+  document.getElementById('tr-cmp-tar-head').innerHTML=head;
+  document.getElementById('tr-cmp-evt-head').innerHTML=head;
+  document.getElementById('tr-cmp-fat-head').innerHTML=head;
+  let totEvt=cadSel.map(()=>0),totFat=cadSel.map(()=>0);
+  document.getElementById('tb-cmp-tar-body').innerHTML=svcs.map(key=>{
+    const [cod,desc]=key.split('||');
+    const vals=cadSel.map(({tars})=>parseFloat(tars.find(t=>t.cod_servico===cod)?.preco_unitario||0));
+    const vr=vals[0]>0?((vals[vals.length-1]-vals[0])/vals[0]*100):null;
+    const cor=vr===null?'inherit':vr>=0?'#1D9E75':'#BE2F3B';
+    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${vr!==null?(vr>=0?'▲ +':'▼ ')+Math.abs(vr).toFixed(1)+'%':'—'}</td></tr>`;
+  }).join('');
+  document.getElementById('tb-cmp-evt-body').innerHTML=svcs.map(key=>{
+    const [cod,desc]=key.split('||');
+    const vals=cadSel.map(({tars},i)=>{const v=parseFloat(tars.find(t=>t.cod_servico===cod)?.eventos_previstos||0);totEvt[i]+=v;return v;});
+    const vr=vals[0]>0?((vals[vals.length-1]-vals[0])/vals[0]*100):null;
+    const cor=vr===null?'inherit':vr>=0?'#1D9E75':'#BE2F3B';
+    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fN(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${vr!==null?(vr>=0?'▲ +':'▼ ')+Math.abs(vr).toFixed(1)+'%':'—'}</td></tr>`;
+  }).join('');
+  document.getElementById('tb-cmp-fat-body').innerHTML=svcs.map(key=>{
+    const [cod,desc]=key.split('||');
+    const vals=cadSel.map(({tars},i)=>{const t=tars.find(tt=>tt.cod_servico===cod);const v=(parseFloat(t?.eventos_previstos||0))*(parseFloat(t?.preco_unitario||0));totFat[i]+=v;return v;});
+    const vr=vals[0]>0?((vals[vals.length-1]-vals[0])/vals[0]*100):null;
+    const cor=vr===null?'inherit':vr>=0?'#1D9E75':'#BE2F3B';
+    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${vr!==null?(vr>=0?'▲ +':'▼ ')+Math.abs(vr).toFixed(1)+'%':'—'}</td></tr>`;
+  }).join('');
+}
+
+// ═══ SIDEBAR ═══
+function toggleSidebar(){
+  const sb=document.getElementById('sidebar'),m=document.getElementById('main'),ic=document.getElementById('icon-toggle');
+  sb.classList.toggle('recolhida');m.classList.toggle('expandido');
+  ic.className=sb.classList.contains('recolhida')?'ti ti-layout-sidebar-left-expand':'ti ti-layout-sidebar-left-collapse';
+}
+
+// ═══ NAVEGAÇÃO ═══
+function voltarMapa(){window.location.href=MAPA_URL;}
+async function fazerLogout(){await sb.auth.signOut();localStorage.removeItem('ceneged_ultima_atividade');window.location.href=LOGIN_URL;}
+
+// ═══ SENHA ═══
+function toggleModalSenha(){document.getElementById('modal-senha').classList.toggle('open');}
+function fecharModalSenha(){document.getElementById('modal-senha').classList.remove('open');}
+async function alterarSenha(){
+  const n=document.getElementById('nova-senha').value,c=document.getElementById('conf-senha').value,m=document.getElementById('senha-msg');
+  if(n.length<8){m.textContent='Mínimo 8 caracteres.';return;}
+  if(n!==c){m.textContent='As senhas não coincidem.';return;}
+  const {error}=await sb.auth.updateUser({password:n});
+  if(error){m.textContent='Erro: '+error.message;}else{m.style.color='#1D9E75';m.textContent='Senha alterada com sucesso!';setTimeout(fecharModalSenha,1500);}
+}
+
+// ═══ EXPORTAR ═══
+function exportarExcel(){alert('Exportação Excel em desenvolvimento.');}
+function exportarPDF(){alert('Exportação PDF em desenvolvimento.');}
+</script>
+</body>
+</html>

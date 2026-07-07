@@ -270,7 +270,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <option value="cobranca">Cob. e Negociação</option>
           <option value="atendimento">Atendimento</option>
         </select>
-        <div class="fil-sep"></div>
         <label>Estado</label>
         <select id="rs-est" onchange="syncRegsResum();carregarResumida()">
           <option value="MA">Maranhão</option>
@@ -666,13 +665,13 @@ async function iniciarApp(user){
   // Aplicar estado selecionado no mapa
   const estSelecionado=localStorage.getItem('ceneged_estado_selecionado');
   if(estSelecionado){
-    const sel=document.getElementById('g-est');
-    if(sel) sel.value=estSelecionado;
-    const selS=document.getElementById('s-est');
-    if(selS) selS.value=estSelecionado;
-    const selRs=document.getElementById('rs-est');
-    if(selRs) selRs.value=estSelecionado;
+    ['g','s','rs'].forEach(p=>{
+      const sel=document.getElementById(p+'-est');
+      if(sel) sel.value=estSelecionado;
+    });
     syncRegsGeral();syncRegsServ();syncRegsReg();syncRegsResum();syncCmpFiltros();
+    // Sincronizar processos DEPOIS de aplicar o estado
+    syncProc('g');syncProc('s');syncProc('r');syncProc('rs');
   }
 
   // Determinar primeira aba visível e carregar após cache pronto
@@ -1145,7 +1144,6 @@ function carregarResumida(){
   if(headFat&&bodyFat){
     headFat.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Referência</th>'+mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">${MN[m].substring(0,3)}/${ano}</th>`).join('')+'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
     const valsPrev=mesesComDados.map(m=>calcPrevisto(est,m,ano,reg,proc)),valsExec=mesesComDados.map(m=>calcExec(est,m,ano,reg,proc).val),valsPago=isRJ(est)?mesesComDados.map(()=>0):mesesComDados.map(m=>calcPago(est,m,ano,reg).val);
-    console.log('[DEBUG] est:',est,'reg:',reg,'proc:',proc,'ano:',ano,'meses:',mesesComDados,'valsPrev[0]:',valsPrev[0],'valsExec[0]:',valsExec[0]);
     const totPrev=valsPrev.reduce((s,v)=>s+v,0),totExec=valsExec.reduce((s,v)=>s+v,0),totPago=valsPago.reduce((s,v)=>s+v,0);
     const mkPct=(v,p)=>p>0?((v-p)/p*100):0;const fPct=v=>{const c=v>=0?'#1D9E75':'#BE2F3B';return `<span style="color:${c};font-weight:700">${v>=0?'+':''}${v.toFixed(1)}%</span>`;};
     bodyFat.innerHTML=

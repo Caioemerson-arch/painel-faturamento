@@ -1145,6 +1145,7 @@ function carregarResumida(){
   if(headFat&&bodyFat){
     headFat.innerHTML='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Referência</th>'+mesesComDados.map(m=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">${MN[m].substring(0,3)}/${ano}</th>`).join('')+'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Total</th>';
     const valsPrev=mesesComDados.map(m=>calcPrevisto(est,m,ano,reg,proc)),valsExec=mesesComDados.map(m=>calcExec(est,m,ano,reg,proc).val),valsPago=isRJ(est)?mesesComDados.map(()=>0):mesesComDados.map(m=>calcPago(est,m,ano,reg).val);
+    console.log('[DEBUG] est:',est,'reg:',reg,'proc:',proc,'ano:',ano,'meses:',mesesComDados,'valsPrev[0]:',valsPrev[0],'valsExec[0]:',valsExec[0]);
     const totPrev=valsPrev.reduce((s,v)=>s+v,0),totExec=valsExec.reduce((s,v)=>s+v,0),totPago=valsPago.reduce((s,v)=>s+v,0);
     const mkPct=(v,p)=>p>0?((v-p)/p*100):0;const fPct=v=>{const c=v>=0?'#1D9E75':'#BE2F3B';return `<span style="color:${c};font-weight:700">${v>=0?'+':''}${v.toFixed(1)}%</span>`;};
     bodyFat.innerHTML=

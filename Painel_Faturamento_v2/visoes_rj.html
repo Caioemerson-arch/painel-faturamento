@@ -44,6 +44,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 .sb-out:hover{border-color:rgba(255,255,255,.25);color:rgba(255,255,255,.7)}
 .sidebar.recolhida .sb-bottom{padding:12px 6px}
 .sidebar.recolhida .sb-out{justify-content:center;padding:6px;width:40px;margin:0 auto 6px}
+.sidebar.recolhida #bloco-status-dados{display:none}
 .main{margin-left:var(--sb-w);display:flex;flex-direction:column;min-height:100vh;transition:margin-left .2s ease}
 .main.expandido{margin-left:52px}
 .main-header{background:var(--br);border-bottom:1px solid var(--bd);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
@@ -152,6 +153,30 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <i class="ti ti-users"></i><span>Gestão de Usuários</span>
     </a>
   </div>
+
+  <!-- ATUALIZAÇÃO DE DADOS -->
+  <div style="border-top:1px solid rgba(255,255,255,.08)" id="bloco-status-dados">
+    <button onclick="toggleStatusDados()" style="width:100%;display:flex;align-items:center;gap:9px;padding:10px 14px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.55);font-size:12px;text-align:left">
+      <i class="ti ti-cloud-upload" style="font-size:16px;flex-shrink:0"></i>
+      <span>Atualização de Dados</span>
+      <i class="ti ti-chevron-down" id="icon-status-dados" style="font-size:13px;margin-left:auto;transition:.2s"></i>
+    </button>
+    <div id="painel-status-dados" style="display:none;padding:0 14px 10px">
+      <div style="margin-bottom:10px">
+        <p style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:5px">Caderno de serviço ativo</p>
+        <div id="status-cad-com" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:2px">Comercial — carregando...</div>
+        <div id="status-cad-tec" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px">Técnica — carregando...</div>
+        <div id="status-cad-em" style="font-size:9px;color:rgba(255,255,255,.25)">Carregado em: —</div>
+      </div>
+      <div style="padding-top:8px;border-top:1px solid rgba(255,255,255,.06)">
+        <p style="font-size:9px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin-bottom:5px">Serviços executados</p>
+        <div id="status-prod-com" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:2px">Comercial — carregando...</div>
+        <div id="status-prod-tec" style="font-size:10px;color:rgba(255,255,255,.55);margin-bottom:4px">Técnica — carregando...</div>
+        <div id="status-prod-em" style="font-size:9px;color:rgba(255,255,255,.25)">Carregado em: —</div>
+      </div>
+    </div>
+  </div>
+
   <div class="sb-bottom">
     <button class="sb-out" onclick="voltarMapa()">
       <i class="ti ti-arrow-left"></i><span>Área comum</span>
@@ -451,6 +476,7 @@ window.addEventListener('load',async()=>{
   if(perfil.perm_exportar_pdf||role==='admin') document.getElementById('btn-pdf').style.display='flex';
   preencherPeriodos();
   await carregarCache();
+  preencherStatusDados();
   setTab('resumida',document.getElementById('nav-resumida'));
 });
 
@@ -844,6 +870,32 @@ function renderComparativo(){
     const cor=vr===null?'inherit':vr>=0?'#1D9E75':'#BE2F3B';
     return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${vr!==null?(vr>=0?'▲ +':'▼ ')+Math.abs(vr).toFixed(1)+'%':'—'}</td></tr>`;
   }).join('');
+}
+
+// ═══ STATUS DADOS ═══
+function toggleStatusDados(){
+  const p=document.getElementById('painel-status-dados');
+  const ic=document.getElementById('icon-status-dados');
+  const aberto=p.style.display!=='none';
+  p.style.display=aberto?'none':'block';
+  ic.style.transform=aberto?'':'rotate(180deg)';
+}
+
+function preencherStatusDados(){
+  const cadCom=C.cads.find(c=>c.regional==='COMERCIAL'||c.nome?.includes('COMERCIAL'));
+  const cadTec=C.cads.find(c=>c.regional==='TECNICA'||c.nome?.includes('TECNICA'));
+  document.getElementById('status-cad-com').textContent='Comercial — '+(cadCom?cadCom.nome:'Sem caderno');
+  document.getElementById('status-cad-tec').textContent='Técnica — '+(cadTec?cadTec.nome:'Sem caderno');
+  const emCad=C.cads.length?new Date(Math.max(...C.cads.map(c=>new Date(c.importado_em||0)))).toLocaleDateString('pt-BR'):'—';
+  document.getElementById('status-cad-em').textContent='Carregado em: '+emCad;
+  const prodCom=C.prod.filter(p=>p.regional==='COMERCIAL');
+  const prodTec=C.prod.filter(p=>p.regional==='TECNICA');
+  const maxMesCom=prodCom.length?Math.max(...prodCom.map(p=>p.ano*100+p.mes)):0;
+  const maxMesTec=prodTec.length?Math.max(...prodTec.map(p=>p.ano*100+p.mes)):0;
+  document.getElementById('status-prod-com').textContent='Comercial — '+(maxMesCom?`até ${String(maxMesCom).slice(4).padStart(2,'0')}/${String(maxMesCom).slice(0,4)}`:'Sem dados');
+  document.getElementById('status-prod-tec').textContent='Técnica — '+(maxMesTec?`até ${String(maxMesTec).slice(4).padStart(2,'0')}/${String(maxMesTec).slice(0,4)}`:'Sem dados');
+  const emProd=C.prod.length?new Date(Math.max(...C.prod.map(p=>new Date(p.importado_em||0)))).toLocaleDateString('pt-BR'):'—';
+  document.getElementById('status-prod-em').textContent='Carregado em: '+emProd;
 }
 
 // ═══ SIDEBAR ═══

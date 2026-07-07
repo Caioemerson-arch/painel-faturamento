@@ -505,14 +505,24 @@ function parsearProducao(wb){
   const rows=[];
   // Ler abas MA e PI normalmente
   ['MA','PI'].forEach(est=>{const ws=wb.Sheets[est];if(!ws) return;const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:2});r.forEach(row=>{if(!row.ESTADO) row.ESTADO=est;});rows.push(...r);});
-  // Se não encontrou MA ou PI, ler a primeira aba (arquivo RJ)
+  // Se não encontrou MA ou PI, ler a aba RJ especificamente
   if(!rows.length){
-    const primeiraAba=wb.SheetNames[0];
-    const ws=wb.Sheets[primeiraAba];
+    const ws=wb.Sheets['RJ'];
     if(ws){
       const r=XLSX.utils.sheet_to_json(ws,{defval:'',range:2});
       r.forEach(row=>{if(!row.ESTADO) row.ESTADO='RJ';if(!row.REGIONAL&&row.PROCESSO) row.REGIONAL=derivarRegionalRJ(row.PROCESSO);});
       rows.push(...r);
+    } else {
+      // Tentar outras abas possíveis exceto Instruções
+      const abasValidas=wb.SheetNames.filter(n=>!['instrucoes','instruções','instrução','instrucao','readme','leiame'].includes(n.toLowerCase()));
+      if(abasValidas.length){
+        const ws2=wb.Sheets[abasValidas[0]];
+        if(ws2){
+          const r=XLSX.utils.sheet_to_json(ws2,{defval:'',range:2});
+          r.forEach(row=>{if(!row.ESTADO) row.ESTADO='RJ';if(!row.REGIONAL&&row.PROCESSO) row.REGIONAL=derivarRegionalRJ(row.PROCESSO);});
+          rows.push(...r);
+        }
+      }
     }
   }
   rows.forEach(r=>{

@@ -750,7 +750,7 @@ function atualizarPageSub(){
   const est=document.getElementById('g-est')?.value||'MA';
   const mes=parseInt(document.getElementById('g-mes')?.value||0);
   const ano=parseInt(document.getElementById('g-ano')?.value||0);
-  const nomes={MA:'Maranhão',PI:'Piauí',TODOS:'Consolidado'};
+  const nomes={MA:'Maranhão',PI:'Piauí',RJ:'Rio de Janeiro',TODOS:'Consolidado'};
   document.getElementById('page-sub').textContent=(nomes[est]||est)+' · '+(mes?MN[mes]+'/'+ano:'—');
 }
 
@@ -787,10 +787,10 @@ function preencherPeriodos(){
   const sa=document.getElementById('rs-ano');
   if(sa) sa.innerHTML=[anoAtual-1,anoAtual,anoAtual+1].map(a=>`<option value="${a}" ${a===anoAtual?'selected':''}>${a}</option>`).join('');
 }
-function syncRegsGeral(){const e=document.getElementById('g-est')?.value||'MA';const s=document.getElementById('g-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[e]||REGS.MA)).map(r=>`<option>${r}</option>`).join('');}
-function syncRegsServ(){const e=document.getElementById('s-est')?.value||'MA';const s=document.getElementById('s-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(REGS[e]||REGS.MA).map(r=>`<option>${r}</option>`).join('');}
-function syncRegsReg(){const e=document.getElementById('r-est')?.value||'MA';const s=document.getElementById('r-reg');if(s) s.innerHTML=(REGS[e]||REGS.MA).map(r=>`<option>${r}</option>`).join('');}
-function syncRegsResum(){const e=document.getElementById('rs-est')?.value||'MA';const s=document.getElementById('rs-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[e]||REGS.MA)).map(r=>`<option>${r}</option>`).join('');}
+function syncRegsGeral(){const e=document.getElementById('g-est')?.value||'MA';const s=document.getElementById('g-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[e]||[])).map(r=>`<option>${r}</option>`).join('');}
+function syncRegsServ(){const e=document.getElementById('s-est')?.value||'MA';const s=document.getElementById('s-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');}
+function syncRegsReg(){const e=document.getElementById('r-est')?.value||'MA';const s=document.getElementById('r-reg');if(s) s.innerHTML=(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');}
+function syncRegsResum(){const e=document.getElementById('rs-est')?.value||'MA';const s=document.getElementById('rs-reg');if(s) s.innerHTML='<option value="">Todas</option>'+(e==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[e]||[])).map(r=>`<option>${r}</option>`).join('');}
 
 // ═══ ANÁLISE MENSAL ═══
 async function carregarGeral(){
@@ -890,8 +890,11 @@ function renderGraficoDivMes(est,ano,mesAtual,reg=''){
 }
 
 function renderTbEvtReg(est,mes,ano,reg=''){
-  const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]));
-  const tb=document.getElementById('tb-evt-reg');let html='',totPE=0,totEx=0,totPg=0;
+  const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[est]||[]));
+  const tb=document.getElementById('tb-evt-reg');
+  if(!tb) return;
+  tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--tx2)">Calculando...</td></tr>';
+  let html='',totPE=0,totEx=0,totPg=0;
   regs.forEach(reg=>{const pE=calcPrevEvt(est,mes,ano,reg),ex=calcExec(est,mes,ano,reg),pg=calcPago(est,mes,ano,reg);const df=pg.evt-ex.evt,pct=ex.evt>0?((ex.evt-pg.evt)/ex.evt*100):0;const bc=Math.abs(pct)<=1?'#1D9E75':'#BA7517';const st=Math.abs(pct)<=1?'<span class="pill p-ok">Normal</span>':'<span class="pill p-warn">Atenção</span>';html+=`<tr><td><strong>${reg}</strong></td><td>${fN(pE)}</td><td>${fN(ex.evt)}</td><td>${fN(pg.evt)}</td><td style="color:${df>=0?'#1D9E75':'#BE2F3B'}">${df>=0?'+':''}${fN(df)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(pct)*10,100)}%;background:${bc}"></div></div><span style="font-size:10px;color:${bc};font-weight:700">${pct.toFixed(1)}%</span></div></td><td>${st}</td></tr>`;totPE+=pE;totEx+=ex.evt;totPg+=pg.evt;});
   const totDf=totPg-totEx,totPct=totEx>0?((totEx-totPg)/totEx*100):0;const totBc=Math.abs(totPct)<2?'#1D9E75':totPct>5?'#BE2F3B':'#BA7517';
   html+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td><strong>TOTAL</strong></td><td><strong>${fN(totPE)}</strong></td><td><strong>${fN(totEx)}</strong></td><td><strong>${fN(totPg)}</strong></td><td style="color:${totDf>=0?'#1D9E75':'#BE2F3B'};font-weight:700">${totDf>=0?'+':''}${fN(totDf)}</td><td><div class="prog"><div class="prog-t"><div class="prog-f" style="width:${Math.min(Math.abs(totPct)*10,100)}%;background:${totBc}"></div></div><span style="font-size:10px;color:${totBc};font-weight:700">${totPct.toFixed(1)}%</span></div></td><td></td></tr>`;
@@ -899,7 +902,7 @@ function renderTbEvtReg(est,mes,ano,reg=''){
 }
 
 function renderTbFatReg(est,mes,ano,reg=''){
-  const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]));
+  const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[est]||[]));
   const tb=document.getElementById('tb-fat-reg');let html='',totP=0,totE=0,totG=0;
   regs.forEach(reg=>{const prev=calcPrevisto(est,mes,ano,reg),ex=calcExec(est,mes,ano,reg),pg=calcPago(est,mes,ano,reg);const dv=pg.val-ex.val,pct=prev>0?(pg.val/prev*100):0;html+=`<tr><td><strong>${reg}</strong></td><td>${fR(prev)}</td><td>${fR(ex.val)}</td><td>${fR(pg.val)}</td><td style="color:${dv>=0?'#1D9E75':'#BE2F3B'}">${dv>=0?'+':''}${fR(dv)}</td><td><span class="pill ${pct>=95?'p-ok':pct>=85?'p-warn':'p-danger'}">${pct.toFixed(1)}%</span></td></tr>`;totP+=prev;totE+=ex.val;totG+=pg.val;});
   const totDv=totG-totE,totPct=totP>0?(totG/totP*100):0;
@@ -908,7 +911,7 @@ function renderTbFatReg(est,mes,ano,reg=''){
 }
 
 function renderTbYTDReg(est,mes,ano,reg=''){
-  const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI]:(REGS[est]||[]));
+  const regs=reg?[reg]:(est==='TODOS'?[...REGS.MA,...REGS.PI,...REGS.RJ]:(REGS[est]||[]));
   const tb=document.getElementById('tb-ytd-reg');if(!tb) return;
   if(!C.cads.length&&!C.prod.length&&!C.bols.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:1rem;color:var(--tx2)">Sem dados carregados.</td></tr>';return;}
   let html='',totYP=0,totYE=0,totYG=0,totMDiv=0;
@@ -933,7 +936,7 @@ function renderTbProp(est,mes,ano,reg=''){
 
 function renderTbDivergRel(est,mes,ano){
   const el=document.getElementById('relatorio-divergencia');if(!el) return;
-  const THRESHOLD_TAR=0.01;const estados=est==='TODOS'?['MA','PI']:[est];let htmlTotal='',temDiv=false;
+  const THRESHOLD_TAR=0.01;const estados=est==='TODOS'?['MA','PI','RJ']:[est];let htmlTotal='',temDiv=false;
   estados.forEach(estado=>{
     const regs=REGS[estado]||[];const tars=getTarifas(estado,mes,ano);if(!tars.length) return;
     const divPorReg={};
@@ -1083,7 +1086,9 @@ function carregarResumida(){
   }
   // Tabelas 2, 3 e 4
   const tars=getTarifas(est,mesesComDados[0],ano,reg);
-  const svcs=[...new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico))];
+  // Limitar serviços para evitar travamento com estados com muitos serviços (ex: RJ com 771)
+  const svcsSet=new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico));
+  const svcs=[...svcsSet].slice(0,500); // max 500 serviços por vez
   const headEvt=document.getElementById('tr-rs-evt-head'),bodyEvt=document.getElementById('tb-rs-evt-body');
   if(headEvt&&bodyEvt){
     let headHtml='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th><th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Prev. Caderno</th>';
@@ -1140,7 +1145,7 @@ async function exportarPDF(){
 }
 
 async function exportarPDFResumida(){
-  const {jsPDF}=window.jspdf;const est=document.getElementById('rs-est')?.value||'MA';const ano=document.getElementById('rs-ano')?.value||new Date().getFullYear();const nomes={MA:'Maranhão',PI:'Piauí',TODOS:'Consolidado'};
+  const {jsPDF}=window.jspdf;const est=document.getElementById('rs-est')?.value||'MA';const ano=document.getElementById('rs-ano')?.value||new Date().getFullYear();const nomes={MA:'Maranhão',PI:'Piauí',RJ:'Rio de Janeiro',TODOS:'Consolidado'};
   const tab=document.getElementById('tab-resumida');const canvas=await html2canvas(tab,{scale:1.5,useCORS:true,backgroundColor:'#f5f4f1'});const img=canvas.toDataURL('image/png');
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});const W=297,H=210,margin=10;
   pdf.setFillColor(26,26,46);pdf.rect(0,0,W,20,'F');pdf.setFillColor(190,47,59);pdf.rect(0,20,W,2,'F');pdf.setTextColor(255,255,255);

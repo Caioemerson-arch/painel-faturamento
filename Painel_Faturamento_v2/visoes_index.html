@@ -496,7 +496,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <label>Processo</label>
         <select id="cmp-proc" onchange="carregarComparativo()"></select>
         <label>Regional</label>
-        <select id="cmp-reg" onchange="carregarComparativo()"><option value="">Todas</option></select>
+        <select id="cmp-reg" onchange="renderComparativo()"><option value="">Todas</option></select>
       </div>
       <div id="cmp-sel-box" style="margin-bottom:1.25rem">
         <div class="sec">Selecione os cadernos para comparar</div>
@@ -1247,6 +1247,13 @@ const CMP_CORES=['#534AB7','#378ADD','#1D9E75','#BA7517','#BE2F3B','#D4537E'];
 
 function carregarComparativo(){
   const est=document.getElementById('cmp-est').value;
+  // Popular regionais do estado selecionado
+  const regsEst=[...new Set(C.tars.filter(t=>t.estado===est).map(t=>t.regional).filter(Boolean))].sort();
+  const selReg=document.getElementById('cmp-reg');
+  const curReg=selReg.value;
+  selReg.innerHTML='<option value="">Todas</option>'+regsEst.map(r=>`<option value="${r}">${r}</option>`).join('');
+  selReg.value=regsEst.includes(curReg)?curReg:'';
+
   const cads=C.cads.filter(c=>c.estado===est).sort((a,b)=>{
     const va=parseInt((a.vigencia_inicio||'01/2000').split('/').reverse().join(''));
     const vb=parseInt((b.vigencia_inicio||'01/2000').split('/').reverse().join(''));
@@ -1264,6 +1271,7 @@ function carregarComparativo(){
 
 function renderComparativo(){
   const est=document.getElementById('cmp-est').value;
+  const regFil=document.getElementById('cmp-reg').value; // '' = Todas
   const checks=[...document.querySelectorAll('#cmp-checks input:checked')];
   const resultado=document.getElementById('cmp-resultado');
   const vazio=document.getElementById('cmp-vazio');
@@ -1271,18 +1279,27 @@ function renderComparativo(){
   if(checks.length<2){resultado.style.display='none';vazio.style.display='flex';return;}
   resultado.style.display='block';vazio.style.display='none';
 
+  // Cadernos selecionados (ordem cronológica = ordem do DOM). Filtra pela regional escolhida.
   const cadSel=checks.map((cb,idx)=>{
     const cad=C.cads.find(c=>c.id===parseInt(cb.value));
-    const tars=C.tars.filter(t=>t.caderno_id===cad.id);
+    const tars=C.tars.filter(t=>t.caderno_id===cad.id&&(!regFil||t.regional===regFil));
     return {cad,tars,cor:CMP_CORES[idx%CMP_CORES.length]};
   });
 
-  // Cards resumo
+  // Variação encadeada: (Novo - Anterior)/Anterior. "Novo" = último caderno, "Anterior" = penúltimo.
+  const varAnterior=vals=>{
+    if(vals.length<2) return null;
+    const ant=vals[vals.length-2], nov=vals[vals.length-1];
+    return ant>0 ? ((nov-ant)/ant*100) : null;
+  };
+  const celVar=v=>{const cor=v===null?'inherit':v>=0?'#1D9E75':'#BE2F3B';return `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${v!==null?(v>=0?'▲ +':'▼ ')+Math.abs(v).toFixed(1)+'%':'—'}</td>`;};
+
+  // Cards resumo (cada caderno vs o imediatamente anterior)
   const cards=document.getElementById('cmp-cards');
   cards.innerHTML=cadSel.map(({cad,tars,cor},i)=>{
     const meta=tars.reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0);
     const anterior=i>0?cadSel[i-1].tars.reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0):null;
-    const var_=anterior?((meta-anterior)/anterior*100):null;
+    const var_=(anterior!==null&&anterior>0)?((meta-anterior)/anterior*100):null;
     return `<div style="background:var(--br);border-radius:var(--r);padding:1rem;border:1px solid var(--bd);border-top:3px solid ${cor}">
       <div style="font-size:10px;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Caderno ${cad.vigencia_inicio||'—'}</div>
       <div style="font-size:18px;font-weight:700;color:var(--pt)">${fR(meta)}</div>
@@ -1290,64 +1307,48 @@ function renderComparativo(){
     </div>`;
   }).join('');
 
-  // Serviços únicos
-  const svcsSet=new Set(cadSel.flatMap(({tars})=>tars.map(t=>t.cod_servico+'||'+t.descricao_servico)));
-  const svcs=[...svcsSet];
+  // Linhas = Serviço x Regional (respeita o filtro de regional)
+  const rowKeys=[...new Set(cadSel.flatMap(({tars})=>tars.map(t=>t.regional+'||'+t.cod_servico+'||'+t.descricao_servico)))]
+    .sort((a,b)=>{const pa=a.split('||'),pb=b.split('||');return pa[0]===pb[0]?pa[2].localeCompare(pb[2]):pa[0].localeCompare(pb[0]);});
+  const regsPresent=new Set(rowKeys.map(k=>k.split('||')[0]));
+  const showReg=regsPresent.size>1; // só mostra a coluna Regional quando há mais de uma
 
-  // Cabeçalho comum
   const headHtml='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th>'+
+    (showReg?'<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Regional</th>':'')+
     cadSel.map(({cad,cor})=>`<th style="font-size:11px;padding:9px 12px;background:var(--bg);text-align:right;color:${cor}">${cad.vigencia_inicio||'—'}</th>`).join('')+
-    '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Variação total</th>';
+    '<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Variação (vs anterior)</th>';
 
-  // Tabela tarifas
-  const thTar=document.getElementById('tr-cmp-tar-head');
-  const tbTar=document.getElementById('tb-cmp-tar-body');
-  thTar.innerHTML=headHtml;
-  tbTar.innerHTML=svcs.map(key=>{
-    const [cod,desc]=key.split('||');
-    const vals=cadSel.map(({tars})=>parseFloat(tars.find(t=>t.cod_servico===cod)?.preco_unitario||0));
-    const var_=vals[0]>0?((vals[vals.length-1]-vals[0])/vals[0]*100):null;
-    const cor=var_===null?'inherit':var_>=0?'#1D9E75':'#BE2F3B';
-    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+
-      vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
-      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${var_!==null?(var_>=0?'▲ +':'▼ ')+Math.abs(var_).toFixed(1)+'%':'—'}</td></tr>`;
-  }).join('');
+  // Monta uma tabela genérica: getVal extrai o valor da linha em cada caderno
+  const montarTabela=(headEl,bodyEl,getVal,fmt,comTotal)=>{
+    headEl.innerHTML=headHtml;
+    const totArr=cadSel.map(()=>0);
+    let html=rowKeys.map(key=>{
+      const [reg,cod,desc]=key.split('||');
+      const vals=cadSel.map(({tars},i)=>{const t=tars.find(x=>x.cod_servico===cod&&x.regional===reg);const v=getVal(t);totArr[i]+=v;return v;});
+      const v_=varAnterior(vals);
+      return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+
+        (showReg?`<td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px;color:var(--tx2)">${reg}</td>`:'')+
+        vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fmt(v)}</td>`).join('')+
+        celVar(v_)+'</tr>';
+    }).join('');
+    if(comTotal){
+      const vTot=varAnterior(totArr);
+      html+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td style="padding:9px 12px;font-weight:700"${showReg?' colspan="2"':''}>TOTAL</td>`+
+        totArr.map(v=>`<td style="padding:9px 12px;text-align:right;font-weight:700">${fmt(v)}</td>`).join('')+
+        celVar(vTot)+'</tr>';
+    }
+    bodyEl.innerHTML=html;
+  };
 
-  // Tabela eventos previstos
-  const thEvt=document.getElementById('tr-cmp-evt-head');
-  const tbEvt=document.getElementById('tb-cmp-evt-body');
-  thEvt.innerHTML=headHtml;
-  let totEvtArr=cadSel.map(()=>0);
-  tbEvt.innerHTML=svcs.map(key=>{
-    const [cod,desc]=key.split('||');
-    const vals=cadSel.map(({tars},i)=>{const v=parseFloat(tars.find(t=>t.cod_servico===cod)?.eventos_previstos||0);totEvtArr[i]+=v;return v;});
-    const var_=vals[0]>0?((vals[vals.length-1]-vals[0])/vals[0]*100):null;
-    const cor=var_===null?'inherit':var_>=0?'#1D9E75':'#BE2F3B';
-    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+
-      vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fN(v)}</td>`).join('')+
-      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${var_!==null?(var_>=0?'▲ +':'▼ ')+Math.abs(var_).toFixed(1)+'%':'—'}</td></tr>`;
-  }).join('');
-  const varTotEvt=totEvtArr[0]>0?((totEvtArr[totEvtArr.length-1]-totEvtArr[0])/totEvtArr[0]*100):null;
-  const corTotEvt=varTotEvt===null?'inherit':varTotEvt>=0?'#1D9E75':'#BE2F3B';
-  tbEvt.innerHTML+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td style="padding:9px 12px;font-weight:700">TOTAL</td>`+totEvtArr.map(v=>`<td style="padding:9px 12px;text-align:right;font-weight:700">${fN(v)}</td>`).join('')+`<td style="padding:9px 12px;text-align:right;font-weight:700;color:${corTotEvt}">${varTotEvt!==null?(varTotEvt>=0?'▲ +':'▼ ')+Math.abs(varTotEvt).toFixed(1)+'%':'—'}</td></tr>`;
-
-  // Tabela faturamento previsto
-  const thFat=document.getElementById('tr-cmp-fat-head');
-  const tbFat=document.getElementById('tb-cmp-fat-body');
-  thFat.innerHTML=headHtml;
-  let totFatArr=cadSel.map(()=>0);
-  tbFat.innerHTML=svcs.map(key=>{
-    const [cod,desc]=key.split('||');
-    const vals=cadSel.map(({tars},i)=>{const t=tars.find(t=>t.cod_servico===cod);const v=(parseFloat(t?.eventos_previstos||0))*(parseFloat(t?.preco_unitario||0));totFatArr[i]+=v;return v;});
-    const var_=vals[0]>0?((vals[vals.length-1]-vals[0])/vals[0]*100):null;
-    const cor=var_===null?'inherit':var_>=0?'#1D9E75':'#BE2F3B';
-    return `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td>`+
-      vals.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+
-      `<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;color:${cor};font-weight:700">${var_!==null?(var_>=0?'▲ +':'▼ ')+Math.abs(var_).toFixed(1)+'%':'—'}</td></tr>`;
-  }).join('');
-  const varTotFat=totFatArr[0]>0?((totFatArr[totFatArr.length-1]-totFatArr[0])/totFatArr[0]*100):null;
-  const corTotFat=varTotFat===null?'inherit':varTotFat>=0?'#1D9E75':'#BE2F3B';
-  tbFat.innerHTML+=`<tr style="background:var(--bg);border-top:2px solid var(--bd)"><td style="padding:9px 12px;font-weight:700">TOTAL</td>`+totFatArr.map(v=>`<td style="padding:9px 12px;text-align:right;font-weight:700">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;text-align:right;font-weight:700;color:${corTotFat}">${varTotFat!==null?(varTotFat>=0?'▲ +':'▼ ')+Math.abs(varTotFat).toFixed(1)+'%':'—'}</td></tr>`;
+  // Tarifa unitária (não soma total)
+  montarTabela(document.getElementById('tr-cmp-tar-head'),document.getElementById('tb-cmp-tar-body'),
+    t=>parseFloat(t?.preco_unitario||0),fR,false);
+  // Eventos previstos (com total)
+  montarTabela(document.getElementById('tr-cmp-evt-head'),document.getElementById('tb-cmp-evt-body'),
+    t=>parseFloat(t?.eventos_previstos||0),fN,true);
+  // Faturamento previsto (com total)
+  montarTabela(document.getElementById('tr-cmp-fat-head'),document.getElementById('tb-cmp-fat-body'),
+    t=>(parseFloat(t?.eventos_previstos||0))*(parseFloat(t?.preco_unitario||0)),fR,true);
 }
 
 // ═══ SENHA ═══

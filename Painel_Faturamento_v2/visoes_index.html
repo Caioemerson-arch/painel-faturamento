@@ -375,7 +375,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       </div>
       <div class="row2">
         <div class="gbox">
-          <h3>Evolução mensal <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos × Tarifa do caderno<br>Executado = Qtd executada × Tarifa do caderno<br>Pago = Qtd paga × Tarifa do boletim<br>Projeção = média dos meses anteriores × previsto</div></button></h3>
+          <h3>Evolução mensal <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos × Tarifa do caderno<br>Executado = Qtd executada × Tarifa do caderno<br>Pago = Qtd paga × Tarifa do boletim<br>Projeção = (Σ realizado ÷ Σ previsto dos meses com lançamento) × previsto do mês futuro. Executado e Pago têm atingimento calculado separadamente.</div></button></h3>
           <div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
           <div style="position:relative;height:200px"><canvas id="ch-mensal"></canvas></div>
         </div>
@@ -862,13 +862,26 @@ function renderYTD(est,mes,ano,reg=''){
 function renderGraficoMensal(est,ano,reg=''){
   const mesAtual=parseInt(document.getElementById('g-mes').value);
   const prev=[],execReal=[],pagoReal=[],execProj=[],pagoProj=[];
-  let somaE=0,somaP=0,cnt=0;
-  for(let m=1;m<=mesAtual;m++){const p=calcPrevisto(est,m,ano,reg);if(p>0){somaE+=calcExec(est,m,ano,reg).val/p;somaP+=calcPago(est,m,ano,reg).val/p;cnt++;}}
-  const pctE=cnt>0?somaE/cnt:0.98,pctP=cnt>0?somaP/cnt:0.97;
+  // Atingimento PONDERADO (agregado): Σrealizado / Σprevisto, só sobre meses que têm lançamento.
+  // Executado e Pago têm somas independentes (o pago costuma atrasar em relação ao executado).
+  let sExec=0,sPrevE=0,sPago=0,sPrevP=0;
+  for(let m=1;m<=mesAtual;m++){
+    const p=calcPrevisto(est,m,ano,reg);
+    if(p<=0) continue;
+    if(getProd(est,m,ano,reg).length>0){sExec+=calcExec(est,m,ano,reg).val;sPrevE+=p;}
+    if(getItens(est,m,ano,reg).length>0){sPago+=calcPago(est,m,ano,reg).val;sPrevP+=p;}
+  }
+  const pctE=sPrevE>0?sExec/sPrevE:0.98, pctP=sPrevP>0?sPago/sPrevP:0.97;
   for(let m=1;m<=12;m++){
     const p=calcPrevisto(est,m,ano,reg);prev.push(p);
-    if(m<=mesAtual){execReal.push(calcExec(est,m,ano,reg).val);pagoReal.push(calcPago(est,m,ano,reg).val);execProj.push(null);pagoProj.push(null);}
-    else{execReal.push(null);pagoReal.push(null);execProj.push(p*pctE);pagoProj.push(p*pctP);}
+    const temExec=getProd(est,m,ano,reg).length>0;
+    const temPago=getItens(est,m,ano,reg).length>0;
+    // Real: só meses até o mês atual que têm lançamento; sem dado = null (a linha para, não cai a zero).
+    execReal.push((m<=mesAtual&&temExec)?calcExec(est,m,ano,reg).val:null);
+    pagoReal.push((m<=mesAtual&&temPago)?calcPago(est,m,ano,reg).val:null);
+    // Projeção: apenas meses futuros (após o mês atual).
+    execProj.push(m>mesAtual?p*pctE:null);
+    pagoProj.push(m>mesAtual?p*pctP:null);
   }
   if(chMensal) chMensal.destroy();
   chMensal=new Chart(document.getElementById('ch-mensal'),{type:'bar',data:{labels:MN.slice(1),datasets:[

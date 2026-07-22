@@ -692,22 +692,36 @@ async function carregarCache(){
 }
 
 // ═══ HELPERS ═══
+// Consolidado (TODOS) = MA + PI. RJ tem painel próprio e NÃO entra aqui.
+const ESTADOS_CONSOL=['MA','PI'];
+const estadoBate=(e,filtro)=>filtro==='TODOS'?ESTADOS_CONSOL.includes(e):e===filtro;
+
 function getCadAtivo(estado,mes,ano){
   const mn=ano*100+mes;
-  return C.cads.filter(c=>{
-    if(estado!=='TODOS'&&c.estado!==estado) return false;
-    const ini=parseInt((c.vigencia_inicio||'01/2000').split('/').reverse().join(''))||0;
-    const fim=c.data_fim?parseInt(c.data_fim.split('/').reverse().join(''))||999999:999999;
+  const vig=s=>parseInt((s||'01/2000').split('/').reverse().join(''))||0;
+  // Cadernos cuja vigência cobre o mês
+  const cand=C.cads.filter(c=>{
+    if(!estadoBate(c.estado,estado)) return false;
+    const ini=vig(c.vigencia_inicio);
+    const fim=c.data_fim?vig(c.data_fim):999999;
     return mn>=ini&&mn<=fim;
   });
+  // Por estado, usar SÓ o caderno de vigência mais recente (empate = maior id).
+  // Evita dupla contagem quando há cadernos sobrepostos ou sem data_fim.
+  const escolhido={};
+  cand.forEach(c=>{
+    const i=vig(c.vigencia_inicio), cur=escolhido[c.estado];
+    if(!cur||i>cur.i||(i===cur.i&&c.id>cur.id)) escolhido[c.estado]={i,id:c.id};
+  });
+  return cand.filter(c=>escolhido[c.estado]&&c.id===escolhido[c.estado].id);
 }
 function getTarifas(estado,mes,ano,reg=''){
   const ids=new Set(getCadAtivo(estado,mes,ano).map(c=>c.id));
-  return C.tars.filter(t=>ids.has(t.caderno_id)&&(estado==='TODOS'||t.estado===estado)&&(!reg||t.regional===reg));
+  return C.tars.filter(t=>ids.has(t.caderno_id)&&estadoBate(t.estado,estado)&&(!reg||t.regional===reg));
 }
-function getProd(estado,mes,ano,reg=''){return C.prod.filter(r=>r.mes===mes&&r.ano===ano&&(estado==='TODOS'||r.estado===estado)&&(!reg||r.regional===reg));}
+function getProd(estado,mes,ano,reg=''){return C.prod.filter(r=>r.mes===mes&&r.ano===ano&&estadoBate(r.estado,estado)&&(!reg||r.regional===reg));}
 function getItens(estado,mes,ano,reg=''){
-  const bids=new Set(C.bols.filter(b=>b.mes===mes&&b.ano===ano&&(estado==='TODOS'||b.estado===estado)).map(b=>b.id));
+  const bids=new Set(C.bols.filter(b=>b.mes===mes&&b.ano===ano&&estadoBate(b.estado,estado)).map(b=>b.id));
   return C.itens.filter(i=>bids.has(i.boletim_id)&&(!reg||i.regional===reg));
 }
 function calcPrevisto(est,m,a,r=''){return getTarifas(est,m,a,r).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0);}

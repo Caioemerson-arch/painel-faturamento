@@ -168,9 +168,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     <a class="sb-item" id="nav-producao" onclick="setTab('producao',this)">
       <i class="ti ti-upload" aria-hidden="true"></i><span class="sb-item-span">Serviços CNG</span>
     </a>
-    <a class="sb-item" id="nav-equipes" onclick="setTab('equipes',this)">
-      <i class="ti ti-users" aria-hidden="true"></i><span class="sb-item-span">Equipes &amp; PQM</span>
-    </a>
     <a class="sb-item" id="nav-equipes-mapi" onclick="setTab('equipes-mapi',this)">
       <i class="ti ti-users-group" aria-hidden="true"></i><span class="sb-item-span">Equipes MA/PI</span>
     </a>
@@ -348,29 +345,6 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       </div>
     </div>
 
-    <!-- ═══ EQUIPES & PQM ═══ -->
-    <div id="tab-equipes" style="display:none">
-      <p class="page-subtitle">Cadastro do quantitativo de equipes e dias disponíveis para o contrato <strong>Técnica (Light)</strong>.</p>
-      <div class="gbox">
-        <h3>Configuração de equipes por período</h3>
-        <div style="display:flex;gap:10px;align-items:center;margin-bottom:1rem">
-          <label style="font-size:11px;color:var(--tx2);font-weight:700">Ano</label>
-          <select id="eq-ano" onchange="carregarEquipes()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff">
-          </select>
-          <button class="btn btn-p btn-sm" onclick="salvarEquipes()"><i class="ti ti-device-floppy"></i> Salvar tudo</button>
-          <span id="eq-msg" style="font-size:11px;color:var(--vd);display:none">✓ Salvo com sucesso!</span>
-        </div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;font-size:12px">
-            <thead>
-              <tr style="background:var(--bg)" id="tr-eq-head"></tr>
-            </thead>
-            <tbody id="tb-eq-body"></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
     <!-- ═══ EQUIPES MA / PI ═══ -->
     <div id="tab-equipes-mapi" style="display:none">
       <p class="page-subtitle">Quantitativo de <strong>equipes por processo, função, mês e regional</strong> — Maranhão e Piauí.</p>
@@ -503,7 +477,6 @@ function setTab(id,el){
   if(id==='cadernos') carregarCadernos();
   if(id==='boletim') carregarHistBol();
   if(id==='producao') carregarHistProd();
-  if(id==='equipes') iniciarEquipes();
   if(id==='equipes-mapi') iniciarEquipesMAPI();
 }
 

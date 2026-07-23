@@ -171,6 +171,9 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     <a class="sb-item" id="nav-equipes" onclick="setTab('equipes',this)">
       <i class="ti ti-users" aria-hidden="true"></i><span class="sb-item-span">Equipes &amp; PQM</span>
     </a>
+    <a class="sb-item" id="nav-equipes-mapi" onclick="setTab('equipes-mapi',this)">
+      <i class="ti ti-users-group" aria-hidden="true"></i><span class="sb-item-span">Equipes MA/PI</span>
+    </a>
     <div class="sb-sec" id="sb-sec-admin" style="display:none">Gestão</div>
     <a class="sb-item" id="nav-admin" href="/Painel_Faturamento_v2/admin_index.html" style="display:none">
       <i class="ti ti-users" aria-hidden="true"></i><span class="sb-item-span">Gestão de Usuários</span>
@@ -368,6 +371,32 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       </div>
     </div>
 
+    <!-- ═══ EQUIPES MA / PI ═══ -->
+    <div id="tab-equipes-mapi" style="display:none">
+      <p class="page-subtitle">Quantitativo de <strong>equipes por processo, função, mês e regional</strong> — Maranhão e Piauí.</p>
+      <div class="gbox">
+        <h3>Equipes por período</h3>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
+          <label style="font-size:11px;color:var(--tx2);font-weight:700">Estado</label>
+          <select id="eqm-est" onchange="carregarEquipesMAPI()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff">
+            <option value="MA">Maranhão</option><option value="PI">Piauí</option>
+          </select>
+          <label style="font-size:11px;color:var(--tx2);font-weight:700">Ano</label>
+          <select id="eqm-ano" onchange="carregarEquipesMAPI()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff"></select>
+          <label style="font-size:11px;color:var(--tx2);font-weight:700">Mês</label>
+          <select id="eqm-mes" onchange="carregarEquipesMAPI()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff"></select>
+          <button class="btn btn-p btn-sm" onclick="salvarEquipesMAPI()"><i class="ti ti-device-floppy"></i> Salvar</button>
+          <span id="eqm-msg" style="font-size:11px;color:var(--vd);display:none">✓ Salvo com sucesso!</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="background:var(--bg)" id="tr-eqm-head"></tr></thead>
+            <tbody id="tb-eqm-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -398,7 +427,7 @@ let svProd=false,svBol=false,svCad=false;
 let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
 
 const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const TABS_LABELS={cadernos:'Importar Caderno de Serviço',boletim:'Importar Boletim EQTL',producao:'Importar Serviços CNG',equipes:'Equipes & PQM — RJ'};
+const TABS_LABELS={cadernos:'Importar Caderno de Serviço',boletim:'Importar Boletim EQTL',producao:'Importar Serviços CNG',equipes:'Equipes & PQM — RJ','equipes-mapi':'Equipes MA/PI'};
 const fR=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fN=v=>Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
 const mA=(m,a)=>String(m).padStart(2,'0')+'/'+a;
@@ -475,6 +504,7 @@ function setTab(id,el){
   if(id==='boletim') carregarHistBol();
   if(id==='producao') carregarHistProd();
   if(id==='equipes') iniciarEquipes();
+  if(id==='equipes-mapi') iniciarEquipesMAPI();
 }
 
 // ═══ EQUIPES & PQM ═══
@@ -532,6 +562,78 @@ async function salvarEquipes(){
     msg.style.display='inline';
     setTimeout(()=>msg.style.display='none',3000);
   }
+}
+
+// ═══ EQUIPES MA / PI ═══
+const EQMAPI_FUNCOES={
+  leitura:['Agente Comercial a Pé','Agente Comercial Motociclista'],
+  cobranca:['Agente Comercial a Pé','Agente Comercial Motociclista'],
+  atendimento:['Agente Comercial Atendente Horista','Agente Comercial Atendente Integral','Agente Comercial Atendente Linha-Direta','Agente Comercial Atendente Volante']
+};
+const EQMAPI_ROTULO={leitura:'Leitura',cobranca:'Cobrança',atendimento:'Atendimento'};
+const EQMAPI_COR={leitura:'#378ADD',cobranca:'#BA7517',atendimento:'#1D9E75'};
+const EQMAPI_REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['METROPOLITANA','NORTE','SUL']};
+
+function iniciarEquipesMAPI(){
+  const sAno=document.getElementById('eqm-ano');
+  if(!sAno.options.length){
+    const y=new Date().getFullYear();
+    sAno.innerHTML=[y-1,y,y+1].map(a=>`<option value="${a}"${a===y?' selected':''}>${a}</option>`).join('');
+  }
+  const sMes=document.getElementById('eqm-mes');
+  if(!sMes.options.length){
+    const mA=new Date().getMonth()+1;
+    sMes.innerHTML=Array.from({length:12},(_,i)=>`<option value="${i+1}"${i+1===mA?' selected':''}>${MN_EQ[i+1]}</option>`).join('');
+  }
+  carregarEquipesMAPI();
+}
+
+async function carregarEquipesMAPI(){
+  const estado=document.getElementById('eqm-est').value;
+  const ano=parseInt(document.getElementById('eqm-ano').value);
+  const mes=parseInt(document.getElementById('eqm-mes').value);
+  const regs=EQMAPI_REGS[estado]||[];
+  let data=[];
+  try{const r=await sb.from('equipes_ma_pi').select('*').eq('estado',estado).eq('ano',ano).eq('mes',mes);data=r.data||[];}catch(e){}
+  const val={};
+  data.forEach(d=>{val[`${d.processo}|${d.funcao}|${d.regional}`]=d.quantidade;});
+  // cabeçalho
+  const thRegs=regs.map(rg=>`<th style="padding:9px 10px;text-align:center;font-size:11px;font-weight:700;color:var(--tx2)">${rg}</th>`).join('');
+  document.getElementById('tr-eqm-head').innerHTML=`<th style="padding:9px 12px;font-size:11px;font-weight:700;color:var(--tx2);min-width:120px">Processo</th><th style="padding:9px 12px;font-size:11px;font-weight:700;color:var(--tx2);min-width:250px">Função</th>${thRegs}`;
+  // corpo
+  let html='';
+  Object.keys(EQMAPI_FUNCOES).forEach(proc=>{
+    const funcs=EQMAPI_FUNCOES[proc], cor=EQMAPI_COR[proc];
+    funcs.forEach((fn,fi)=>{
+      const cells=regs.map((rg,ri)=>{
+        const v=val[`${proc}|${fn}|${rg}`];
+        return `<td style="padding:5px 6px;text-align:center"><input type="number" min="0" value="${v==null?'':v}" id="eqm-${proc}-${fi}-${ri}" style="width:64px;text-align:center;padding:5px;border:1px solid var(--bd);border-radius:4px;font-size:12px"></td>`;
+      }).join('');
+      const procCell=fi===0?`<td rowspan="${funcs.length}" style="padding:9px 12px;font-weight:700;font-size:12px;color:${cor};vertical-align:middle;border-left:3px solid ${cor}">${EQMAPI_ROTULO[proc]}</td>`:'';
+      html+=`<tr>${procCell}<td style="padding:8px 12px;font-size:12px">${fn}</td>${cells}</tr>`;
+    });
+  });
+  document.getElementById('tb-eqm-body').innerHTML=html;
+}
+
+async function salvarEquipesMAPI(){
+  const estado=document.getElementById('eqm-est').value;
+  const ano=parseInt(document.getElementById('eqm-ano').value);
+  const mes=parseInt(document.getElementById('eqm-mes').value);
+  const regs=EQMAPI_REGS[estado]||[];
+  const ups=[];
+  Object.keys(EQMAPI_FUNCOES).forEach(proc=>{
+    EQMAPI_FUNCOES[proc].forEach((fn,fi)=>{
+      regs.forEach((rg,ri)=>{
+        const q=parseInt(document.getElementById(`eqm-${proc}-${fi}-${ri}`)?.value||0)||0;
+        ups.push({estado,regional:rg,ano,mes,processo:proc,funcao:fn,quantidade:q});
+      });
+    });
+  });
+  const msg=document.getElementById('eqm-msg');
+  const {error}=await sb.from('equipes_ma_pi').upsert(ups,{onConflict:'estado,regional,ano,mes,processo,funcao'});
+  if(error){alert('Erro ao salvar: '+error.message);return;}
+  msg.style.display='inline';setTimeout(()=>msg.style.display='none',3000);
 }
 
 // ═══ STATUS DE DADOS ═══

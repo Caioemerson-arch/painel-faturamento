@@ -803,7 +803,7 @@ async function salvarCaderno(){
   const {estado,vigencia_inicio,regional}=dadosCad[0];
 
   // Para RJ, distinguir por regional (COMERCIAL ou TECNICA)
-  // Para MA e PI, inativar todos os ativos do estado
+  // Para MA e PI, inativar só os cadernos ativos do MESMO PROCESSO
   const ativos=C.cads.filter(c=>{
     if(c.estado!==estado||!c.ativo) return false;
     if(estado==='RJ'){
@@ -812,7 +812,11 @@ async function salvarCaderno(){
       const regsDoAtivo=C.tars.filter(t=>t.caderno_id===c.id).map(t=>t.regional);
       return regsDoAtivo.some(r=>regsDoNovoCad.includes(r));
     }
-    return true;
+    // MA/PI: só inativar se compartilhar o mesmo processo (leitura/cobranca/atendimento)
+    const normP=p=>(p||'leitura');
+    const procsNovo=new Set(dadosCad.map(d=>normP(d.processo)));
+    const procsAtivo=C.tars.filter(t=>t.caderno_id===c.id).map(t=>normP(t.processo));
+    return procsAtivo.some(p=>procsNovo.has(p));
   });
 
   for(const c of ativos) await sb.from('cadernos').update({ativo:false,data_fim:vigencia_inicio}).eq('id',c.id);

@@ -189,6 +189,9 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     <a class="sb-item" id="nav-comparativo" onclick="setTab('comparativo',this)">
       <i class="ti ti-git-compare" aria-hidden="true"></i><span>Comparativo de Cadernos</span>
     </a>
+    <a class="sb-item" id="nav-equipes" onclick="setTab('equipes',this)">
+      <i class="ti ti-users-group" aria-hidden="true"></i><span>Equipes e Ticket</span>
+    </a>
     <div class="sb-sec" id="sb-sec-dados" style="display:none">Dados</div>
     <a class="sb-item" id="nav-dados" href="/Painel_Faturamento_v2/dados_index.html" style="display:none">
       <i class="ti ti-upload" aria-hidden="true"></i><span>Importação de Dados</span>
@@ -533,6 +536,38 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <div id="cmp-vazio" class="alerta al-info" style="display:none"><span>ℹ</span><span>Selecione ao menos 2 cadernos para comparar.</span></div>
     </div>
 
+    <!-- ═══ EQUIPES E TICKET ═══ -->
+    <div id="tab-equipes" style="display:none">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:1rem">
+        <label style="font-size:11px;color:var(--tx2);font-weight:700">Estado</label>
+        <select id="eqt-est" onchange="carregarEquipesTicket()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--br)"></select>
+        <label style="font-size:11px;color:var(--tx2);font-weight:700">Ano</label>
+        <select id="eqt-ano" onchange="carregarEquipesTicket()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--br)"></select>
+        <label style="font-size:11px;color:var(--tx2);font-weight:700">Mês</label>
+        <select id="eqt-mes" onchange="carregarEquipesTicket()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--br)"></select>
+        <label style="font-size:11px;color:var(--tx2);font-weight:700">Processo</label>
+        <select id="eqt-proc" onchange="carregarEquipesTicket()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--br)">
+          <option value="leitura">Leitura</option>
+          <option value="cobranca">Cobrança e Negociação</option>
+          <option value="atendimento">Atendimento</option>
+        </select>
+      </div>
+      <div class="cards" id="eqt-cards"></div>
+      <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem;margin-bottom:1.25rem">
+        <div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem">Ticket/equipe × Meta/equipe (R$/equipe·mês)</div>
+        <div style="position:relative;height:240px"><canvas id="ch-eqt"></canvas></div>
+      </div>
+      <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem">
+        <div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem">Equipes por processo, função e regional</div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead id="eqt-thead"></thead>
+            <tbody id="eqt-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /con -->
 </div><!-- /main -->
 
@@ -582,7 +617,7 @@ const LOGIN_URL='/Painel_Faturamento_v2/index.html';
 
 // ═══ ESTADO ═══
 let perfil=null,role='',userEmail='';
-let chMensal=null,chPizza=null,chRegM=null,chRegPz=null;
+let chMensal=null,chPizza=null,chRegM=null,chRegPz=null,chEqt=null;
 let tabAtual='resumida';
 let C={cads:[],tars:[],prod:[],bols:[],itens:[]};
 
@@ -591,7 +626,7 @@ const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agos
 const REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['PIAUÍ'],RJ:['COMERCIAL','TECNICA']};
 function procAtual(prefixo){return document.getElementById(prefixo+'-proc')?.value||'';}
 const CS=['#BE2F3B','#378ADD','#1D9E75','#BA7517','#533AB7','#D4537E','#888780','#0F6E56','#7F77DD'];
-const TABS_LABELS={resumida:'Análise Faturamento Geral',geral:'Análise Mensal',regional:'Análise Por Regional',servico:'Análise Por Serviço',comparativo:'Comparativo de Cadernos'};
+const TABS_LABELS={resumida:'Análise Faturamento Geral',geral:'Análise Mensal',regional:'Análise Por Regional',servico:'Análise Por Serviço',comparativo:'Comparativo de Cadernos',equipes:'Equipes e Ticket'};
 const TABS_EXPORT=['resumida','geral','regional','servico'];
 
 // ═══ FORMATAÇÃO ═══
@@ -715,25 +750,49 @@ function getCadAtivo(estado,mes,ano){
   });
   return cand.filter(c=>escolhido[c.estado]&&c.id===escolhido[c.estado].id);
 }
-function getTarifas(estado,mes,ano,reg=''){
+// Processo atual (as abas setam no topo do seu carregarX). Default = leitura (não quebra o legado).
+let PROC_ATUAL='leitura';
+const procBate=(tp,proc)=>{const p=proc||PROC_ATUAL;return p==='leitura'?(!tp||tp==='leitura'):tp===p;};
+// Conjunto de códigos de serviço de um processo (todas as vigências do estado)
+function codsDoProcesso(est,proc){return new Set(C.tars.filter(t=>estadoBate(t.estado,est)&&procBate(t.processo,proc)).map(t=>t.cod_servico));}
+// Mapeamento função → serviços (Leitura) para o ticket por função
+const FUNCAO_SERVICOS={
+  'Agente Comercial a Pé':['5081700003','5081400020','5081700004','5081700005','5081100006'],
+  'Agente Comercial Motociclista':['5081800003','5081400019','5081100003','5081700006']
+};
+
+function getTarifas(estado,mes,ano,reg='',proc){
   const ids=new Set(getCadAtivo(estado,mes,ano).map(c=>c.id));
-  return C.tars.filter(t=>ids.has(t.caderno_id)&&estadoBate(t.estado,estado)&&(!reg||t.regional===reg));
+  return C.tars.filter(t=>ids.has(t.caderno_id)&&estadoBate(t.estado,estado)&&(!reg||t.regional===reg)&&procBate(t.processo,proc));
 }
 function getProd(estado,mes,ano,reg=''){return C.prod.filter(r=>r.mes===mes&&r.ano===ano&&estadoBate(r.estado,estado)&&(!reg||r.regional===reg));}
 function getItens(estado,mes,ano,reg=''){
   const bids=new Set(C.bols.filter(b=>b.mes===mes&&b.ano===ano&&estadoBate(b.estado,estado)).map(b=>b.id));
   return C.itens.filter(i=>bids.has(i.boletim_id)&&(!reg||i.regional===reg));
 }
-function calcPrevisto(est,m,a,r=''){return getTarifas(est,m,a,r).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0);}
-function calcPrevEvt(est,m,a,r=''){return getTarifas(est,m,a,r).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);}
-function calcExec(est,m,a,r=''){
-  const tars=getTarifas(est,m,a,r);
+function calcPrevisto(est,m,a,r='',proc){return getTarifas(est,m,a,r,proc).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0);}
+function calcPrevEvt(est,m,a,r='',proc){return getTarifas(est,m,a,r,proc).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);}
+function calcExec(est,m,a,r='',proc){
+  const tars=getTarifas(est,m,a,r,proc);
   const tarMap={};tars.forEach(t=>tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
+  const cods=codsDoProcesso(est,proc);
   let val=0,evt=0;
-  getProd(est,m,a,r).forEach(p=>{const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=p.qde_executada*tar;evt+=p.qde_executada;});
+  getProd(est,m,a,r).forEach(p=>{if(!cods.has(p.cod_servico))return;const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=(parseFloat(p.qde_executada)||0)*tar;evt+=(parseFloat(p.qde_executada)||0);});
   return {val,evt};
 }
-function calcPago(est,m,a,r=''){let val=0,evt=0;getItens(est,m,a,r).forEach(i=>{val+=(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0);evt+=parseFloat(i.qde_paga)||0;});return {val,evt};}
+function calcPago(est,m,a,r='',proc){
+  const cods=codsDoProcesso(est,proc);
+  let val=0,evt=0;
+  getItens(est,m,a,r).forEach(i=>{if(!cods.has(i.cod_servico))return;val+=(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0);evt+=parseFloat(i.qde_paga)||0;});
+  return {val,evt};
+}
+// Executado só de um conjunto de serviços (ticket por função na Leitura)
+function calcExecCods(est,m,a,codsSet){
+  const tars=getTarifas(est,m,a,'','leitura');
+  const tarMap={};tars.forEach(t=>{if(codsSet.has(String(t.cod_servico)))tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0;});
+  let val=0;getProd(est,m,a).forEach(p=>{if(!codsSet.has(String(p.cod_servico)))return;const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=(parseFloat(p.qde_executada)||0)*tar;});
+  return val;
+}
 
 // ═══ SIDEBAR ═══
 function toggleSidebar(){
@@ -760,6 +819,102 @@ function setTab(id,el){
   if(id==='regional') carregarRegional();
   if(id==='resumida') carregarResumida();
   if(id==='comparativo') carregarComparativo();
+  if(id==='equipes') iniciarEquipesTicket();
+}
+
+// ═══ EQUIPES E TICKET (MA/PI) ═══
+const EQT_FUNCOES={
+  leitura:['Agente Comercial a Pé','Agente Comercial Motociclista'],
+  cobranca:['Agente Comercial a Pé','Agente Comercial Motociclista'],
+  atendimento:['Agente Comercial Atendente Horista','Agente Comercial Atendente Integral','Agente Comercial Atendente Linha-Direta','Agente Comercial Atendente Volante']
+};
+const EQT_REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['METROPOLITANA','NORTE','SUL']};
+const EQT_PROC=[{k:'leitura',r:'Leitura',cor:'#378ADD'},{k:'cobranca',r:'Cobrança',cor:'#BA7517'},{k:'atendimento',r:'Atendimento',cor:'#1D9E75'}];
+let _eqtCache=null;
+
+async function getEquipesMAPI(est,ano){
+  if(_eqtCache&&_eqtCache.est===est&&_eqtCache.ano===ano) return _eqtCache.data;
+  let data=[];
+  try{const r=await sb.from('equipes_ma_pi').select('*').eq('estado',est).eq('ano',ano);data=r.data||[];}catch(e){}
+  _eqtCache={est,ano,data};
+  return data;
+}
+
+function iniciarEquipesTicket(){
+  const sEst=document.getElementById('eqt-est');
+  if(!sEst.options.length) sEst.innerHTML='<option value="MA">Maranhão</option><option value="PI">Piauí</option>';
+  const sAno=document.getElementById('eqt-ano');
+  if(!sAno.options.length){const y=new Date().getFullYear();sAno.innerHTML=[y-1,y,y+1].map(a=>`<option value="${a}"${a===y?' selected':''}>${a}</option>`).join('');}
+  const sMes=document.getElementById('eqt-mes');
+  if(!sMes.options.length){const mA=new Date().getMonth()+1;sMes.innerHTML=Array.from({length:12},(_,i)=>`<option value="${i+1}"${i+1===mA?' selected':''}>${MN[i+1]}</option>`).join('');}
+  carregarEquipesTicket();
+}
+
+async function carregarEquipesTicket(){
+  const est=document.getElementById('eqt-est').value;
+  const ano=parseInt(document.getElementById('eqt-ano').value);
+  const mes=parseInt(document.getElementById('eqt-mes').value);
+  const proc=document.getElementById('eqt-proc')?.value||'leitura';
+  const procInfo=EQT_PROC.find(p=>p.k===proc)||EQT_PROC[0];
+  const cor=procInfo.cor;
+  const data=await getEquipesMAPI(est,ano);
+  const funcs=EQT_FUNCOES[proc]||[];
+  const eqFunc=(fn,m)=>data.filter(d=>d.processo===proc&&d.funcao===fn&&d.mes===m).reduce((s,d)=>s+(parseInt(d.quantidade)||0),0);
+  const eqTot=m=>data.filter(d=>d.processo===proc&&d.mes===m).reduce((s,d)=>s+(parseInt(d.quantidade)||0),0);
+
+  // Balões por FUNÇÃO do processo selecionado
+  let cards=funcs.map(fn=>{
+    const eq=eqFunc(fn,mes);
+    let sub;
+    if(proc==='leitura'){
+      const cods=new Set((FUNCAO_SERVICOS[fn]||[]).map(String));
+      const fat=calcExecCods(est,mes,ano,cods);
+      sub=eq>0?`Ticket ${fR(fat/eq)}/eq`:'Sem equipes no mês';
+    } else if(proc==='cobranca'){
+      sub='Ticket: global (ver card)';
+    } else sub='Ticket: cálculo a definir';
+    return `<div class="card" style="border-top-color:${cor}"><div class="cl">${fn}</div><div class="cv">${eq}</div><div class="cs cm">${sub}</div></div>`;
+  }).join('');
+  // Card resumo do processo (total de equipes + ticket global)
+  const totEq=eqTot(mes);
+  let tkGlobal;
+  if(proc==='atendimento') tkGlobal='Ticket: cálculo a definir';
+  else{
+    const fat=calcExec(est,mes,ano,'',proc).val;
+    const rot=proc==='cobranca'?'Ticket global':'Ticket médio';
+    tkGlobal=totEq>0?`${rot} ${fR(fat/totEq)}/eq`:'Ticket: aguardando produção';
+  }
+  cards+=`<div class="card vd"><div class="cl">${procInfo.r} — total de equipes</div><div class="cv">${totEq}</div><div class="cs cm">${tkGlobal}</div></div>`;
+  document.getElementById('eqt-cards').innerHTML=cards;
+
+  // Gráfico: Ticket/equipe × Meta/equipe (global do processo) ao longo dos meses
+  const semTicket=proc==='atendimento';
+  const meses=[];
+  for(let m=1;m<=12;m++){ if(data.some(d=>d.processo===proc&&d.mes===m)||C.prod.some(pp=>pp.ano===ano&&pp.mes===m&&estadoBate(pp.estado,est))) meses.push(m); }
+  const tkArr=[],mtArr=[];
+  meses.forEach(m=>{
+    const eq=eqTot(m);
+    if(semTicket||eq<=0){tkArr.push(null);mtArr.push(null);return;}
+    tkArr.push(calcExec(est,m,ano,'',proc).val/eq);
+    mtArr.push(calcPrevisto(est,m,ano,'',proc)/eq);
+  });
+  if(chEqt) chEqt.destroy();
+  chEqt=new Chart(document.getElementById('ch-eqt'),{type:'line',data:{labels:meses.map(m=>MN[m].slice(0,3)),datasets:[
+    {label:'Ticket/eq (Realizado)',data:tkArr,borderColor:cor,tension:.3,pointRadius:3,spanGaps:true},
+    {label:'Meta/eq (Previsto)',data:mtArr,borderColor:'#888',borderDash:[5,5],pointRadius:0,spanGaps:true}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10}}}},scales:{y:{ticks:{font:{size:10},callback:v=>fR(v).replace('R$\u00a0','')}},x:{ticks:{font:{size:10}}}}}});
+
+  // Tabela: equipes por função × regional (processo selecionado)
+  const regs=EQT_REGS[est]||[];
+  const thRegs=regs.map(r=>`<th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--tx2)">${r}</th>`).join('');
+  document.getElementById('eqt-thead').innerHTML=`<tr style="background:var(--bg)"><th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--tx2)">Função</th>${thRegs}<th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--tx2)">Total</th></tr>`;
+  let body='';
+  funcs.forEach(fn=>{
+    let tot=0;
+    const cells=regs.map(r=>{const q=data.filter(d=>d.processo===proc&&d.funcao===fn&&d.regional===r&&d.mes===mes).reduce((s,d)=>s+(parseInt(d.quantidade)||0),0);tot+=q;return `<td style="text-align:right;padding:7px 10px">${q}</td>`;}).join('');
+    body+=`<tr style="border-top:1px solid var(--bd)"><td style="padding:7px 12px;border-left:3px solid ${cor}">${fn}</td>${cells}<td style="text-align:right;padding:7px 10px;font-weight:700">${tot}</td></tr>`;
+  });
+  document.getElementById('eqt-tbody').innerHTML=body;
 }
 
 function atualizarPageSub(){
@@ -815,16 +970,9 @@ async function carregarGeral(){
   const ano=parseInt(document.getElementById('g-ano').value);
   const reg=document.getElementById('g-reg')?.value||'';
   const proc=document.getElementById('g-proc')?.value||'leitura';
+  PROC_ATUAL=proc;
   syncRegsGeral();atualizarPageSub();
 
-  // Processo sem dados ainda
-  if(proc!=='leitura'){
-    const msg='<tr><td colspan="10" style="text-align:center;padding:2rem;color:var(--tx2);font-style:italic">Dados em apuração, em breve será apresentado.</td></tr>';
-    ['tb-evt-reg','tb-fat-reg','tb-ytd-reg','tb-tar','tb-prop'].forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=msg;});
-    document.getElementById('relatorio-divergencia').innerHTML='<p style="color:var(--tx2);font-style:italic;text-align:center;padding:1rem">Dados em apuração, em breve será apresentado.</p>';
-    document.getElementById('g-alerta').style.display='none';
-    return;
-  }
   const prev=calcPrevisto(est,mes,ano,reg),exec=calcExec(est,mes,ano,reg),pago=calcPago(est,mes,ano,reg);
   const pctExec=prev>0?(exec.val/prev*100):0;
   const pct=prev>0?(pago.val/prev*100):0;
@@ -985,6 +1133,7 @@ function carregarServico(){
   const est=document.getElementById('s-est').value,reg=document.getElementById('s-reg').value;
   const mes=parseInt(document.getElementById('s-mes').value),ano=parseInt(document.getElementById('s-ano').value);
   const proc=document.getElementById('s-proc')?.value||'';
+  PROC_ATUAL=proc||'leitura';
   syncRegsServ();
   const tars=getTarifas(est,mes,ano,reg,proc);
   const svcMap={};tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0,tarifa:parseFloat(t.preco_unitario)||0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
@@ -1006,6 +1155,7 @@ function carregarRegional(){
   const est=document.getElementById('r-est').value,reg=document.getElementById('r-reg').value;
   const mes=parseInt(document.getElementById('r-mes').value),ano=parseInt(document.getElementById('r-ano').value);
   const proc=document.getElementById('r-proc')?.value||'';
+  PROC_ATUAL=proc||'leitura';
   document.getElementById('r-ch-tit').textContent=`Evolução mensal — ${reg}`;
   const prev=calcPrevisto(est,mes,ano,reg),exec=calcExec(est,mes,ano,reg),pago=calcPago(est,mes,ano,reg);
   const pct=prev>0?(pago.val/prev*100):0,dv=pago.val-exec.val;
@@ -1076,6 +1226,7 @@ function carregarResumida(){
   const ano=parseInt(document.getElementById('rs-ano')?.value||new Date().getFullYear());
   const mesFil=parseInt(document.getElementById('rs-mes')?.value||0);
   const proc=document.getElementById('rs-proc')?.value||'leitura';
+  PROC_ATUAL=proc;
 
   // Preencher select de mês dinamicamente
   const sMes=document.getElementById('rs-mes');
@@ -1085,13 +1236,6 @@ function carregarResumida(){
 
   const tabIds=['tb-rs-fat-body','tb-rs-evt-body','tb-rs-dif-cad-body','tb-rs-dif-exec-cad-body','tb-rs-dif-exec-body'];
   const headIds=['tr-rs-fat-head','tr-rs-evt-head','tr-rs-dif-cad-head','tr-rs-dif-exec-cad-head','tr-rs-dif-exec-head'];
-
-  // Processo sem dados ainda — apenas para MA/PI
-  if(proc!=='leitura'){
-    tabIds.forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML=`<tr><td colspan="20" style="text-align:center;padding:2rem;color:var(--tx2);font-style:italic">Dados em apuração, em breve será apresentado.</td></tr>`;});
-    headIds.forEach(id=>{const el=document.getElementById(id);if(el) el.innerHTML='';});
-    return;
-  }
 
   const mesesTodos=[];
   for(let m=1;m<=12;m++){if(C.prod.some(r=>r.ano===ano&&r.mes===m&&(est==='TODOS'||r.estado===est)&&(!reg||r.regional===reg))||C.bols.some(b=>b.ano===ano&&b.mes===m&&(est==='TODOS'||b.estado===est))) mesesTodos.push(m);}

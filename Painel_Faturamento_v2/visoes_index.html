@@ -891,18 +891,20 @@ async function carregarEquipesTicket(){
   const semTicket=proc==='atendimento';
   const meses=[];
   for(let m=1;m<=12;m++){ if(data.some(d=>d.processo===proc&&d.mes===m)||C.prod.some(pp=>pp.ano===ano&&pp.mes===m&&estadoBate(pp.estado,est))) meses.push(m); }
-  const tkArr=[],mtArr=[];
+  const tkArr=[],pgArr=[],mtArr=[];
   meses.forEach(m=>{
     const eq=eqTot(m);
-    if(semTicket||eq<=0){tkArr.push(null);mtArr.push(null);return;}
+    if(semTicket||eq<=0){tkArr.push(null);pgArr.push(null);mtArr.push(null);return;}
     tkArr.push(calcExec(est,m,ano,'',proc).val/eq);
+    pgArr.push(calcPago(est,m,ano,'',proc).val/eq);
     mtArr.push(calcPrevisto(est,m,ano,'',proc)/eq);
   });
   if(chEqt) chEqt.destroy();
-  chEqt=new Chart(document.getElementById('ch-eqt'),{type:'line',data:{labels:meses.map(m=>MN[m].slice(0,3)),datasets:[
-    {label:'Ticket/eq (Realizado)',data:tkArr,borderColor:cor,tension:.3,pointRadius:3,spanGaps:true},
-    {label:'Meta/eq (Previsto)',data:mtArr,borderColor:'#888',borderDash:[5,5],pointRadius:0,spanGaps:true}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10}}}},scales:{y:{ticks:{font:{size:10},callback:v=>fR(v).replace('R$\u00a0','')}},x:{ticks:{font:{size:10}}}}}});
+  chEqt=new Chart(document.getElementById('ch-eqt'),{data:{labels:meses.map(m=>MN[m].slice(0,3)),datasets:[
+    {type:'line',label:'Meta/eq (Previsto)',data:mtArr,borderColor:'#888',borderDash:[5,5],borderWidth:2,pointRadius:0,tension:.2,spanGaps:true,order:0},
+    {type:'bar',label:'Ticket/eq (Realizado)',data:tkArr,backgroundColor:cor,borderRadius:3,order:1},
+    {type:'bar',label:'Ticket/eq (Pago EQTL)',data:pgArr,backgroundColor:'#2E9E6B',borderRadius:3,order:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},usePointStyle:true,boxWidth:8}}},scales:{y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>fR(v).replace('R$\u00a0','')}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
 
   // Tabela: equipes por função × regional (processo selecionado)
   const regs=EQT_REGS[est]||[];

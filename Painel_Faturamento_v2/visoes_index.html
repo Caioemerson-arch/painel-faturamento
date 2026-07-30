@@ -566,6 +566,16 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           </table>
         </div>
       </div>
+      <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem;margin-top:1.25rem">
+        <div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.25rem">Variação Ticket Executado × Pago (EQTL), por função e regional</div>
+        <div style="font-size:11px;color:var(--tx2);margin-bottom:.75rem">Variação = (Pago − Executado) ÷ Executado × 100. Negativo (vermelho) = EQTL pagou menos que o executado.</div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead id="eqtv-thead"></thead>
+            <tbody id="eqtv-tbody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
   </div><!-- /con -->
@@ -787,10 +797,15 @@ function calcPago(est,m,a,r='',proc){
   return {val,evt};
 }
 // Executado só de um conjunto de serviços (ticket por função na Leitura)
-function calcExecCods(est,m,a,codsSet){
-  const tars=getTarifas(est,m,a,'','leitura');
+function calcExecCods(est,m,a,codsSet,reg=''){
+  const tars=getTarifas(est,m,a,reg,'leitura');
   const tarMap={};tars.forEach(t=>{if(codsSet.has(String(t.cod_servico)))tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0;});
-  let val=0;getProd(est,m,a).forEach(p=>{if(!codsSet.has(String(p.cod_servico)))return;const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=(parseFloat(p.qde_executada)||0)*tar;});
+  let val=0;getProd(est,m,a,reg).forEach(p=>{if(!codsSet.has(String(p.cod_servico)))return;const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=(parseFloat(p.qde_executada)||0)*tar;});
+  return val;
+}
+// Pago (boletim) só de um conjunto de serviços, opcionalmente por regional
+function calcPagoCods(est,m,a,codsSet,reg=''){
+  let val=0;getItens(est,m,a,reg).forEach(i=>{if(!codsSet.has(String(i.cod_servico)))return;val+=(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0);});
   return val;
 }
 
@@ -917,6 +932,27 @@ async function carregarEquipesTicket(){
     body+=`<tr style="border-top:1px solid var(--bd)"><td style="padding:7px 12px;border-left:3px solid ${cor}">${fn}</td>${cells}<td style="text-align:right;padding:7px 10px;font-weight:700">${tot}</td></tr>`;
   });
   document.getElementById('eqt-tbody').innerHTML=body;
+
+  // Tabela: variação Ticket Executado × Pago (função × regional). Mapeamento só existe na Leitura.
+  document.getElementById('eqtv-thead').innerHTML=`<tr style="background:var(--bg)"><th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--tx2)">Função</th>${thRegs}<th style="text-align:right;padding:8px 10px;font-size:11px;color:var(--tx2)">Total</th></tr>`;
+  const celVarV=v=>{const c=v===null?'var(--tx2)':v>=0?'#1D9E75':'#BE2F3B';return `<td style="text-align:right;padding:7px 10px;font-weight:700;color:${c}">${v===null?'—':(v>=0?'+':'')+v.toFixed(1)+'%'}</td>`;};
+  if(proc!=='leitura'){
+    const msg=proc==='cobranca'?'Cobrança usa ticket global (sem mapeamento por função).':'Atendimento: cálculo a definir.';
+    document.getElementById('eqtv-tbody').innerHTML=`<tr><td colspan="${regs.length+2}" style="text-align:center;padding:1.5rem;color:var(--tx2);font-style:italic">Disponível para Leitura. ${msg}</td></tr>`;
+  } else {
+    let vbody='';
+    funcs.forEach(fn=>{
+      const cods=new Set((FUNCAO_SERVICOS[fn]||[]).map(String));
+      let tE=0,tP=0;
+      const cells=regs.map(r=>{
+        const ex=calcExecCods(est,mes,ano,cods,r),pg=calcPagoCods(est,mes,ano,cods,r);
+        tE+=ex;tP+=pg;
+        return celVarV(ex>0?((pg-ex)/ex*100):null);
+      }).join('');
+      vbody+=`<tr style="border-top:1px solid var(--bd)"><td style="padding:7px 12px;border-left:3px solid ${cor}">${fn}</td>${cells}${celVarV(tE>0?((tP-tE)/tE*100):null)}</tr>`;
+    });
+    document.getElementById('eqtv-tbody').innerHTML=vbody;
+  }
 }
 
 function atualizarPageSub(){

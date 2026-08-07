@@ -725,14 +725,26 @@ async function fazerLogout(){
 }
 
 // ═══ CACHE ═══
+// Busca TODAS as linhas em blocos de 1000 (o Supabase corta em 1000 por consulta).
+async function fetchAll(makeQuery){
+  const PAGE=1000; let from=0, all=[];
+  while(true){
+    const {data,error}=await makeQuery().range(from,from+PAGE-1);
+    if(error){console.error('fetchAll',error);break;}
+    if(!data||!data.length) break;
+    all=all.concat(data);
+    if(data.length<PAGE) break;
+    from+=PAGE;
+  }
+  return all;
+}
 async function carregarCache(){
-  const {data:cads}=await sb.from('cadernos').select('*').eq('confirmado',true).order('id');
-  C.cads=cads||[];
-  if(C.cads.length){const {data:tars}=await sb.from('caderno_tarifas').select('*').in('caderno_id',C.cads.map(c=>c.id));C.tars=tars||[];}
+  C.cads=await fetchAll(()=>sb.from('cadernos').select('*').eq('confirmado',true).order('id'));
+  if(C.cads.length){C.tars=await fetchAll(()=>sb.from('caderno_tarifas').select('*').in('caderno_id',C.cads.map(c=>c.id)).order('id'));}
   else C.tars=[];
-  const {data:prod}=await sb.from('producao_real').select('*').eq('ativo',true);C.prod=prod||[];
-  const {data:bols}=await sb.from('boletins').select('*').eq('ativo',true);C.bols=bols||[];
-  if(C.bols.length){const {data:itens}=await sb.from('boletim_itens').select('*').in('boletim_id',C.bols.map(b=>b.id));C.itens=itens||[];}
+  C.prod=await fetchAll(()=>sb.from('producao_real').select('*').eq('ativo',true).order('id'));
+  C.bols=await fetchAll(()=>sb.from('boletins').select('*').eq('ativo',true).order('id'));
+  if(C.bols.length){C.itens=await fetchAll(()=>sb.from('boletim_itens').select('*').in('boletim_id',C.bols.map(b=>b.id)).order('id'));}
   else C.itens=[];
 }
 

@@ -449,14 +449,26 @@ function voltarVisoes(){
 }
 
 // ═══ CACHE ═══
+// Busca TODAS as linhas em blocos de 1000 (o Supabase corta em 1000 por consulta).
+async function fetchAll(makeQuery){
+  const PAGE=1000; let from=0, all=[];
+  while(true){
+    const {data,error}=await makeQuery().range(from,from+PAGE-1);
+    if(error){console.error('fetchAll',error);break;}
+    if(!data||!data.length) break;
+    all=all.concat(data);
+    if(data.length<PAGE) break;
+    from+=PAGE;
+  }
+  return all;
+}
 async function carregarCache(){
-  const {data:cads}=await sb.from('cadernos').select('*').eq('confirmado',true).order('id');
-  C.cads=cads||[];
-  if(C.cads.length){const {data:tars}=await sb.from('caderno_tarifas').select('*').in('caderno_id',C.cads.map(c=>c.id));C.tars=tars||[];}
+  C.cads=await fetchAll(()=>sb.from('cadernos').select('*').eq('confirmado',true).order('id'));
+  if(C.cads.length){C.tars=await fetchAll(()=>sb.from('caderno_tarifas').select('*').in('caderno_id',C.cads.map(c=>c.id)).order('id'));}
   else C.tars=[];
-  const {data:prod}=await sb.from('producao_real').select('*').eq('ativo',true);C.prod=prod||[];
-  const {data:bols}=await sb.from('boletins').select('*').eq('ativo',true);C.bols=bols||[];
-  if(C.bols.length){const {data:itens}=await sb.from('boletim_itens').select('*').in('boletim_id',C.bols.map(b=>b.id));C.itens=itens||[];}
+  C.prod=await fetchAll(()=>sb.from('producao_real').select('*').eq('ativo',true).order('id'));
+  C.bols=await fetchAll(()=>sb.from('boletins').select('*').eq('ativo',true).order('id'));
+  if(C.bols.length){C.itens=await fetchAll(()=>sb.from('boletim_itens').select('*').in('boletim_id',C.bols.map(b=>b.id)).order('id'));}
   else C.itens=[];
 }
 
@@ -839,9 +851,11 @@ async function salvarCaderno(){
 // ═══ HISTÓRICOS ═══
 async function carregarHistProd(){
   const filtEst=document.getElementById('fil-hist-prod')?.value||'';
-  let q=sb.from('producao_real').select('mes,ano,estado,qde_executada,importado_em,ativo').order('ano',{ascending:false}).order('mes',{ascending:false});
-  if(filtEst) q=q.eq('estado',filtEst);
-  const {data:prod}=await q;
+  const prod=await fetchAll(()=>{
+    let q=sb.from('producao_real').select('mes,ano,estado,qde_executada,importado_em,ativo').order('ano',{ascending:false}).order('mes',{ascending:false}).order('id',{ascending:false});
+    if(filtEst) q=q.eq('estado',filtEst);
+    return q;
+  });
   const tb=document.getElementById('tb-hist-prod');
   if(!prod?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum lançamento encontrado.</td></tr>';return;}
   const ag={};prod.forEach(r=>{const k=`${r.ano}|${String(r.mes).padStart(2,'0')}|${r.estado}`;if(!ag[k]) ag[k]={mes:r.mes,ano:r.ano,estado:r.estado,total:0,em:r.importado_em,ativo:r.ativo!==false};ag[k].total+=r.qde_executada;});
@@ -874,9 +888,11 @@ async function excluirProd(mes,ano,est){
 
 async function carregarHistBol(){
   const filtEst=document.getElementById('fil-hist-bol')?.value||'';
-  let q=sb.from('boletins').select('*').order('ano',{ascending:false}).order('mes',{ascending:false});
-  if(filtEst) q=q.eq('estado',filtEst);
-  const {data:bols}=await q;
+  const bols=await fetchAll(()=>{
+    let q=sb.from('boletins').select('*').order('ano',{ascending:false}).order('mes',{ascending:false}).order('id',{ascending:false});
+    if(filtEst) q=q.eq('estado',filtEst);
+    return q;
+  });
   const tb=document.getElementById('tb-hist-bol');
   if(!bols?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum boletim encontrado.</td></tr>';return;}
   const ordenado=[...bols].sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes);

@@ -59,6 +59,9 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 .header-actions{display:flex;gap:8px;align-items:center}
 .btn-xls{font-size:12px;padding:7px 14px;background:#1D9E75;color:#fff;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
 .btn-xls:hover{background:#0F6E56}
+.chip{font-size:12px;padding:6px 12px;border-radius:20px;border:1px solid var(--bd);background:var(--bg);color:var(--tx2);cursor:pointer;font-family:inherit}
+.chip:hover{border-color:#BE2F3B}
+.chip.on{background:#BE2F3B;border-color:#BE2F3B;color:#fff;font-weight:700}
 .btn-pdf{font-size:12px;padding:7px 14px;background:var(--vm);color:#fff;border:none;border-radius:var(--r2);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
 .btn-pdf:hover{background:#a02632}
 .con{padding:1.25rem 1.5rem;flex:1;min-width:0}
@@ -598,6 +601,14 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 <div class="modal-overlay" id="modal-excel">
   <div class="modal modal-excel">
     <p style="font-size:15px;font-weight:700;margin-bottom:1rem"><i class="ti ti-file-spreadsheet"></i> Exportar dados em Excel</p>
+    <label style="font-size:11px;color:var(--tx2);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Período de extração</label>
+    <div id="xl-presets" style="display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 14px">
+      <button type="button" class="chip" data-p="atual" onclick="aplicarPresetExcel('atual')">Mês atual</button>
+      <button type="button" class="chip" data-p="anterior" onclick="aplicarPresetExcel('anterior')">Mês anterior</button>
+      <button type="button" class="chip" data-p="3meses" onclick="aplicarPresetExcel('3meses')">Últimos 3 meses</button>
+      <button type="button" class="chip" data-p="ytd" onclick="aplicarPresetExcel('ytd')">Ano atual (YTD)</button>
+      <button type="button" class="chip" data-p="custom" onclick="aplicarPresetExcel('custom')">Personalizado</button>
+    </div>
     <div class="modal-grid">
       <div class="fg"><label>Estado</label><select id="xl-est"></select></div>
       <div class="fg"><label>Regional</label><select id="xl-reg"><option value="">Todas</option></select></div>
@@ -606,9 +617,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <div class="fg"><label>Mês fim</label><select id="xl-mes-fim"></select></div>
       <div class="fg"><label>Ano fim</label><select id="xl-ano-fim"></select></div>
     </div>
-    <div style="font-size:11px;color:var(--tx2);margin-bottom:1rem;padding:10px;background:var(--bg);border-radius:var(--r2)">
-      O arquivo exportado conterá: <strong>Eventos Previstos</strong>, <strong>Executados</strong> e <strong>Pagos</strong> por serviço, regional e mês.
-    </div>
+    <div id="xl-resumo" style="font-size:12px;color:var(--tx2);margin-bottom:1rem;padding:12px 14px;background:rgba(190,47,59,.06);border:1px solid rgba(190,47,59,.25);border-radius:var(--r2);line-height:1.5"></div>
     <div class="btn-row">
       <button class="btn btn-s" onclick="fecharModalExcel()">Cancelar</button>
       <button class="btn btn-p" onclick="exportarExcel()"><i class="ti ti-download"></i> Baixar Excel</button>
@@ -1396,18 +1405,46 @@ async function exportarRelRegPDF(){
 }
 
 // ═══ EXCEL ═══
+let EXCEL_PRESET='atual';
 function preencherModalExcel(){
   const ano=new Date().getFullYear(),mes=new Date().getMonth()+1;
-  const xl=document.getElementById('xl-est');if(xl){xl.innerHTML='<option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option>';xl.addEventListener('change',()=>{const e=xl.value;document.getElementById('xl-reg').innerHTML='<option value="">Todas</option>'+(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');});}
+  const xl=document.getElementById('xl-est');if(xl){xl.innerHTML='<option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="TODOS">Consolidado</option>';xl.addEventListener('change',()=>{const e=xl.value;document.getElementById('xl-reg').innerHTML='<option value="">Todas</option>'+(REGS[e]||[]).map(r=>`<option>${r}</option>`).join('');atualizarResumoExcel();});}
   ['xl-mes-ini','xl-mes-fim'].forEach(id=>{const s=document.getElementById(id);if(s) s.innerHTML=MN.slice(1).map((n,i)=>`<option value="${i+1}" ${i+1===mes?'selected':''}>${n}</option>`).join('');});
   ['xl-ano-ini','xl-ano-fim'].forEach(id=>{const s=document.getElementById(id);if(s) s.innerHTML=[ano-1,ano,ano+1].map(a=>`<option value="${a}" ${a===ano?'selected':''}>${a}</option>`).join('');});
+  // Editar manualmente qualquer data → vira "Personalizado"
+  ['xl-mes-ini','xl-ano-ini','xl-mes-fim','xl-ano-fim'].forEach(id=>{const s=document.getElementById(id);if(s) s.addEventListener('change',()=>{marcarChipExcel('custom');atualizarResumoExcel();});});
+  document.getElementById('xl-reg')?.addEventListener('change',atualizarResumoExcel);
 }
-function abrirModalExcel(){document.getElementById('modal-excel').classList.add('open');}
+function marcarChipExcel(preset){EXCEL_PRESET=preset;document.querySelectorAll('#xl-presets .chip').forEach(c=>c.classList.toggle('on',c.dataset.p===preset));}
+function aplicarPresetExcel(preset){
+  const now=new Date(),cm=now.getMonth()+1,cy=now.getFullYear();
+  const setR=(mi,yi,mf,yf)=>{const sv=(id,v)=>{const s=document.getElementById(id);if(s) s.value=v;};sv('xl-mes-ini',mi);sv('xl-ano-ini',yi);sv('xl-mes-fim',mf);sv('xl-ano-fim',yf);};
+  if(preset==='atual') setR(cm,cy,cm,cy);
+  else if(preset==='anterior'){const d=new Date(cy,cm-2,1);setR(d.getMonth()+1,d.getFullYear(),d.getMonth()+1,d.getFullYear());}
+  else if(preset==='3meses'){const d=new Date(cy,cm-3,1);setR(d.getMonth()+1,d.getFullYear(),cm,cy);}
+  else if(preset==='ytd') setR(1,cy,cm,cy);
+  // 'custom' não altera as datas
+  marcarChipExcel(preset);
+  atualizarResumoExcel();
+}
+function atualizarResumoExcel(){
+  const el=document.getElementById('xl-resumo');if(!el) return;
+  const est=document.getElementById('xl-est').value;
+  const reg=document.getElementById('xl-reg').value||'todas as regionais';
+  const mi=+document.getElementById('xl-mes-ini').value,yi=+document.getElementById('xl-ano-ini').value;
+  const mf=+document.getElementById('xl-mes-fim').value,yf=+document.getElementById('xl-ano-fim').value;
+  const n=(yf*12+mf)-(yi*12+mi)+1;
+  const estNome={MA:'Maranhão',PI:'Piauí',TODOS:'Consolidado (MA+PI)'}[est]||est;
+  if(n<1){el.innerHTML='<strong style="color:#BE2F3B">O mês/ano final está antes do inicial.</strong> Ajuste o período.';return;}
+  el.innerHTML=`Você vai extrair <strong>${MN[mi].slice(0,3)}/${yi} → ${MN[mf].slice(0,3)}/${yf}</strong> · <strong>${n} ${n===1?'mês':'meses'}</strong> · ${estNome} · ${reg}.<br>Conteúdo: Previsto, Executado e Pago por serviço, regional e mês.`;
+}
+function abrirModalExcel(){document.getElementById('modal-excel').classList.add('open');aplicarPresetExcel('atual');}
 function fecharModalExcel(){document.getElementById('modal-excel').classList.remove('open');}
 function exportarExcel(){
   const est=document.getElementById('xl-est').value,reg=document.getElementById('xl-reg').value;
   const mesIni=parseInt(document.getElementById('xl-mes-ini').value),anoIni=parseInt(document.getElementById('xl-ano-ini').value);
   const mesFim=parseInt(document.getElementById('xl-mes-fim').value),anoFim=parseInt(document.getElementById('xl-ano-fim').value);
+  if(anoFim*12+mesFim < anoIni*12+mesIni){alert('O período final está antes do inicial. Ajuste as datas antes de exportar.');return;}
   const rows=[['Mês/Ano','Estado','Regional','Serviço','Eventos Previstos','Eventos Executados','Eventos Pagos']];
   let ano=anoIni,mes=mesIni;
   while(ano<anoFim||(ano===anoFim&&mes<=mesFim)){

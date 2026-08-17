@@ -1447,12 +1447,18 @@ function exportarExcel(){
   if(anoFim*12+mesFim < anoIni*12+mesIni){alert('O período final está antes do inicial. Ajuste as datas antes de exportar.');return;}
   const rows=[['Mês/Ano','Estado','Regional','Serviço','Eventos Previstos','Eventos Executados','Eventos Pagos']];
   let ano=anoIni,mes=mesIni;
+  const estados = est==='TODOS' ? ESTADOS_CONSOL : [est];
   while(ano<anoFim||(ano===anoFim&&mes<=mesFim)){
-    const tars=getTarifas(est,mes,ano,reg);const svcMap={};tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
-    const execMap={};getProd(est,mes,ano,reg).forEach(r=>execMap[r.cod_servico]=(execMap[r.cod_servico]||0)+r.qde_executada);
-    const pagoMap={};getItens(est,mes,ano,reg).forEach(i=>pagoMap[i.cod_servico]=(pagoMap[i.cod_servico]||0)+(i.qde_paga||0));
-    const svcs=new Set([...Object.keys(svcMap),...Object.keys(execMap),...Object.keys(pagoMap)]);
-    svcs.forEach(cod=>{rows.push([mA(mes,ano),est,reg||'Todas',svcMap[cod]?.desc||cod,svcMap[cod]?.prev||0,execMap[cod]||0,pagoMap[cod]||0]);});
+    estados.forEach(e=>{
+      const regs = reg ? [reg] : (REGS[e]||['']);
+      regs.forEach(r=>{
+        const tars=getTarifas(e,mes,ano,r);const svcMap={};tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
+        const execMap={};getProd(e,mes,ano,r).forEach(rp=>execMap[rp.cod_servico]=(execMap[rp.cod_servico]||0)+rp.qde_executada);
+        const pagoMap={};getItens(e,mes,ano,r).forEach(i=>pagoMap[i.cod_servico]=(pagoMap[i.cod_servico]||0)+(i.qde_paga||0));
+        const svcs=new Set([...Object.keys(svcMap),...Object.keys(execMap),...Object.keys(pagoMap)]);
+        svcs.forEach(cod=>{rows.push([mA(mes,ano),e,r||'—',svcMap[cod]?.desc||cod,svcMap[cod]?.prev||0,execMap[cod]||0,pagoMap[cod]||0]);});
+      });
+    });
     mes++;if(mes>12){mes=1;ano++;}
   }
   const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:10},{wch:12},{wch:16},{wch:45},{wch:18},{wch:18},{wch:14}];XLSX.utils.book_append_sheet(wb,ws,'Eventos');

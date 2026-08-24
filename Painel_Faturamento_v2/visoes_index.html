@@ -617,6 +617,12 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <div class="fg"><label>Mês fim</label><select id="xl-mes-fim"></select></div>
       <div class="fg"><label>Ano fim</label><select id="xl-ano-fim"></select></div>
     </div>
+    <label style="font-size:11px;color:var(--tx2);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Dados a extrair</label>
+    <div style="display:flex;flex-direction:column;gap:0;margin:8px 0 14px;border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">
+      <label style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13px"><input type="checkbox" id="xl-d-qtd" checked onchange="atualizarResumoExcel()" style="width:15px;height:15px;accent-color:#BE2F3B"> <span><strong>Quantidade de serviços</strong> <span style="color:var(--tx2)">— Previsto · Executado · Pago</span></span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13px;border-top:1px solid var(--bd)"><input type="checkbox" id="xl-d-tar" onchange="atualizarResumoExcel()" style="width:15px;height:15px;accent-color:#BE2F3B"> <span><strong>Tarifa unitária (R$)</strong> <span style="color:var(--tx2)">— caderno · boletim</span></span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13px;border-top:1px solid var(--bd)"><input type="checkbox" id="xl-d-fat" onchange="atualizarResumoExcel()" style="width:15px;height:15px;accent-color:#BE2F3B"> <span><strong>Faturamento (R$)</strong> <span style="color:var(--tx2)">— Previsto · Executado · Pago</span></span></label>
+    </div>
     <div id="xl-resumo" style="font-size:12px;color:var(--tx2);margin-bottom:1rem;padding:12px 14px;background:rgba(190,47,59,.06);border:1px solid rgba(190,47,59,.25);border-radius:var(--r2);line-height:1.5"></div>
     <div class="btn-row">
       <button class="btn btn-s" onclick="fecharModalExcel()">Cancelar</button>
@@ -1436,7 +1442,12 @@ function atualizarResumoExcel(){
   const n=(yf*12+mf)-(yi*12+mi)+1;
   const estNome={MA:'Maranhão',PI:'Piauí',TODOS:'Consolidado (MA+PI)'}[est]||est;
   if(n<1){el.innerHTML='<strong style="color:#BE2F3B">O mês/ano final está antes do inicial.</strong> Ajuste o período.';return;}
-  el.innerHTML=`Você vai extrair <strong>${MN[mi].slice(0,3)}/${yi} → ${MN[mf].slice(0,3)}/${yf}</strong> · <strong>${n} ${n===1?'mês':'meses'}</strong> · ${estNome} · ${reg}.<br>Conteúdo: Previsto, Executado e Pago por serviço, regional e mês.`;
+  const partes=[];
+  if(document.getElementById('xl-d-qtd')?.checked) partes.push('Quantidade (Prev/Exec/Pago)');
+  if(document.getElementById('xl-d-tar')?.checked) partes.push('Tarifa (caderno/boletim)');
+  if(document.getElementById('xl-d-fat')?.checked) partes.push('Faturamento (Prev/Exec/Pago)');
+  const cols=partes.length?partes.join(' · '):'<strong style="color:#BE2F3B">selecione ao menos um tipo de dado</strong>';
+  el.innerHTML=`Você vai extrair <strong>${MN[mi].slice(0,3)}/${yi} → ${MN[mf].slice(0,3)}/${yf}</strong> · <strong>${n} ${n===1?'mês':'meses'}</strong> · ${estNome} · ${reg}.<br>Colunas: ${cols} — por serviço e regional.`;
 }
 function abrirModalExcel(){document.getElementById('modal-excel').classList.add('open');aplicarPresetExcel('atual');}
 function fecharModalExcel(){document.getElementById('modal-excel').classList.remove('open');}
@@ -1445,24 +1456,42 @@ function exportarExcel(){
   const mesIni=parseInt(document.getElementById('xl-mes-ini').value),anoIni=parseInt(document.getElementById('xl-ano-ini').value);
   const mesFim=parseInt(document.getElementById('xl-mes-fim').value),anoFim=parseInt(document.getElementById('xl-ano-fim').value);
   if(anoFim*12+mesFim < anoIni*12+mesIni){alert('O período final está antes do inicial. Ajuste as datas antes de exportar.');return;}
-  const rows=[['Mês/Ano','Estado','Regional','Serviço','Eventos Previstos','Eventos Executados','Eventos Pagos']];
-  let ano=anoIni,mes=mesIni;
+  const wQtd=document.getElementById('xl-d-qtd').checked,wTar=document.getElementById('xl-d-tar').checked,wFat=document.getElementById('xl-d-fat').checked;
+  if(!wQtd&&!wTar&&!wFat){alert('Selecione ao menos um tipo de dado para extrair.');return;}
+  const header=['Mês/Ano','Estado','Regional','Serviço'];
+  if(wQtd) header.push('Qtd Previsto','Qtd Executado','Qtd Pago');
+  if(wTar) header.push('Tarifa Caderno (R$)','Tarifa Boletim (R$)');
+  if(wFat) header.push('Fat. Previsto (R$)','Fat. Executado (R$)','Fat. Pago (R$)');
+  const rows=[header];
   const estados = est==='TODOS' ? ESTADOS_CONSOL : [est];
+  let ano=anoIni,mes=mesIni;
   while(ano<anoFim||(ano===anoFim&&mes<=mesFim)){
     estados.forEach(e=>{
       const regs = reg ? [reg] : (REGS[e]||['']);
       regs.forEach(r=>{
-        const tars=getTarifas(e,mes,ano,r);const svcMap={};tars.forEach(t=>{if(!svcMap[t.cod_servico]) svcMap[t.cod_servico]={desc:t.descricao_servico,prev:0};svcMap[t.cod_servico].prev+=parseFloat(t.eventos_previstos)||0;});
-        const execMap={};getProd(e,mes,ano,r).forEach(rp=>execMap[rp.cod_servico]=(execMap[rp.cod_servico]||0)+rp.qde_executada);
-        const pagoMap={};getItens(e,mes,ano,r).forEach(i=>pagoMap[i.cod_servico]=(pagoMap[i.cod_servico]||0)+(i.qde_paga||0));
-        const svcs=new Set([...Object.keys(svcMap),...Object.keys(execMap),...Object.keys(pagoMap)]);
-        svcs.forEach(cod=>{rows.push([mA(mes,ano),e,r||'—',svcMap[cod]?.desc||cod,svcMap[cod]?.prev||0,execMap[cod]||0,pagoMap[cod]||0]);});
+        const svcMap={};getTarifas(e,mes,ano,r).forEach(t=>{const c=t.cod_servico;if(!svcMap[c])svcMap[c]={desc:t.descricao_servico,prev:0,tar:0};svcMap[c].prev+=parseFloat(t.eventos_previstos)||0;svcMap[c].tar=parseFloat(t.preco_unitario)||0;});
+        const execMap={};getProd(e,mes,ano,r).forEach(rp=>execMap[rp.cod_servico]=(execMap[rp.cod_servico]||0)+(parseFloat(rp.qde_executada)||0));
+        const pQ={},pV={};getItens(e,mes,ano,r).forEach(i=>{const c=i.cod_servico,q=parseFloat(i.qde_paga)||0,p=parseFloat(i.preco_unitario)||0;pQ[c]=(pQ[c]||0)+q;pV[c]=(pV[c]||0)+q*p;});
+        const svcs=new Set([...Object.keys(svcMap),...Object.keys(execMap),...Object.keys(pQ)]);
+        svcs.forEach(cod=>{
+          const qPrev=svcMap[cod]?.prev||0,qExec=execMap[cod]||0,qPago=pQ[cod]||0;
+          const tarCad=svcMap[cod]?.tar||0,tarBol=pQ[cod]?((pV[cod]||0)/pQ[cod]):0;
+          const row=[mA(mes,ano),e,r||'—',svcMap[cod]?.desc||cod];
+          if(wQtd) row.push(qPrev,qExec,qPago);
+          if(wTar) row.push(+tarCad.toFixed(2),+tarBol.toFixed(2));
+          if(wFat) row.push(+(qPrev*tarCad).toFixed(2),+(qExec*tarCad).toFixed(2),+(pV[cod]||0).toFixed(2));
+          rows.push(row);
+        });
       });
     });
     mes++;if(mes>12){mes=1;ano++;}
   }
-  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:10},{wch:12},{wch:16},{wch:45},{wch:18},{wch:18},{wch:14}];XLSX.utils.book_append_sheet(wb,ws,'Eventos');
-  XLSX.writeFile(wb,`CENEGED_Eventos_${est}_${mA(mesIni,anoIni).replace('/','_')}_${mA(mesFim,anoFim).replace('/','_')}.xlsx`);fecharModalExcel();
+  const cols=[{wch:10},{wch:12},{wch:16},{wch:45}];
+  if(wQtd) cols.push({wch:14},{wch:16},{wch:12});
+  if(wTar) cols.push({wch:18},{wch:18});
+  if(wFat) cols.push({wch:18},{wch:18},{wch:16});
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=cols;XLSX.utils.book_append_sheet(wb,ws,'Dados');
+  XLSX.writeFile(wb,`CENEGED_${est}_${mA(mesIni,anoIni).replace('/','_')}_${mA(mesFim,anoFim).replace('/','_')}.xlsx`);fecharModalExcel();
 }
 
 // ═══ STATUS DE DADOS ═══

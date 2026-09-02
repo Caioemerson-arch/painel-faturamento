@@ -1031,9 +1031,48 @@ function carregarCadernos(){
       </div>
     </div>`;
   };
-  elAtivos.innerHTML=ativos.length?ativos.map(c=>renderCad(c)).join(''):'<div class="loader">Nenhum caderno ativo.</div>';
+  // Ativos: cards compactos agrupados por estado (um por processo), expandem ao clicar
+  const COR={leitura:'#1F6FEB',cobranca:'#BA7517',atendimento:'#1D9E75'};
+  const ROT={leitura:'Leitura',cobranca:'Cobrança',atendimento:'Atendimento'};
+  const ORD=['leitura','cobranca','atendimento'];
+  const procsShow=filtProc?[filtProc]:ORD;
+  let htmlAtivos='';
+  ['MA','PI'].forEach(est=>{
+    const doEst=ativos.filter(c=>c.estado===est);
+    const porProc={};doEst.forEach(c=>{const p=procLabel(c);if(!porProc[p]||c.id>porProc[p].id) porProc[p]=c;});
+    const n=Object.keys(porProc).length;
+    if(filtProc&&n===0) return; // nada desse processo nesse estado quando filtrando
+    htmlAtivos+=`<div style="margin-bottom:1.25rem">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:12px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.05em">${est==='MA'?'Maranhão':'Piauí'}</span>
+        <span style="flex:1;height:1px;background:var(--bd)"></span>
+        <span style="font-size:11px;color:var(--tx2)">${n} processo(s) ativo(s)</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">`;
+    procsShow.forEach(p=>{
+      const c=porProc[p];
+      if(c){
+        const tars=C.tars.filter(t=>t.caderno_id===c.id);
+        const regs=new Set(tars.map(t=>t.regional)).size;
+        const nsvc=regs>0?Math.round(tars.length/regs):tars.length;
+        htmlAtivos+=`<div onclick="toggleCadDet(${c.id})" style="border:1px solid var(--bd);border-left:3px solid ${COR[p]||'#888'};border-radius:10px;padding:11px 13px;background:var(--br);cursor:pointer">
+          <div style="font-size:11px;font-weight:700;color:${COR[p]||'#888'};margin-bottom:3px">${ROT[p]||p}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--pt)">Vig ${c.vigencia_inicio||'—'}</div>
+          <div style="font-size:11px;color:var(--tx2);margin-top:2px">${regs} regional(is) · ${nsvc} serviços</div>
+        </div>`;
+      } else {
+        htmlAtivos+=`<div style="border:1px dashed var(--bd);border-radius:10px;padding:11px 13px;color:var(--tx2);font-size:11px;display:flex;align-items:center;justify-content:center;text-align:center">${ROT[p]||p} — sem caderno</div>`;
+      }
+    });
+    htmlAtivos+=`</div>`;
+    // painéis de detalhe (escondidos) com o card completo
+    procsShow.forEach(p=>{const c=porProc[p];if(c) htmlAtivos+=`<div id="caddet-${c.id}" style="display:none;margin-top:10px">${renderCad(c)}</div>`;});
+    htmlAtivos+=`</div>`;
+  });
+  elAtivos.innerHTML=htmlAtivos||'<div class="loader">Nenhum caderno ativo.</div>';
   elHist.innerHTML=historico.length?historico.map(c=>renderCad(c)).join(''):'<div class="loader">Nenhum caderno encerrado encontrado.</div>';
 }
+function toggleCadDet(id){const el=document.getElementById('caddet-'+id);if(el) el.style.display=el.style.display==='none'?'block':'none';}
 
 async function salvarVig(id){
   const ini=document.getElementById('vi-'+id).value.trim();

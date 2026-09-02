@@ -778,14 +778,17 @@ function getCadAtivo(estado,mes,ano){
     const fim=c.data_fim?vig(c.data_fim):999999;
     return mn>=ini&&mn<=fim;
   });
-  // Por estado, usar SÓ o caderno de vigência mais recente (empate = maior id).
-  // Evita dupla contagem quando há cadernos sobrepostos ou sem data_fim.
+  // processo do caderno (derivado das tarifas)
+  const procCad=(c)=>{const p=C.tars.find(t=>t.caderno_id===c.id&&t.processo);return (p&&p.processo)||'leitura';};
+  // Por (estado + processo), usar SÓ o caderno de vigência mais recente (empate = maior id).
+  // Permite Leitura/Cobrança/Atendimento ativos ao mesmo tempo sem um derrubar o outro.
   const escolhido={};
   cand.forEach(c=>{
-    const i=vig(c.vigencia_inicio), cur=escolhido[c.estado];
-    if(!cur||i>cur.i||(i===cur.i&&c.id>cur.id)) escolhido[c.estado]={i,id:c.id};
+    const key=c.estado+'|'+procCad(c);
+    const i=vig(c.vigencia_inicio), cur=escolhido[key];
+    if(!cur||i>cur.i||(i===cur.i&&c.id>cur.id)) escolhido[key]={i,id:c.id};
   });
-  return cand.filter(c=>escolhido[c.estado]&&c.id===escolhido[c.estado].id);
+  return cand.filter(c=>{const key=c.estado+'|'+procCad(c);return escolhido[key]&&c.id===escolhido[key].id;});
 }
 // Processo atual (as abas setam no topo do seu carregarX). Default = leitura (não quebra o legado).
 let PROC_ATUAL='leitura';

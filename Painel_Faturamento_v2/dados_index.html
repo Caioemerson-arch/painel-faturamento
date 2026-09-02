@@ -293,16 +293,19 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         </div>
       </div>
       <div class="sec-row">
-        <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <div class="sec" style="margin:0">Histórico de boletins</div>
           <select id="fil-hist-bol" onchange="carregarHistBol()" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)">
-            <option value="">Todos os estados</option><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="RJ">Rio de Janeiro</option>
+            <option value="">Todos os estados</option><option value="MA">Maranhão</option><option value="PI">Piauí</option>
+          </select>
+          <select id="fil-hist-bol-proc" onchange="carregarHistBol()" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)">
+            <option value="">Todos os processos</option><option value="leitura">Leitura</option><option value="cobranca">Cobrança e Negociação</option><option value="atendimento">Atendimento</option>
           </select>
         </div>
         <button class="btn btn-s btn-sm" onclick="carregarHistBol()"><i class="ti ti-refresh"></i> Atualizar</button>
       </div>
       <div class="tbox">
-        <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Total pago</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead>
+        <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Processo</th><th>Total eventos</th><th>Total pago</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody id="tb-hist-bol"></tbody></table>
       </div>
     </div>
@@ -331,16 +334,19 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         </div>
       </div>
       <div class="sec-row">
-        <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <div class="sec" style="margin:0">Histórico de lançamentos</div>
           <select id="fil-hist-prod" onchange="carregarHistProd()" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)">
-            <option value="">Todos os estados</option><option value="MA">Maranhão</option><option value="PI">Piauí</option><option value="RJ">Rio de Janeiro</option>
+            <option value="">Todos os estados</option><option value="MA">Maranhão</option><option value="PI">Piauí</option>
+          </select>
+          <select id="fil-hist-prod-proc" onchange="carregarHistProd()" style="font-size:11px;padding:4px 8px;border-radius:var(--r2);border:1px solid var(--bd);background:var(--br)">
+            <option value="">Todos os processos</option><option value="leitura">Leitura</option><option value="cobranca">Cobrança e Negociação</option><option value="atendimento">Atendimento</option>
           </select>
         </div>
         <button class="btn btn-s btn-sm" onclick="carregarHistProd()"><i class="ti ti-refresh"></i> Atualizar</button>
       </div>
       <div class="tbox">
-        <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Total eventos</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead>
+        <table><thead><tr><th>Mês/Ano</th><th>Estado</th><th>Processo</th><th>Total eventos</th><th>Importado em</th><th>Status</th><th>Ações</th></tr></thead>
         <tbody id="tb-hist-prod"></tbody></table>
       </div>
     </div>
@@ -856,60 +862,74 @@ async function salvarCaderno(){
 }
 
 // ═══ HISTÓRICOS ═══
+function procSelo(p){
+  const m={leitura:['Leitura','#1F6FEB','rgba(55,138,221,.12)'],cobranca:['Cobrança','#BA7517','rgba(186,117,23,.12)'],atendimento:['Atendimento','#1D9E75','rgba(29,158,117,.12)']};
+  const [txt,cor,bg]=m[p]||[p||'—','#777','var(--bg)'];
+  return `<span style="font-size:11px;padding:2px 9px;border-radius:12px;background:${bg};color:${cor};font-weight:700">${txt}</span>`;
+}
 async function carregarHistProd(){
   const filtEst=document.getElementById('fil-hist-prod')?.value||'';
+  const filtProc=document.getElementById('fil-hist-prod-proc')?.value||'';
   const prod=await fetchAll(()=>{
-    let q=sb.from('producao_real').select('mes,ano,estado,qde_executada,importado_em,ativo').order('ano',{ascending:false}).order('mes',{ascending:false}).order('id',{ascending:false});
+    let q=sb.from('producao_real').select('mes,ano,estado,processo,qde_executada,importado_em,ativo').in('estado',['MA','PI']).order('ano',{ascending:false}).order('mes',{ascending:false}).order('id',{ascending:false});
     if(filtEst) q=q.eq('estado',filtEst);
+    if(filtProc) q=q.eq('processo',filtProc);
     return q;
   });
   const tb=document.getElementById('tb-hist-prod');
-  if(!prod?.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum lançamento encontrado.</td></tr>';return;}
-  const ag={};prod.forEach(r=>{const k=`${r.ano}|${String(r.mes).padStart(2,'0')}|${r.estado}`;if(!ag[k]) ag[k]={mes:r.mes,ano:r.ano,estado:r.estado,total:0,em:r.importado_em,ativo:r.ativo!==false};ag[k].total+=r.qde_executada;});
+  if(!prod?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum lançamento encontrado.</td></tr>';return;}
+  const ag={};prod.forEach(r=>{const proc=r.processo||'leitura';const k=`${r.ano}|${String(r.mes).padStart(2,'0')}|${r.estado}|${proc}`;if(!ag[k]) ag[k]={mes:r.mes,ano:r.ano,estado:r.estado,processo:proc,total:0,em:r.importado_em,ativo:r.ativo!==false};ag[k].total+=r.qde_executada;});
   const ordenado=Object.entries(ag).sort((a,b)=>b[0].localeCompare(a[0])).map(e=>e[1]);
   tb.innerHTML=ordenado.map(r=>`<tr>
     <td>${mA(r.mes,r.ano)}</td>
     <td>${r.estado}</td>
+    <td>${procSelo(r.processo)}</td>
     <td>${fN(r.total)}</td>
     <td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'—'}</td>
     <td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td>
     <td style="display:flex;gap:6px;align-items:center">
       ${r.ativo
-        ?`<button class="btn-inativar" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',true)"><i class="ti ti-toggle-left" style="font-size:14px"></i> Inativar</button>`
-        :`<button class="btn-ativar" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}',false)"><i class="ti ti-toggle-right" style="font-size:14px"></i> Ativar</button>`
+        ?`<button class="btn-inativar" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}','${r.processo}',true)"><i class="ti ti-toggle-left" style="font-size:14px"></i> Inativar</button>`
+        :`<button class="btn-ativar" onclick="inativarProd(${r.mes},${r.ano},'${r.estado}','${r.processo}',false)"><i class="ti ti-toggle-right" style="font-size:14px"></i> Ativar</button>`
       }
-      <button class="btn-excluir" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}')"><i class="ti ti-trash" style="font-size:14px"></i> Excluir</button>
+      <button class="btn-excluir" onclick="excluirProd(${r.mes},${r.ano},'${r.estado}','${r.processo}')"><i class="ti ti-trash" style="font-size:14px"></i> Excluir</button>
     </td>
   </tr>`).join('');
 }
 
-async function inativarProd(mes,ano,est,ativo){
-  await sb.from('producao_real').update({ativo:!ativo}).eq('mes',mes).eq('ano',ano).eq('estado',est);
+async function inativarProd(mes,ano,est,proc,ativo){
+  await sb.from('producao_real').update({ativo:!ativo}).eq('mes',mes).eq('ano',ano).eq('estado',est).eq('processo',proc);
   await carregarCache();preencherStatusDados();carregarHistProd();
 }
-async function excluirProd(mes,ano,est){
-  if(!confirm(`Excluir ${mA(mes,ano)} — ${est}? Esta ação não pode ser desfeita.`)) return;
-  await sb.from('producao_real').delete().eq('mes',mes).eq('ano',ano).eq('estado',est);
+async function excluirProd(mes,ano,est,proc){
+  if(!confirm(`Excluir ${mA(mes,ano)} — ${est} (${proc})? Esta ação não pode ser desfeita.`)) return;
+  await sb.from('producao_real').delete().eq('mes',mes).eq('ano',ano).eq('estado',est).eq('processo',proc);
   await carregarCache();preencherStatusDados();carregarHistProd();
 }
 
 async function carregarHistBol(){
   const filtEst=document.getElementById('fil-hist-bol')?.value||'';
+  const filtProc=document.getElementById('fil-hist-bol-proc')?.value||'';
   const bols=await fetchAll(()=>{
-    let q=sb.from('boletins').select('*').order('ano',{ascending:false}).order('mes',{ascending:false}).order('id',{ascending:false});
+    let q=sb.from('boletins').select('*').in('estado',['MA','PI']).order('ano',{ascending:false}).order('mes',{ascending:false}).order('id',{ascending:false});
     if(filtEst) q=q.eq('estado',filtEst);
     return q;
   });
   const tb=document.getElementById('tb-hist-bol');
-  if(!bols?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum boletim encontrado.</td></tr>';return;}
-  const ordenado=[...bols].sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes);
-  tb.innerHTML='';
-  for(const b of ordenado){
-    const it=C.itens.filter(i=>i.boletim_id===b.id);
-    const tE=it.reduce((s,i)=>s+(i.qde_paga||0),0),tV=it.reduce((s,i)=>s+(parseFloat(i.valor_pago)||0),0);
-    tb.innerHTML+=`<tr>
+  const linhas=[];
+  for(const b of bols){
+    const its=C.itens.filter(i=>i.boletim_id===b.id);
+    if(filtProc && !its.some(i=>i.processo===filtProc)) continue;
+    const procs=[...new Set(its.map(i=>i.processo).filter(Boolean))];
+    const proc=procs.length===1?procs[0]:(procs.length>1?'misto':'leitura');
+    const tE=its.reduce((s,i)=>s+(i.qde_paga||0),0),tV=its.reduce((s,i)=>s+(parseFloat(i.valor_pago)||0),0);
+    linhas.push({b,proc,tE,tV});
+  }
+  if(!linhas.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--tx2)">Nenhum boletim encontrado.</td></tr>';return;}
+  tb.innerHTML=linhas.map(({b,proc,tE,tV})=>`<tr>
       <td>${mA(b.mes,b.ano)}</td>
       <td>${b.estado}</td>
+      <td>${proc==='misto'?'<span style="font-size:11px;color:var(--tx2);font-style:italic">misto</span>':procSelo(proc)}</td>
       <td>${fN(tE)}</td>
       <td>${fR(tV)}</td>
       <td>${b.importado_em?new Date(b.importado_em).toLocaleDateString('pt-BR'):'—'}</td>
@@ -921,8 +941,7 @@ async function carregarHistBol(){
         }
         <button class="btn-excluir" onclick="excluirBol(${b.id},'${mA(b.mes,b.ano)}','${b.estado}')"><i class="ti ti-trash" style="font-size:14px"></i> Excluir</button>
       </td>
-    </tr>`;
-  }
+    </tr>`).join('');
 }
 
 async function inativarBol(id,ativo){

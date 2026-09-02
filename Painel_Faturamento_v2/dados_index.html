@@ -641,11 +641,21 @@ function toggleStatusDados(){
 function preencherStatusDados(){
   const fDt=ts=>{if(!ts) return '—';const d=new Date(ts);return d.toLocaleDateString('pt-BR')+' - '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});};
   const fMA=(m,a)=>m&&a?String(m).padStart(2,'0')+'/'+a:'—';
-  const cadMA=C.cads.filter(c=>c.estado==='MA'&&c.ativo).sort((a,b)=>b.id-a.id)[0];
-  const cadPI=C.cads.filter(c=>c.estado==='PI'&&c.ativo).sort((a,b)=>b.id-a.id)[0];
-  document.getElementById('status-cad-ma').textContent='MA — '+(cadMA?.vigencia_inicio||'Sem caderno ativo');
-  document.getElementById('status-cad-pi').textContent='PI — '+(cadPI?.vigencia_inicio||'Sem caderno ativo');
-  document.getElementById('status-cad-em').textContent='Carregado em: '+fDt(cadMA?.importado_em||cadPI?.importado_em);
+  const procDoCad=(c)=>{const p=C.tars.find(t=>t.caderno_id===c.id&&t.processo);return (p&&p.processo)||'leitura';};
+  const ROT={leitura:'Leitura',cobranca:'Cobrança',atendimento:'Atendimento'};
+  const statusEstado=(est)=>{
+    const cads=C.cads.filter(c=>c.estado===est&&c.ativo);
+    if(!cads.length) return est+' — Sem caderno ativo';
+    const porProc={};
+    cads.forEach(c=>{const p=procDoCad(c);if(!porProc[p]||c.id>porProc[p].id) porProc[p]=c;});
+    const ordem=['leitura','cobranca','atendimento'];
+    const chaves=[...ordem.filter(p=>porProc[p]),...Object.keys(porProc).filter(p=>!ordem.includes(p))];
+    return est+' — '+chaves.map(p=>`${ROT[p]||p} ${porProc[p].vigencia_inicio||'—'}`).join(' · ');
+  };
+  document.getElementById('status-cad-ma').textContent=statusEstado('MA');
+  document.getElementById('status-cad-pi').textContent=statusEstado('PI');
+  const algum=C.cads.filter(c=>(c.estado==='MA'||c.estado==='PI')&&c.ativo).sort((a,b)=>b.id-a.id)[0];
+  document.getElementById('status-cad-em').textContent='Carregado em: '+fDt(algum?.importado_em);
   const bolMA=C.bols.filter(b=>b.estado==='MA').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
   const bolPI=C.bols.filter(b=>b.estado==='PI').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
   document.getElementById('status-bol-ma').textContent='MA — '+fMA(bolMA?.mes,bolMA?.ano);

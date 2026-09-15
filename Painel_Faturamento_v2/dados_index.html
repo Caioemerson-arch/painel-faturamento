@@ -749,10 +749,10 @@ function parsearBoletim(wb){
   lerAbas(wb).forEach(r=>{
     if(!r.MES||!r.ANO||!r.REGIONAL||!r.COD_SERVICO){erros++;return;}
     const mes=parseInt(r.MES),ano=parseInt(r.ANO),est=String(r.ESTADO).trim(),reg=String(r.REGIONAL).trim(),cod=String(r.COD_SERVICO).trim();
-    const procRow=(est==='MA'||est==='PI')?procDoCodigo(cod,''):'leitura';
+    const procRow=(est==='MA'||est==='PI')?(String(r.PROCESSO||'').trim().toLowerCase()||procDoCodigo(cod,'')):'leitura';
     const ja=C.bols.find(b=>b.mes===mes&&b.ano===ano&&b.estado===est&&(b.processo||'leitura')===procRow);
     if(ja){const dk=`${mA(mes,ano)} — ${est}`;if(!dups.includes(dk)) dups.push(dk);}
-    dadosBol.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO||'0').replace(',','.'))||0,qde_paga:parseInt(r.QDE_PAGA)||0,_dup:!!ja});
+    dadosBol.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO||'0').replace(',','.'))||0,qde_paga:parseInt(r.QDE_PAGA)||0,processo:procRow,_dup:!!ja});
   });
   if(!dadosBol.length){alert('Nenhum dado encontrado.');return;}
   const aT=[];dadosBol.forEach(r=>{const tc=tarMap[r.cod_servico+'|'+r.regional];if(tc&&Math.abs(tc-r.preco_unitario)>0.01) aT.push(`${r.regional}: ${r.descricao_servico}`);});
@@ -825,7 +825,7 @@ async function salvarBoletim(){
   // Processo do boletim: derivado dos códigos dos itens (via caderno), o mais frequente
   let procBol='leitura';
   if(estado==='MA'||estado==='PI'){
-    const cont={};dadosBol.forEach(r=>{const p=procDoCodigo(r.cod_servico,'');cont[p]=(cont[p]||0)+1;});
+    const cont={};dadosBol.forEach(r=>{const p=r.processo||procDoCodigo(r.cod_servico,'');cont[p]=(cont[p]||0)+1;});
     procBol=Object.entries(cont).sort((a,b)=>b[1]-a[1])[0]?.[0]||'leitura';
   }
   // Só substitui o boletim do MESMO processo (Leitura e Atendimento do mesmo mês coexistem)
@@ -836,7 +836,7 @@ async function salvarBoletim(){
   const {data:bol,error:e1}=await sb.from('boletins').insert(bolReg).select().single();
   if(e1||!bol){alert('Erro ao criar boletim.');btn.innerHTML='<i class="ti ti-check"></i> Confirmar e salvar';btn.disabled=false;svBol=false;return;}
   const mapBol={};dadosBol.forEach(r=>{const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;const k=`${r.estado}|${regFinal}|${r.cod_servico}`;if(!mapBol[k]) mapBol[k]={...r,regional:regFinal,qde_paga:r.qde_paga};else mapBol[k].qde_paga+=r.qde_paga;});
-  const {error:e2}=await sb.from('boletim_itens').insert(Object.values(mapBol).map(r=>{const o={boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga};if(r.estado==='MA'||r.estado==='PI') o.processo=procDoCodigo(r.cod_servico,'');return o;}));
+  const {error:e2}=await sb.from('boletim_itens').insert(Object.values(mapBol).map(r=>{const o={boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga};if(r.estado==='MA'||r.estado==='PI') o.processo=r.processo||procDoCodigo(r.cod_servico,'');return o;}));
   if(e2) alert('Erro: '+e2.message);
   else{alert(`✓ Boletim ${MN[mes]}/${ano} — ${estado} salvo!`);cancelarUpload('bol');await carregarCache();preencherStatusDados();carregarHistBol();}
   btn.innerHTML='<i class="ti ti-check"></i> Confirmar e salvar';btn.disabled=false;svBol=false;

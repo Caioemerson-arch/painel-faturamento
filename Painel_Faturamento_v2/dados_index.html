@@ -740,7 +740,7 @@ function parsearProducao(wb){
   document.getElementById('prod-st-txt').textContent=dadosProd.length+' registros carregados'+(erros?' ('+erros+' ignorados)':'');
   const da=document.getElementById('prod-dup-al');
   if(dups.length){document.getElementById('prod-dup-txt').textContent='Já importados — serão substituídos: '+dups.join(', ');da.style.display='flex';}else da.style.display='none';
-  document.getElementById('tb-pv-prod').innerHTML=dadosProd.map(r=>'<tr><td>'+mA(r.mes,r.ano)+'</td><td>'+r.estado+'</td><td>'+r.regional+'</td><td style="font-size:11px;color:var(--tx2)">'+(r.processo||'—')+'</td><td style="font-size:11px">'+r.descricao_servico+'</td><td style="text-align:right;font-weight:700">'+fN(r.qde_executada)+'</td><td>'+(r._dup?'<span class="pill p-warn">Substituirá</span>':'<span class="pill p-ok">Novo</span>')+'</td></tr>').join('');
+  document.getElementById('tb-pv-prod').innerHTML=dadosProd.map(r=>'<tr><td>'+mA(r.mes,r.ano)+'</td><td>'+r.estado+'</td><td>'+r.regional+'</td><td style="font-size:11px;color:var(--tx2)">'+(r.processo||'—')+'</td><td style="font-size:11px">'+r.descricao_servico+'</td><td style="text-align:right;font-weight:700">'+fQ(r.qde_executada)+'</td><td>'+(r._dup?'<span class="pill p-warn">Substituirá</span>':'<span class="pill p-ok">Novo</span>')+'</td></tr>').join('');
   document.getElementById('pv-prod').style.display='block';
 }
 
@@ -764,7 +764,7 @@ function parsearBoletim(wb){
   if(dups.length){document.getElementById('bol-dup-txt').textContent=`Período já importado — será substituído: ${dups.join(', ')}`;da.style.display='flex';}else da.style.display='none';
   document.getElementById('tb-pv-bol').innerHTML=dadosBol.map(r=>{
     const tc=tarMap[r.cod_servico+'|'+r.regional],dv=tc&&Math.abs(tc-r.preco_unitario)>0.01;
-    return `<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;color:${dv?'#BE2F3B':'inherit'}">${fR(r.preco_unitario)}</td><td style="text-align:right;font-weight:700">${fN(r.qde_paga)}</td><td style="text-align:right">${fR(r.preco_unitario*r.qde_paga)}</td><td>${dv?'<span class="pill p-danger">⚠ Tarifa diverge</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
+    return `<tr><td>${mA(r.mes,r.ano)}</td><td>${r.estado}</td><td>${r.regional}</td><td style="font-size:11px">${r.descricao_servico}</td><td style="text-align:right;color:${dv?'#BE2F3B':'inherit'}">${fR(r.preco_unitario)}</td><td style="text-align:right;font-weight:700">${fQ(r.qde_paga)}</td><td style="text-align:right">${fR(r.preco_unitario*r.qde_paga)}</td><td>${dv?'<span class="pill p-danger">⚠ Tarifa diverge</span>':'<span class="pill p-ok">Ok</span>'}</td></tr>`;
   }).join('');
   document.getElementById('pv-bol').style.display='block';
 }

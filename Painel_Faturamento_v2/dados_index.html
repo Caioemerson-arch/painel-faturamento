@@ -413,6 +413,7 @@ const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agos
 const TABS_LABELS={cadernos:'Importar Caderno de Serviço',boletim:'Importar Boletim EQTL',producao:'Importar Serviços CNG',equipes:'Equipes & PQM — RJ','equipes-mapi':'Equipes MA/PI'};
 const fR=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fN=v=>Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+const fQ=v=>Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:2});
 const mA=(m,a)=>String(m).padStart(2,'0')+'/'+a;
 
 // ═══ SESSÃO ═══
@@ -733,7 +734,7 @@ function parsearProducao(wb){
     const proc=String(r.PROCESSO||'').trim();
     const ja=C.prod.find(p=>p.mes===mes&&p.ano===ano&&p.estado===est&&p.regional===reg&&p.cod_servico===cod);
     if(ja){const dk=`${mA(mes,ano)} — ${est} — ${reg}`;if(!dups.includes(dk)) dups.push(dk);}
-    dadosProd.push({mes,ano,estado:est,regional:reg,processo:proc,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),qde_executada:parseInt(r.QTD_EXECUTADA)||0,_dup:!!ja});
+    dadosProd.push({mes,ano,estado:est,regional:reg,processo:proc,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),qde_executada:parseFloat(String(r.QTD_EXECUTADA||'0').replace(',','.'))||0,_dup:!!ja});
   });
   if(!dadosProd.length){alert('Nenhum dado encontrado.');return;}
   document.getElementById('prod-st-txt').textContent=dadosProd.length+' registros carregados'+(erros?' ('+erros+' ignorados)':'');
@@ -752,7 +753,7 @@ function parsearBoletim(wb){
     const procRow=(est==='MA'||est==='PI')?(String(r.PROCESSO||'').trim().toLowerCase()||procDoCodigo(cod,'')):'leitura';
     const ja=C.bols.find(b=>b.mes===mes&&b.ano===ano&&b.estado===est&&(b.processo||'leitura')===procRow);
     if(ja){const dk=`${mA(mes,ano)} — ${est}`;if(!dups.includes(dk)) dups.push(dk);}
-    dadosBol.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO||'0').replace(',','.'))||0,qde_paga:parseInt(r.QDE_PAGA)||0,processo:procRow,_dup:!!ja});
+    dadosBol.push({mes,ano,estado:est,regional:reg,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO||'0').replace(',','.'))||0,qde_paga:parseFloat(String(r.QDE_PAGA||'0').replace(',','.'))||0,processo:procRow,_dup:!!ja});
   });
   if(!dadosBol.length){alert('Nenhum dado encontrado.');return;}
   const aT=[];dadosBol.forEach(r=>{const tc=tarMap[r.cod_servico+'|'+r.regional];if(tc&&Math.abs(tc-r.preco_unitario)>0.01) aT.push(`${r.regional}: ${r.descricao_servico}`);});
@@ -907,13 +908,13 @@ async function carregarHistProd(){
   tb.innerHTML=ordenado.map(r=>{
     const its=C.prod.filter(p=>p.mes===r.mes&&p.ano===r.ano&&p.estado===r.estado&&(p.processo||'leitura')===r.processo).slice().sort((a,c)=>a.regional===c.regional?String(a.descricao_servico||'').localeCompare(String(c.descricao_servico||'')):String(a.regional||'').localeCompare(String(c.regional||'')));
     let dQ=0;
-    const det=its.map(p=>{const q=parseFloat(p.qde_executada)||0;dQ+=q;return `<tr style="border-top:1px solid var(--bd)"><td style="padding:6px 10px">${p.regional}</td><td style="padding:6px 10px">${p.descricao_servico||p.cod_servico}</td><td style="padding:6px 10px;text-align:right">${fN(q)}</td></tr>`;}).join('');
+    const det=its.map(p=>{const q=parseFloat(p.qde_executada)||0;dQ+=q;return `<tr style="border-top:1px solid var(--bd)"><td style="padding:6px 10px">${p.regional}</td><td style="padding:6px 10px">${p.descricao_servico||p.cod_servico}</td><td style="padding:6px 10px;text-align:right">${fQ(q)}</td></tr>`;}).join('');
     const detId=`pdet-${r.ano}-${r.mes}-${r.estado}-${r.processo}`;
     return `<tr>
     <td style="cursor:pointer" onclick="toggleLinhaDet('${detId}')"><span id="car-${detId}" style="color:#BE2F3B;font-weight:700">\u25b8</span> ${mA(r.mes,r.ano)}</td>
     <td>${r.estado}</td>
     <td>${procSelo(r.processo)}</td>
-    <td>${fN(r.total)}</td>
+    <td>${fQ(r.total)}</td>
     <td>${r.em?new Date(r.em).toLocaleDateString('pt-BR'):'\u2014'}</td>
     <td>${r.ativo?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td>
     <td style="display:flex;gap:6px;align-items:center">
@@ -929,7 +930,7 @@ async function carregarHistProd(){
       <div class="sec" style="margin:0 0 6px">Detalhe carregado \u2014 ${its.length} itens</div>
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="background:var(--br)"><th style="text-align:left;padding:6px 10px">Regional</th><th style="text-align:left;padding:6px 10px">Servi\u00e7o</th><th style="text-align:right;padding:6px 10px">Qtd executada</th></tr></thead>
-        <tbody>${det||'<tr><td colspan="3" style="padding:8px;color:var(--tx2)">Sem itens.</td></tr>'}<tr style="border-top:2px solid var(--bd);font-weight:700"><td colspan="2" style="padding:6px 10px">TOTAL</td><td style="text-align:right;padding:6px 10px">${fN(dQ)}</td></tr></tbody>
+        <tbody>${det||'<tr><td colspan="3" style="padding:8px;color:var(--tx2)">Sem itens.</td></tr>'}<tr style="border-top:2px solid var(--bd);font-weight:700"><td colspan="2" style="padding:6px 10px">TOTAL</td><td style="text-align:right;padding:6px 10px">${fQ(dQ)}</td></tr></tbody>
       </table>
     </div>
   </td></tr>`;
@@ -969,13 +970,13 @@ async function carregarHistBol(){
     const cadPreco=(est,reg,cod)=>{const t=C.tars.find(x=>x.estado===est&&x.regional===reg&&String(x.cod_servico)===String(cod));return t?(parseFloat(t.preco_unitario)||0):null;};
     const its=C.itens.filter(i=>i.boletim_id===b.id).slice().sort((a,c)=>a.regional===c.regional?String(a.descricao_servico||'').localeCompare(String(c.descricao_servico||'')):String(a.regional||'').localeCompare(String(c.regional||'')));
     let dQ=0,dV=0,temDiv=false;
-    const det=its.map(i=>{const q=parseFloat(i.qde_paga)||0,pu=parseFloat(i.preco_unitario)||0,v=q*pu;dQ+=q;dV+=v;const pc=cadPreco(b.estado,i.regional,i.cod_servico);const div=pc!==null&&Math.abs(pc-pu)>0.01;if(div)temDiv=true;const cor=div?'color:#BE2F3B;font-weight:700':'';return `<tr style="border-top:1px solid var(--bd)"><td style="padding:6px 10px">${i.regional}</td><td style="padding:6px 10px">${i.descricao_servico||i.cod_servico}</td><td style="padding:6px 10px;text-align:right;${cor}"${div?` title="Tarifa do caderno: ${fR(pc)}"`:''}>${fR(pu)}</td><td style="padding:6px 10px;text-align:right">${fN(q)}</td><td style="padding:6px 10px;text-align:right">${fR(v)}</td></tr>`;}).join('');
+    const det=its.map(i=>{const q=parseFloat(i.qde_paga)||0,pu=parseFloat(i.preco_unitario)||0,v=q*pu;dQ+=q;dV+=v;const pc=cadPreco(b.estado,i.regional,i.cod_servico);const div=pc!==null&&Math.abs(pc-pu)>0.01;if(div)temDiv=true;const cor=div?'color:#BE2F3B;font-weight:700':'';return `<tr style="border-top:1px solid var(--bd)"><td style="padding:6px 10px">${i.regional}</td><td style="padding:6px 10px">${i.descricao_servico||i.cod_servico}</td><td style="padding:6px 10px;text-align:right;${cor}"${div?` title="Tarifa do caderno: ${fR(pc)}"`:''}>${fR(pu)}</td><td style="padding:6px 10px;text-align:right">${fQ(q)}</td><td style="padding:6px 10px;text-align:right">${fR(v)}</td></tr>`;}).join('');
     const detId='bdet-'+b.id;
     return `<tr>
       <td style="cursor:pointer" onclick="toggleLinhaDet('${detId}')"><span id="car-${detId}" style="color:#BE2F3B;font-weight:700">\u25b8</span> ${mA(b.mes,b.ano)}</td>
       <td>${b.estado}</td>
       <td>${proc==='misto'?'<span style="font-size:11px;color:var(--tx2);font-style:italic">misto</span>':procSelo(proc)}</td>
-      <td>${fN(tE)}</td>
+      <td>${fQ(tE)}</td>
       <td>${fR(tV)}</td>
       <td>${b.importado_em?new Date(b.importado_em).toLocaleDateString('pt-BR'):'\u2014'}</td>
       <td>${b.ativo!==false?'<span class="pill p-ok">Ativo</span>':'<span class="pill p-cinza">Inativo</span>'}</td>
@@ -992,7 +993,7 @@ async function carregarHistBol(){
         <div class="sec" style="margin:0 0 6px">Detalhe carregado \u2014 ${its.length} itens${temDiv?' \u00b7 <span style=\"color:#BE2F3B\">vermelho = tarifa diferente do caderno</span>':''}</div>
         <table style="width:100%;border-collapse:collapse;font-size:12px">
           <thead><tr style="background:var(--br)"><th style="text-align:left;padding:6px 10px">Regional</th><th style="text-align:left;padding:6px 10px">Servi\u00e7o</th><th style="text-align:right;padding:6px 10px">Tarifa</th><th style="text-align:right;padding:6px 10px">Qtd paga</th><th style="text-align:right;padding:6px 10px">Valor pago</th></tr></thead>
-          <tbody>${det||'<tr><td colspan="5" style="padding:8px;color:var(--tx2)">Sem itens.</td></tr>'}<tr style="border-top:2px solid var(--bd);font-weight:700"><td colspan="3" style="padding:6px 10px">TOTAL</td><td style="text-align:right;padding:6px 10px">${fN(dQ)}</td><td style="text-align:right;padding:6px 10px">${fR(dV)}</td></tr></tbody>
+          <tbody>${det||'<tr><td colspan="5" style="padding:8px;color:var(--tx2)">Sem itens.</td></tr>'}<tr style="border-top:2px solid var(--bd);font-weight:700"><td colspan="3" style="padding:6px 10px">TOTAL</td><td style="text-align:right;padding:6px 10px">${fQ(dQ)}</td><td style="text-align:right;padding:6px 10px">${fR(dV)}</td></tr></tbody>
         </table>
       </div>
     </td></tr>`;

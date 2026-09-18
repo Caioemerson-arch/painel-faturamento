@@ -794,7 +794,7 @@ function getCadAtivo(estado,mes,ano){
 let PROC_ATUAL='leitura';
 const procBate=(tp,proc)=>{const p=proc||PROC_ATUAL;return p==='leitura'?(!tp||tp==='leitura'):tp===p;};
 // Conjunto de códigos de serviço de um processo (todas as vigências do estado)
-function codsDoProcesso(est,proc){return new Set(C.tars.filter(t=>estadoBate(t.estado,est)&&procBate(t.processo,proc)).map(t=>t.cod_servico));}
+function codsDoProcesso(est,proc){return new Set(C.tars.filter(t=>estadoBate(t.estado,est)&&procBate(t.processo,proc)).map(t=>String(t.cod_servico)));}
 // Mapeamento função → serviços (Leitura) para o ticket por função
 const FUNCAO_SERVICOS={
   'Agente Comercial a Pé':['5081700003','5081400020','5081700004','5081700005','5081100006'],
@@ -817,13 +817,13 @@ function calcExec(est,m,a,r='',proc){
   const tarMap={};tars.forEach(t=>tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
   const cods=codsDoProcesso(est,proc);
   let val=0,evt=0;
-  getProd(est,m,a,r).forEach(p=>{if(!cods.has(p.cod_servico))return;const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=(parseFloat(p.qde_executada)||0)*tar;evt+=(parseFloat(p.qde_executada)||0);});
+  getProd(est,m,a,r).forEach(p=>{if(!cods.has(String(p.cod_servico)))return;const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=(parseFloat(p.qde_executada)||0)*tar;evt+=(parseFloat(p.qde_executada)||0);});
   return {val,evt};
 }
 function calcPago(est,m,a,r='',proc){
   const cods=codsDoProcesso(est,proc);
   let val=0,evt=0;
-  getItens(est,m,a,r).forEach(i=>{if(!cods.has(i.cod_servico))return;val+=(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0);evt+=parseFloat(i.qde_paga)||0;});
+  getItens(est,m,a,r).forEach(i=>{if(!cods.has(String(i.cod_servico)))return;val+=(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0);evt+=parseFloat(i.qde_paga)||0;});
   return {val,evt};
 }
 // Executado só de um conjunto de serviços (ticket por função na Leitura)

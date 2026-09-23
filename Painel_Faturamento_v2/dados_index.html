@@ -731,7 +731,7 @@ function parsearProducao(wb){
     if(est==='RJ'&&!reg) reg=derivarRegionalRJ(r.PROCESSO);
     if(est==='PI') reg='PIAUÍ';
     const cod=String(r.COD_SERVICO).trim();
-    const proc=String(r.PROCESSO||'').trim();
+    const proc=(est==='MA'||est==='PI')?String(r.PROCESSO||'').trim().toLowerCase():String(r.PROCESSO||'').trim();
     const ja=C.prod.find(p=>p.mes===mes&&p.ano===ano&&p.estado===est&&p.regional===reg&&p.cod_servico===cod);
     if(ja){const dk=`${mA(mes,ano)} — ${est} — ${reg}`;if(!dups.includes(dk)) dups.push(dk);}
     dadosProd.push({mes,ano,estado:est,regional:reg,processo:proc,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),qde_executada:parseFloat(String(r.QTD_EXECUTADA||'0').replace(',','.'))||0,_dup:!!ja});
@@ -777,7 +777,7 @@ function parsearCaderno(wb){
     let regFinal=String(r.REGIONAL||'').trim();
     if(est==='PI') regFinal='PIAUÍ';
     const cod=String(r.COD_SERVICO).trim();
-    const proc=String(r.PROCESSO||'').trim();
+    const proc=(est==='MA'||est==='PI')?String(r.PROCESSO||'').trim().toLowerCase():String(r.PROCESSO||'').trim();
     const k=`${est}|${regFinal}|${cod}`;
     const item={estado:est,regional:regFinal,cod_servico:cod,descricao_servico:String(r.DESCRICAO_SERVICO||'').trim(),vigencia_inicio:String(r.VIGENCIA_INICIO).trim(),preco_unitario:parseFloat(String(r.PRECO_UNITARIO).replace(',','.'))||0,eventos_previstos:parseFloat(String(r.EVENTOS_PREVISTOS).replace(',','.'))||0,processo:proc};
     if(!mapTemp[k]) mapTemp[k]=item;

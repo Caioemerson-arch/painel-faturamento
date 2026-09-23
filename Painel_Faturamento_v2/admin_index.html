@@ -460,7 +460,11 @@ async function salvarPermissoesUsuario(userId){
   // Salvar estados diretamente
   const {error:e2}=await sb.from('usuarios_perfil').update({estados_permitidos:estados}).eq('id',userId);
 
-  return e1||e2;
+  if(e1) console.error('RPC atualizar_permissoes_usuario',e1);
+  if(e2) console.error('update estados_permitidos',e2);
+  const err=e1||e2;
+  if(err) err._msg=(e1?'Permissões: ':'Estados: ')+(err.message||err.code||'erro desconhecido');
+  return err;
 }
 
 // ═══ SALVAR TODAS (botão do cabeçalho) ═══
@@ -469,13 +473,13 @@ async function salvarTodasPermissoes(){
   btn.textContent='Salvando...';btn.disabled=true;
   const rows=document.querySelectorAll('[id^="perm-"]');
   const ids=[...rows].map(r=>r.id.replace('perm-',''));
-  let erros=0;
+  let erros=0;const msgs=[];
   for(const id of ids){
     const err=await salvarPermissoesUsuario(id);
-    if(err) erros++;
+    if(err){erros++;msgs.push(err._msg||err.message||String(err));}
   }
   btn.innerHTML='<i class="ti ti-device-floppy"></i> Salvar alterações';btn.disabled=false;
-  if(erros>0) alert(`⚠ ${erros} usuário(s) com erro ao salvar.`);
+  if(erros>0) alert(`⚠ ${erros} usuário(s) com erro ao salvar.\n\nDetalhe: ${[...new Set(msgs)].join(' | ')}`);
   else{alert('✓ Todas as permissões foram salvas!');await carregarUsuarios();}
 }
 

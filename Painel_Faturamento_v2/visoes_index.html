@@ -500,7 +500,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <option value="PI">Piauí</option>
         </select>
         <label>Processo</label>
-        <select id="cmp-proc" onchange="carregarComparativo()"></select>
+        <select id="cmp-proc" onchange="carregarComparativo()"><option value="leitura">Leitura</option><option value="cobranca">Cobrança e Negociação</option><option value="atendimento">Atendimento</option></select>
         <label>Regional</label>
         <select id="cmp-reg" onchange="renderComparativo()"><option value="">Todas</option></select>
       </div>
@@ -612,6 +612,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     <div class="modal-grid">
       <div class="fg"><label>Estado</label><select id="xl-est"></select></div>
       <div class="fg"><label>Regional</label><select id="xl-reg"><option value="">Todas</option></select></div>
+      <div class="fg" style="grid-column:1/-1"><label>Processo</label><select id="xl-proc" onchange="atualizarResumoExcel()"><option value="leitura">Leitura</option><option value="cobranca">Cobrança e Negociação</option><option value="atendimento">Atendimento</option></select></div>
       <div class="fg"><label>Mês início</label><select id="xl-mes-ini"></select></div>
       <div class="fg"><label>Ano início</label><select id="xl-ano-ini"></select></div>
       <div class="fg"><label>Mês fim</label><select id="xl-mes-fim"></select></div>
@@ -656,7 +657,7 @@ const TABS_EXPORT=['resumida','geral','regional','servico'];
 
 // ═══ FORMATAÇÃO ═══
 const fR=v=>'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-const fN=v=>Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:0});
+const fN=v=>Number(v||0).toLocaleString('pt-BR',{maximumFractionDigits:2});
 const mA=(m,a)=>String(m).padStart(2,'0')+'/'+a;
 
 // ═══ SESSÃO ═══
@@ -1325,7 +1326,10 @@ function carregarResumida(){
       `<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#185FA5">% Pago vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totPago,totPrev))}</td></tr>`;
   }
   // Tabelas 2, 3 e 4
-  const tars=getTarifas(est,mesesComDados[0],ano,reg);
+  // Lista de serviços: caderno vigente em algum mês com dados; se nenhum, qualquer mês do ano
+  let tars=[];
+  for(const m of mesesComDados){tars=getTarifas(est,m,ano,reg);if(tars.length)break;}
+  if(!tars.length){for(let m=1;m<=12;m++){tars=getTarifas(est,m,ano,reg);if(tars.length)break;}}
   const svcsSet=new Set(tars.map(t=>t.cod_servico+'||'+t.descricao_servico));
   const svcs=[...svcsSet];
   const headEvt=document.getElementById('tr-rs-evt-head'),bodyEvt=document.getElementById('tb-rs-evt-body');
@@ -1444,18 +1448,20 @@ function atualizarResumoExcel(){
   const mf=+document.getElementById('xl-mes-fim').value,yf=+document.getElementById('xl-ano-fim').value;
   const n=(yf*12+mf)-(yi*12+mi)+1;
   const estNome={MA:'Maranhão',PI:'Piauí',TODOS:'Consolidado (MA+PI)'}[est]||est;
+  const procNome={leitura:'Leitura',cobranca:'Cobrança e Negociação',atendimento:'Atendimento'}[document.getElementById('xl-proc')?.value||'leitura'];
   if(n<1){el.innerHTML='<strong style="color:#BE2F3B">O mês/ano final está antes do inicial.</strong> Ajuste o período.';return;}
   const partes=[];
   if(document.getElementById('xl-d-qtd')?.checked) partes.push('Quantidade (Prev/Exec/Pago)');
   if(document.getElementById('xl-d-tar')?.checked) partes.push('Tarifa (caderno/boletim)');
   if(document.getElementById('xl-d-fat')?.checked) partes.push('Faturamento (Prev/Exec/Pago)');
   const cols=partes.length?partes.join(' · '):'<strong style="color:#BE2F3B">selecione ao menos um tipo de dado</strong>';
-  el.innerHTML=`Você vai extrair <strong>${MN[mi].slice(0,3)}/${yi} → ${MN[mf].slice(0,3)}/${yf}</strong> · <strong>${n} ${n===1?'mês':'meses'}</strong> · ${estNome} · ${reg}.<br>Colunas: ${cols} — por serviço e regional.`;
+  el.innerHTML=`Você vai extrair <strong>${MN[mi].slice(0,3)}/${yi} → ${MN[mf].slice(0,3)}/${yf}</strong> · <strong>${n} ${n===1?'mês':'meses'}</strong> · ${estNome} · ${reg} · <strong>${procNome}</strong>.<br>Colunas: ${cols} — por serviço e regional.`;
 }
-function abrirModalExcel(){document.getElementById('modal-excel').classList.add('open');aplicarPresetExcel('atual');}
+function abrirModalExcel(){document.getElementById('modal-excel').classList.add('open');const sp=document.getElementById('xl-proc');if(sp&&['leitura','cobranca','atendimento'].includes(PROC_ATUAL)) sp.value=PROC_ATUAL;aplicarPresetExcel('atual');}
 function fecharModalExcel(){document.getElementById('modal-excel').classList.remove('open');}
 function exportarExcel(){
   const est=document.getElementById('xl-est').value,reg=document.getElementById('xl-reg').value;
+  const proc=document.getElementById('xl-proc')?.value||'leitura';
   const mesIni=parseInt(document.getElementById('xl-mes-ini').value),anoIni=parseInt(document.getElementById('xl-ano-ini').value);
   const mesFim=parseInt(document.getElementById('xl-mes-fim').value),anoFim=parseInt(document.getElementById('xl-ano-fim').value);
   if(anoFim*12+mesFim < anoIni*12+mesIni){alert('O período final está antes do inicial. Ajuste as datas antes de exportar.');return;}
@@ -1472,9 +1478,9 @@ function exportarExcel(){
     estados.forEach(e=>{
       const regs = reg ? [reg] : (REGS[e]||['']);
       regs.forEach(r=>{
-        const svcMap={};getTarifas(e,mes,ano,r).forEach(t=>{const c=t.cod_servico;if(!svcMap[c])svcMap[c]={desc:t.descricao_servico,prev:0,tar:0};svcMap[c].prev+=parseFloat(t.eventos_previstos)||0;svcMap[c].tar=parseFloat(t.preco_unitario)||0;});
-        const execMap={};getProd(e,mes,ano,r).forEach(rp=>execMap[rp.cod_servico]=(execMap[rp.cod_servico]||0)+(parseFloat(rp.qde_executada)||0));
-        const pQ={},pV={};getItens(e,mes,ano,r).forEach(i=>{const c=i.cod_servico,q=parseFloat(i.qde_paga)||0,p=parseFloat(i.preco_unitario)||0;pQ[c]=(pQ[c]||0)+q;pV[c]=(pV[c]||0)+q*p;});
+        const codsP=codsDoProcesso(e,proc);const svcMap={};getTarifas(e,mes,ano,r,proc).forEach(t=>{const c=t.cod_servico;if(!svcMap[c])svcMap[c]={desc:t.descricao_servico,prev:0,tar:0};svcMap[c].prev+=parseFloat(t.eventos_previstos)||0;svcMap[c].tar=parseFloat(t.preco_unitario)||0;});
+        const execMap={};getProd(e,mes,ano,r).filter(rp=>codsP.has(String(rp.cod_servico))).forEach(rp=>execMap[rp.cod_servico]=(execMap[rp.cod_servico]||0)+(parseFloat(rp.qde_executada)||0));
+        const pQ={},pV={};getItens(e,mes,ano,r).filter(i=>codsP.has(String(i.cod_servico))).forEach(i=>{const c=i.cod_servico,q=parseFloat(i.qde_paga)||0,p=parseFloat(i.preco_unitario)||0;pQ[c]=(pQ[c]||0)+q;pV[c]=(pV[c]||0)+q*p;});
         const svcs=new Set([...Object.keys(svcMap),...Object.keys(execMap),...Object.keys(pQ)]);
         svcs.forEach(cod=>{
           const qPrev=svcMap[cod]?.prev||0,qExec=execMap[cod]||0,qPago=pQ[cod]||0;
@@ -1494,7 +1500,7 @@ function exportarExcel(){
   if(wTar) cols.push({wch:18},{wch:18});
   if(wFat) cols.push({wch:18},{wch:18},{wch:16});
   const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=cols;XLSX.utils.book_append_sheet(wb,ws,'Dados');
-  XLSX.writeFile(wb,`CENEGED_${est}_${mA(mesIni,anoIni).replace('/','_')}_${mA(mesFim,anoFim).replace('/','_')}.xlsx`);fecharModalExcel();
+  XLSX.writeFile(wb,`CENEGED_${est}_${proc}_${mA(mesIni,anoIni).replace('/','_')}_${mA(mesFim,anoFim).replace('/','_')}.xlsx`);fecharModalExcel();
 }
 
 // ═══ STATUS DE DADOS ═══
@@ -1550,7 +1556,9 @@ function carregarComparativo(){
   selReg.innerHTML='<option value="">Todas</option>'+regsEst.map(r=>`<option value="${r}">${r}</option>`).join('');
   selReg.value=regsEst.includes(curReg)?curReg:'';
 
-  const cads=C.cads.filter(c=>c.estado===est).sort((a,b)=>{
+  const procSel=document.getElementById('cmp-proc')?.value||'leitura';
+  const procCadC=c=>{const t=C.tars.find(x=>x.caderno_id===c.id&&x.processo);return (t&&String(t.processo).toLowerCase())||'leitura';};
+  const cads=C.cads.filter(c=>c.estado===est&&procCadC(c)===procSel).sort((a,b)=>{
     const va=parseInt((a.vigencia_inicio||'01/2000').split('/').reverse().join(''));
     const vb=parseInt((b.vigencia_inicio||'01/2000').split('/').reverse().join(''));
     return va-vb;

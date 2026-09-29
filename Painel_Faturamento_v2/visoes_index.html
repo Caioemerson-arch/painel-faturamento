@@ -195,6 +195,9 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     <a class="sb-item" id="nav-equipes" onclick="setTab('equipes',this)">
       <i class="ti ti-users-group" aria-hidden="true"></i><span>Equipes e Ticket</span>
     </a>
+    <a class="sb-item" id="nav-global" onclick="setTab('global',this)" style="display:none">
+      <i class="ti ti-world" aria-hidden="true"></i><span>Visão Global</span>
+    </a>
     <div class="sb-sec" id="sb-sec-dados" style="display:none">Dados</div>
     <a class="sb-item" id="nav-dados" href="/Painel_Faturamento_v2/dados_index.html" style="display:none">
       <i class="ti ti-upload" aria-hidden="true"></i><span>Importação de Dados</span>
@@ -581,6 +584,35 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       </div>
     </div>
 
+    <!-- ═══ VISÃO GLOBAL (MA · PI · RJ) ═══ -->
+    <div id="tab-global" style="display:none">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:.5rem">
+        <label style="font-size:11px;color:var(--tx2);font-weight:700">Ano</label><select id="gl-ano" onchange="carregarGlobal()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--br)"></select>
+        <label style="font-size:11px;color:var(--tx2);font-weight:700">Mês</label><select id="gl-mes" onchange="carregarGlobal()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--br)"></select>
+        <label style="font-size:11px;color:var(--tx2);font-weight:700">Processo</label>
+        <select id="gl-proc" onchange="carregarGlobal()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--br)"><option value="">Todos</option><option value="leitura">Leitura</option><option value="cobranca">Cobrança e Negociação</option><option value="atendimento">Atendimento</option></select>
+        <div id="gl-modo" style="display:flex;gap:6px"><button type="button" class="chip on" data-m="mensal" onclick="glModo('mensal')">Mensal</button><button type="button" class="chip" data-m="ytd" onclick="glModo('ytd')">Acumulado (YTD)</button></div>
+      </div>
+      <div style="font-size:11px;color:var(--tx2);margin-bottom:1rem">O filtro de processo vale para MA e PI. O RJ aparece sempre completo (Comercial e Técnica), calculado com a mesma regra do painel RJ; sem boletins lançados, o RJ não tem Pago.</div>
+      <div id="gl-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:1.25rem"></div>
+      <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem;margin-bottom:1.25rem">
+        <div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem">Faturamento por estado e processo</div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead id="gl-mat-head"></thead><tbody id="gl-mat-body"></tbody></table></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.25rem;margin-bottom:1.25rem">
+        <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem"><div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem">Participação no executado</div><div id="gl-part"></div></div>
+        <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem"><div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem" id="gl-ytd-tit">Acumulado do ano</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px" id="gl-ytd"></table></div></div>
+      </div>
+      <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem;margin-bottom:1.25rem">
+        <div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem">Evolução mensal do executado por estado</div>
+        <div style="position:relative;height:260px"><canvas id="ch-glob"></canvas></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.25rem">
+        <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem"><div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem">Alertas — onde agir primeiro</div><div id="gl-alertas"></div></div>
+        <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem"><div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem" id="gl-tk-tit">Ticket por equipe</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px" id="gl-ticket"></table></div></div>
+      </div>
+    </div>
+
   </div><!-- /con -->
 </div><!-- /main -->
 
@@ -652,7 +684,7 @@ const MN=['','Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agos
 const REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['PIAUÍ'],RJ:['COMERCIAL','TECNICA']};
 function procAtual(prefixo){return document.getElementById(prefixo+'-proc')?.value||'';}
 const CS=['#BE2F3B','#378ADD','#1D9E75','#BA7517','#533AB7','#D4537E','#888780','#0F6E56','#7F77DD'];
-const TABS_LABELS={resumida:'Análise Faturamento Geral',geral:'Análise Mensal',regional:'Análise Por Regional',servico:'Análise Por Serviço',comparativo:'Comparativo de Cadernos',equipes:'Equipes e Ticket'};
+const TABS_LABELS={resumida:'Análise Faturamento Geral',geral:'Análise Mensal',regional:'Análise Por Regional',servico:'Análise Por Serviço',comparativo:'Comparativo de Cadernos',equipes:'Equipes e Ticket',global:'Visão Global (MA · PI · RJ)'};
 const TABS_EXPORT=['resumida','geral','regional','servico'];
 
 // ═══ FORMATAÇÃO ═══
@@ -694,7 +726,9 @@ async function iniciarApp(user){
     'geral':'nav-geral',
     'regional':'nav-regional',
     'servico':'nav-servico',
-    'comparativo':'nav-comparativo'
+    'comparativo':'nav-comparativo',
+    'equipes':'nav-equipes',
+    'global':'nav-global'
   };
   Object.entries(mapaNavAbas).forEach(([aba,navId])=>{
     const el=document.getElementById(navId);
@@ -852,6 +886,7 @@ function toggleSidebar(){
 
 // ═══ NAVEGAÇÃO ═══
 function setTab(id,el){
+  if(['global','comparativo','equipes'].includes(id)&&role!=='admin'&&!(perfil?.abas_permitidas||[]).includes(id)){alert('Você não tem permissão para acessar esta aba.');return;}
   document.querySelectorAll('[id^="tab-"]').forEach(t=>t.style.display='none');
   document.getElementById('tab-'+id).style.display='block';
   document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
@@ -866,6 +901,7 @@ function setTab(id,el){
   if(id==='resumida') carregarResumida();
   if(id==='comparativo') carregarComparativo();
   if(id==='equipes') iniciarEquipesTicket();
+  if(id==='global') glIniciar();
 }
 
 // ═══ EQUIPES E TICKET (MA/PI) ═══
@@ -1415,6 +1451,118 @@ async function exportarRelRegPDF(){
   pdf.setFillColor(26,26,46);pdf.rect(0,0,W,22,'F');pdf.setFillColor(190,47,59);pdf.rect(0,22,W,2,'F');pdf.setTextColor(255,255,255);pdf.setFontSize(14);pdf.setFont('helvetica','bold');pdf.text('CENEGED',margin,14);pdf.setFontSize(10);pdf.setFont('helvetica','normal');pdf.text(`Relatório de Divergência — ${reg}`,W/2,10,{align:'center'});pdf.text(`${est==='MA'?'Maranhão':'Piauí'} · Jan→${MN[mes]}/${ano}`,W/2,16,{align:'center'});pdf.setFontSize(8);pdf.text('Gerado em '+new Date().toLocaleString('pt-BR'),W-margin,19,{align:'right'});
   const imgW=W-margin*2,imgH=(canvas.height/canvas.width)*imgW;pdf.addImage(img,'PNG',margin,28,imgW,Math.min(imgH,H-38));
   pdf.save(`CENEGED_Divergencia_${reg}_${MN[mes]}_${ano}.pdf`);
+}
+
+
+// ═══ VISÃO GLOBAL (MA · PI · RJ) — RJ somente leitura, mesma regra do painel RJ ═══
+let chGlob=null,GL_MODO='mensal',GL_EQRJ=null;const GL_EQMP={};
+const GL_PROCS=['leitura','cobranca','atendimento'];
+const GL_ROT={leitura:'Leitura',cobranca:'Cobrança',atendimento:'Atendimento',COMERCIAL:'Comercial',TECNICA:'Técnica'};
+const GL_COR={MA:'#378ADD',PI:'#BA7517',RJ:'#7F77DD'};
+const GL_PCOR={leitura:'#185FA5',cobranca:'#BA7517',atendimento:'#1D9E75',COMERCIAL:'#7F77DD',TECNICA:'#534AB7'};
+async function glEqRJ(){if(GL_EQRJ) return GL_EQRJ;try{const r=await sb.from('equipes_rj').select('*');GL_EQRJ=r.data||[];}catch(e){GL_EQRJ=[];}return GL_EQRJ;}
+async function glEqMP(ano){if(GL_EQMP[ano]) return GL_EQMP[ano];try{const r=await sb.from('equipes_ma_pi').select('*').eq('ano',ano);GL_EQMP[ano]=r.data||[];}catch(e){GL_EQMP[ano]=[];}return GL_EQMP[ano];}
+function glIniciar(){
+  const sA=document.getElementById('gl-ano');
+  if(!sA.options.length){const y=new Date().getFullYear();sA.innerHTML=[y-1,y,y+1].map(a=>`<option value="${a}"${a===y?' selected':''}>${a}</option>`).join('');}
+  const sM=document.getElementById('gl-mes');
+  if(!sM.options.length){const d=new Date();const mp=d.getMonth()===0?12:d.getMonth();sM.innerHTML=MN.slice(1).map((n,i)=>`<option value="${i+1}"${i+1===mp?' selected':''}>${n}</option>`).join('');}
+  carregarGlobal();
+}
+function glModo(m){GL_MODO=m;document.querySelectorAll('#gl-modo .chip').forEach(c=>c.classList.toggle('on',c.dataset.m===m));carregarGlobal();}
+async function carregarGlobal(){
+  const ano=parseInt(document.getElementById('gl-ano').value),mes=parseInt(document.getElementById('gl-mes').value);
+  const pf=document.getElementById('gl-proc').value,procs=pf?[pf]:GL_PROCS;
+  const meses=GL_MODO==='ytd'?Array.from({length:mes},(_,i)=>i+1):[mes];
+  const mesesYTD=Array.from({length:mes},(_,i)=>i+1);
+  const [eqMP,eqRJ]=await Promise.all([glEqMP(ano),glEqRJ()]);
+  const S=(fn,ms)=>ms.reduce((s,m)=>s+fn(m),0);
+  const pct=(a,b)=>b>0?a/b*100:null;
+  const fP=(v,suf='')=>v===null?'<span style="color:var(--tx2)">—</span>':`<span style="color:${v>=95?'#1D9E75':v>=85?'#BA7517':'#BE2F3B'};font-weight:700">${v.toFixed(1).replace('.',',')}%${suf}</span>`;
+  // MA/PI: fórmulas atuais, processo explícito
+  const mapi=(est,p,ms,reg='')=>({prev:S(m=>calcPrevisto(est,m,ano,reg,p),ms),exec:S(m=>calcExec(est,m,ano,reg,p).val,ms),pago:S(m=>calcPago(est,m,ano,reg,p).val,ms)});
+  // RJ: mesma regra do painel RJ (cadernos ativos; previsto mensal fixo; executado = qtd × tarifa por regional|serviço)
+  const rjIds=new Set(C.cads.filter(c=>c.estado==='RJ'&&c.ativo).map(c=>c.id));
+  const rjTars=C.tars.filter(t=>rjIds.has(t.caderno_id)&&t.estado==='RJ');
+  const rjTar={};rjTars.forEach(t=>rjTar[t.regional+'|'+String(t.cod_servico)]=parseFloat(t.preco_unitario)||0);
+  const rjBols=C.bols.filter(b=>b.estado==='RJ');const rjBolIds=new Set(rjBols.map(b=>b.id));
+  const rjTemPago=C.itens.some(i=>rjBolIds.has(i.boletim_id));
+  const rjPrevM=reg=>rjTars.filter(t=>!reg||t.regional===reg).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0)*(parseFloat(t.preco_unitario)||0),0);
+  const rjExecM=(m,reg)=>C.prod.filter(p=>p.estado==='RJ'&&p.mes===m&&p.ano===ano&&(!reg||p.regional===reg)).reduce((s,p)=>{const t=rjTar[p.regional+'|'+String(p.cod_servico)]||0;return s+(t>0?(parseFloat(p.qde_executada)||0)*t:0);},0);
+  const rjPagoM=(m,reg)=>{const b=new Set(rjBols.filter(x=>x.mes===m&&x.ano===ano).map(x=>x.id));return C.itens.filter(i=>b.has(i.boletim_id)&&(!reg||i.regional===reg)).reduce((s,i)=>s+(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0),0);};
+  const rj=(ms,reg='')=>({prev:rjPrevM(reg)*ms.length,exec:S(m=>rjExecM(m,reg),ms),pago:rjTemPago?S(m=>rjPagoM(m,reg),ms):null});
+  // Linhas estado × processo
+  const L=[];
+  ['MA','PI'].forEach(est=>procs.forEach(p=>{const r=mapi(est,p,meses);if(r.prev||r.exec||r.pago) L.push({est,proc:p,...r});}));
+  ['COMERCIAL','TECNICA'].forEach(reg=>{const r=rj(meses,reg);if(r.prev||r.exec||r.pago) L.push({est:'RJ',proc:reg,...r});});
+  const tot=est=>{const ls=L.filter(l=>l.est===est);return {prev:ls.reduce((s,l)=>s+l.prev,0),exec:ls.reduce((s,l)=>s+l.exec,0),pago:(est==='RJ'&&!rjTemPago)?null:ls.reduce((s,l)=>s+(l.pago||0),0)};};
+  const T={MA:tot('MA'),PI:tot('PI'),RJ:tot('RJ')};
+  const per=GL_MODO==='ytd'?`Jan → ${MN[mes].slice(0,3)}/${ano}`:`${MN[mes]}/${ano}`;
+  // Cards
+  const card=(est,nome)=>{const t=T[est],tp=t.pago!==null,at=tp?pct(t.pago,t.prev):pct(t.exec,t.prev);
+    return `<div style="background:var(--br);border:1px solid var(--bd);border-top:3px solid ${GL_COR[est]};border-radius:var(--r);padding:1rem">
+      <div style="font-size:12px;font-weight:700;color:var(--pt);margin-bottom:6px">${nome}</div>
+      <div style="font-size:11px;color:var(--tx2)">${tp?'Pago':'Executado'}</div><div style="font-size:20px;font-weight:700;color:var(--pt)">${fR(tp?t.pago:t.exec)}</div>
+      <div style="font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.6">Previsto ${fR(t.prev)} · ${tp?'Executado '+fR(t.exec):'Pago —'}<br>${fP(at,tp?'':' exec.')}${tp?` · <span style="color:#BE2F3B">glosa ${fR(t.exec-t.pago)}</span>`:''}</div></div>`;};
+  const gPrev=T.MA.prev+T.PI.prev+T.RJ.prev,gExec=T.MA.exec+T.PI.exec+T.RJ.exec,gPago=T.MA.pago+T.PI.pago+(T.RJ.pago||0);
+  document.getElementById('gl-cards').innerHTML=card('MA','Maranhão')+card('PI','Piauí')+card('RJ','Rio de Janeiro')+
+    `<div style="background:var(--bg);border:1px solid var(--bd);border-top:3px solid var(--tx2);border-radius:var(--r);padding:1rem">
+      <div style="font-size:12px;font-weight:700;color:var(--pt);margin-bottom:6px">Total geral</div>
+      <div style="font-size:11px;color:var(--tx2)">Executado</div><div style="font-size:20px;font-weight:700;color:var(--pt)">${fR(gExec)}</div>
+      <div style="font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.6">Previsto ${fR(gPrev)} · ${fP(pct(gExec,gPrev),' exec.')}<br>Pago ${rjTemPago?'MA+PI+RJ':'MA+PI'} ${fR(gPago)}</div></div>`;
+  // Matriz
+  const th=(t,r)=>`<th style="padding:8px 12px;font-size:11px;color:var(--tx2);text-align:${r?'right':'left'}">${t}</th>`;
+  document.getElementById('gl-mat-head').innerHTML=`<tr style="background:var(--bg)">${th('Estado')}${th('Processo')}${th('Previsto',1)}${th('Executado',1)}${th('Pago',1)}${th('% atingido',1)}</tr>`;
+  const td=(t,r,x='')=>`<td style="padding:8px 12px;${r?'text-align:right;':''}${x}">${t}</td>`;
+  let mb='';
+  ['MA','PI','RJ'].forEach(est=>{const ls=L.filter(l=>l.est===est);ls.forEach((l,i)=>{const sp=l.pago===null;
+    mb+=`<tr style="border-top:1px solid var(--bd)">${i===0?`<td rowspan="${ls.length}" style="padding:8px 12px;font-weight:700;border-left:3px solid ${GL_COR[est]};vertical-align:middle">${est}</td>`:''}${td(GL_ROT[l.proc])}${td(fR(l.prev),1)}${td(fR(l.exec),1)}${td(sp?'—':fR(l.pago),1)}${td(fP(sp?pct(l.exec,l.prev):pct(l.pago,l.prev),sp?' exec.':''),1)}</tr>`;});});
+  mb+=L.length?`<tr style="border-top:2px solid var(--bd);background:var(--bg);font-weight:700">${td('Total',0)}${td('')}${td(fR(gPrev),1)}${td(fR(gExec),1)}${td(fR(gPago),1)}${td('',1)}</tr>`:`<tr><td colspan="6" style="padding:1.5rem;text-align:center;color:var(--tx2)">Sem dados para ${per}.</td></tr>`;
+  document.getElementById('gl-mat-body').innerHTML=mb;
+  // Participação
+  const barra=(it,base)=>{if(base<=0) return '<div style="font-size:12px;color:var(--tx2)">Sem executado no período.</div>';
+    return `<div style="display:flex;height:24px;border-radius:6px;overflow:hidden;background:var(--bg);margin-bottom:6px">${it.filter(x=>x.v>0).map(x=>{const w=x.v/base*100;return `<div title="${x.n}: ${w.toFixed(1).replace('.',',')}% · ${fR(x.v)}" style="width:${w}%;background:${x.c};color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden">${w>=9?x.n+' '+w.toFixed(0)+'%':''}</div>`;}).join('')}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11px;color:var(--tx2);margin-bottom:12px">${it.filter(x=>x.v>0).map(x=>`<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${x.c};margin-right:4px"></span>${x.n} ${(x.v/base*100).toFixed(1).replace('.',',')}%</span>`).join('')}</div>`;};
+  const pProc=['leitura','cobranca','atendimento'].map(p=>({n:GL_ROT[p],c:GL_PCOR[p],v:L.filter(l=>l.proc===p).reduce((s,l)=>s+l.exec,0)})).concat(['COMERCIAL','TECNICA'].map(r=>({n:'RJ '+GL_ROT[r],c:GL_PCOR[r],v:L.filter(l=>l.proc===r).reduce((s,l)=>s+l.exec,0)})));
+  document.getElementById('gl-part').innerHTML=`<div style="font-size:11px;color:var(--tx2);margin-bottom:4px">Por estado · ${per}</div>`+barra(['MA','PI','RJ'].map(e=>({n:e,c:GL_COR[e],v:T[e].exec})),gExec)+`<div style="font-size:11px;color:var(--tx2);margin-bottom:4px">Por processo</div>`+barra(pProc,gExec);
+  // YTD
+  document.getElementById('gl-ytd-tit').textContent=`Acumulado do ano (Jan → ${MN[mes].slice(0,3)}/${ano})`;
+  const y=est=>{if(est==='RJ') return rj(mesesYTD);const a={prev:0,exec:0,pago:0};procs.forEach(p=>{const r=mapi(est,p,mesesYTD);a.prev+=r.prev;a.exec+=r.exec;a.pago+=r.pago;});return a;};
+  let yb=`<tr style="background:var(--bg)">${th('Estado')}${th('Previsto',1)}${th('Executado',1)}${th('Pago',1)}${th('% atingido',1)}</tr>`;
+  ['MA','PI','RJ'].forEach(est=>{const r=y(est),sp=r.pago===null;yb+=`<tr style="border-top:1px solid var(--bd)">${td(est,0,'font-weight:700;border-left:3px solid '+GL_COR[est])}${td(fR(r.prev),1)}${td(fR(r.exec),1)}${td(sp?'—':fR(r.pago),1)}${td(fP(sp?pct(r.exec,r.prev):pct(r.pago,r.prev),sp?' exec.':''),1)}</tr>`;});
+  document.getElementById('gl-ytd').innerHTML=yb;
+  // Evolução mensal (executado por estado + previsto total)
+  const execM=(est,m)=>est==='RJ'?rjExecM(m,''):procs.reduce((s,p)=>s+calcExec(est,m,ano,'',p).val,0);
+  const prevM=m=>['MA','PI'].reduce((s,est)=>s+procs.reduce((a,p)=>a+calcPrevisto(est,m,ano,'',p),0),0)+rjPrevM('');
+  const mm=[];for(let m=1;m<=12;m++){if(['MA','PI','RJ'].some(e=>execM(e,m)>0)) mm.push(m);}
+  if(chGlob) chGlob.destroy();
+  chGlob=new Chart(document.getElementById('ch-glob'),{data:{labels:mm.map(m=>MN[m].slice(0,3)),datasets:[
+    {type:'line',label:'Previsto total',data:mm.map(prevM),borderColor:'#888',borderDash:[5,5],borderWidth:2,pointRadius:0,tension:.2,order:0},
+    ...['MA','PI','RJ'].map(e=>({type:'bar',label:e,data:mm.map(m=>execM(e,m)),backgroundColor:GL_COR[e],borderRadius:3,order:1}))
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},usePointStyle:true,boxWidth:8}}},scales:{y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>fR(v).replace('R$\u00a0','')}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+  // Alertas
+  const al=[];
+  ['MA','PI'].forEach(est=>(REGS[est]||[]).forEach(reg=>procs.forEach(p=>{let g=0,ok=false;meses.forEach(m=>{const pg=calcPago(est,m,ano,reg,p).val;if(pg>0){ok=true;g+=calcExec(est,m,ano,reg,p).val-pg;}});if(ok&&g>0) al.push({n:`${est} · ${reg} · ${GL_ROT[p]}`,g});})));
+  al.sort((a,b)=>b.g-a.g);
+  const dv=['COMERCIAL','TECNICA'].map(r=>{const x=rj(meses,r);return {n:'RJ · '+GL_ROT[r],d:x.prev>0?(x.exec/x.prev*100-100):null};}).filter(x=>x.d!==null).sort((a,b)=>a.d-b.d);
+  const it=(n,val,cor,bg)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 9px;background:${bg};border-radius:6px;font-size:12px;margin-bottom:5px"><span>${n}</span><span style="color:${cor};font-weight:700">${val}</span></div>`;
+  document.getElementById('gl-alertas').innerHTML=
+    `<div style="font-size:11px;color:var(--tx2);margin-bottom:6px">Maior glosa (Executado − Pago) · MA/PI · ${per}</div>`+
+    (al.length?al.slice(0,5).map(a=>it(a.n,fR(a.g),'#BE2F3B','rgba(190,47,59,.06)')).join(''):'<div style="font-size:12px;color:var(--tx2);margin-bottom:8px">Nenhuma glosa no período (ou boletim ainda não lançado).</div>')+
+    `<div style="font-size:11px;color:var(--tx2);margin:10px 0 6px">Desvio do executado vs previsto · RJ</div>`+
+    (dv.length?dv.map(d=>it(d.n,(d.d>=0?'+':'')+d.d.toFixed(1).replace('.',',')+'%',d.d<0?'#BA7517':'#1D9E75',d.d<0?'rgba(186,117,23,.08)':'rgba(29,158,117,.08)')).join(''):'<div style="font-size:12px;color:var(--tx2)">Sem previsto do RJ no período.</div>');
+  // Ticket (mês selecionado)
+  document.getElementById('gl-tk-tit').textContent=`Ticket por equipe — ${MN[mes]}/${ano} (executado ÷ equipes)`;
+  let tb=`<tr style="background:var(--bg)">${th('Estado · Processo')}${th('Equipes',1)}${th('Executado',1)}${th('Ticket',1)}</tr>`;let nT=0;
+  ['MA','PI'].forEach(est=>procs.forEach(p=>{
+    if(p==='atendimento'){tb+=`<tr style="border-top:1px solid var(--bd);color:var(--tx2)">${td(est+' · Atendimento')}${td('—',1)}${td('—',1)}${td('a definir',1)}</tr>`;nT++;return;}
+    const eq=eqMP.filter(d=>d.estado===est&&d.processo===p&&d.mes===mes).reduce((s,d)=>s+(parseInt(d.quantidade)||0),0);
+    const ex=calcExec(est,mes,ano,'',p).val;if(!eq&&!ex) return;nT++;
+    tb+=`<tr style="border-top:1px solid var(--bd)">${td(est+' · '+GL_ROT[p])}${td(eq||'—',1)}${td(fR(ex),1)}${td(eq>0?fR(ex/eq):'sem equipes',1,eq>0?'font-weight:700':'color:var(--tx2)')}</tr>`;}));
+  const eR=eqRJ.find(x=>x.mes===mes&&x.ano===ano),eqT=(parseInt(eR?.equipes_linha_morta)||0)+(parseInt(eR?.equipes_linha_viva)||0),exT=rjExecM(mes,'TECNICA');
+  if(eqT||exT){nT++;tb+=`<tr style="border-top:1px solid var(--bd)">${td('RJ · Técnica')}${td(eqT||'—',1)}${td(fR(exT),1)}${td(eqT>0?fR(exT/eqT):'sem equipes',1,eqT>0?'font-weight:700':'color:var(--tx2)')}</tr>`;}
+  tb+=`<tr style="border-top:1px solid var(--bd);color:var(--tx2)">${td('RJ · Comercial')}${td('—',1)}${td('—',1)}${td('a definir',1)}</tr>`;
+  document.getElementById('gl-ticket').innerHTML=tb;
 }
 
 // ═══ EXCEL ═══

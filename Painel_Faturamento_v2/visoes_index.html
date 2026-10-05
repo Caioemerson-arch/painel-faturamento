@@ -1498,18 +1498,25 @@ async function carregarGlobal(){
   const tot=est=>{const ls=L.filter(l=>l.est===est);return {prev:ls.reduce((s,l)=>s+l.prev,0),exec:ls.reduce((s,l)=>s+l.exec,0),pago:(est==='RJ'&&!rjTemPago)?null:ls.reduce((s,l)=>s+(l.pago||0),0)};};
   const T={MA:tot('MA'),PI:tot('PI'),RJ:tot('RJ')};
   const per=GL_MODO==='ytd'?`Jan → ${MN[mes].slice(0,3)}/${ano}`:`${MN[mes]}/${ano}`;
+  // Glosa = diferença a menor do previsto no caderno, por regional × processo × mês, sem compensação.
+  // MA/PI: Previsto − Pago (só meses com boletim lançado no estado/processo). RJ (sem Pago): Previsto − Executado.
+  const GLI=[];
+  ['MA','PI'].forEach(est=>procs.forEach(p=>{const mb=meses.filter(m=>calcPago(est,m,ano,'',p).val>0);if(!mb.length) return;
+    (REGS[est]||[]).forEach(reg=>{let g=0;mb.forEach(m=>{const d=calcPrevisto(est,m,ano,reg,p)-calcPago(est,m,ano,reg,p).val;if(d>0) g+=d;});if(g>0.005) GLI.push({est,n:`${est} · ${reg} · ${GL_ROT[p]}`,g});});}));
+  ['COMERCIAL','TECNICA'].forEach(reg=>{const pm=rjPrevM(reg);let g=0;meses.forEach(m=>{if(!C.prod.some(x=>x.estado==='RJ'&&x.mes===m&&x.ano===ano)) return;const d=pm-rjExecM(m,reg);if(d>0) g+=d;});if(g>0.005) GLI.push({est:'RJ',n:'RJ · '+GL_ROT[reg],g});});
+  const GLS={MA:0,PI:0,RJ:0};GLI.forEach(x=>GLS[x.est]+=x.g);
   // Cards
   const card=(est,nome)=>{const t=T[est],tp=t.pago!==null,at=tp?pct(t.pago,t.prev):pct(t.exec,t.prev);
     return `<div style="background:var(--br);border:1px solid var(--bd);border-top:3px solid ${GL_COR[est]};border-radius:var(--r);padding:1rem">
       <div style="font-size:12px;font-weight:700;color:var(--pt);margin-bottom:6px">${nome}</div>
       <div style="font-size:11px;color:var(--tx2)">${tp?'Pago':'Executado'}</div><div style="font-size:20px;font-weight:700;color:var(--pt)">${fR(tp?t.pago:t.exec)}</div>
-      <div style="font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.6">Previsto ${fR(t.prev)} · ${tp?'Executado '+fR(t.exec):'Pago —'}<br>${fP(at,tp?'':' exec.')}${tp?` · <span style="color:#BE2F3B">glosa ${fR(t.exec-t.pago)}</span>`:''}</div></div>`;};
+      <div style="font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.6">Previsto ${fR(t.prev)} · ${tp?'Executado '+fR(t.exec):'Pago —'}<br>${fP(at,tp?'':' exec.')} · <span style="color:#BE2F3B">glosa ${fR(GLS[est]||0)}</span></div></div>`;};
   const gPrev=T.MA.prev+T.PI.prev+T.RJ.prev,gExec=T.MA.exec+T.PI.exec+T.RJ.exec,gPago=T.MA.pago+T.PI.pago+(T.RJ.pago||0);
   document.getElementById('gl-cards').innerHTML=card('MA','Maranhão')+card('PI','Piauí')+card('RJ','Rio de Janeiro')+
     `<div style="background:var(--bg);border:1px solid var(--bd);border-top:3px solid var(--tx2);border-radius:var(--r);padding:1rem">
       <div style="font-size:12px;font-weight:700;color:var(--pt);margin-bottom:6px">Total geral</div>
       <div style="font-size:11px;color:var(--tx2)">Executado</div><div style="font-size:20px;font-weight:700;color:var(--pt)">${fR(gExec)}</div>
-      <div style="font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.6">Previsto ${fR(gPrev)} · ${fP(pct(gExec,gPrev),' exec.')}<br>Pago ${rjTemPago?'MA+PI+RJ':'MA+PI'} ${fR(gPago)}</div></div>`;
+      <div style="font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.6">Previsto ${fR(gPrev)} · ${fP(pct(gExec,gPrev),' exec.')}<br>Pago ${rjTemPago?'MA+PI+RJ':'MA+PI'} ${fR(gPago)} · <span style="color:#BE2F3B">glosa ${fR(GLS.MA+GLS.PI+GLS.RJ)}</span></div></div>`;
   // Matriz
   const th=(t,r)=>`<th style="padding:8px 12px;font-size:11px;color:var(--tx2);text-align:${r?'right':'left'}">${t}</th>`;
   document.getElementById('gl-mat-head').innerHTML=`<tr style="background:var(--bg)">${th('Estado')}${th('Processo')}${th('Previsto',1)}${th('Executado',1)}${th('Pago',1)}${th('% atingido',1)}</tr>`;
@@ -1540,17 +1547,12 @@ async function carregarGlobal(){
     {type:'line',label:'Previsto total',data:mm.map(prevM),borderColor:'#888',borderDash:[5,5],borderWidth:2,pointRadius:0,tension:.2,order:0},
     ...['MA','PI','RJ'].map(e=>({type:'bar',label:e,data:mm.map(m=>execM(e,m)),backgroundColor:GL_COR[e],borderRadius:3,order:1}))
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},usePointStyle:true,boxWidth:8}}},scales:{y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>fR(v).replace('R$\u00a0','')}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
-  // Alertas
-  const al=[];
-  ['MA','PI'].forEach(est=>(REGS[est]||[]).forEach(reg=>procs.forEach(p=>{let g=0,ok=false;meses.forEach(m=>{const pg=calcPago(est,m,ano,reg,p).val;if(pg>0){ok=true;g+=calcExec(est,m,ano,reg,p).val-pg;}});if(ok&&g>0) al.push({n:`${est} · ${reg} · ${GL_ROT[p]}`,g});})));
-  al.sort((a,b)=>b.g-a.g);
-  const dv=['COMERCIAL','TECNICA'].map(r=>{const x=rj(meses,r);return {n:'RJ · '+GL_ROT[r],d:x.prev>0?(x.exec/x.prev*100-100):null};}).filter(x=>x.d!==null).sort((a,b)=>a.d-b.d);
-  const it=(n,val,cor,bg)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 9px;background:${bg};border-radius:6px;font-size:12px;margin-bottom:5px"><span>${n}</span><span style="color:${cor};font-weight:700">${val}</span></div>`;
-  document.getElementById('gl-alertas').innerHTML=
-    `<div style="font-size:11px;color:var(--tx2);margin-bottom:6px">Maior glosa (Executado − Pago) · MA/PI · ${per}</div>`+
-    (al.length?al.slice(0,5).map(a=>it(a.n,fR(a.g),'#BE2F3B','rgba(190,47,59,.06)')).join(''):'<div style="font-size:12px;color:var(--tx2);margin-bottom:8px">Nenhuma glosa no período (ou boletim ainda não lançado).</div>')+
-    `<div style="font-size:11px;color:var(--tx2);margin:10px 0 6px">Desvio do executado vs previsto · RJ</div>`+
-    (dv.length?dv.map(d=>it(d.n,(d.d>=0?'+':'')+d.d.toFixed(1).replace('.',',')+'%',d.d<0?'#BA7517':'#1D9E75',d.d<0?'rgba(186,117,23,.08)':'rgba(29,158,117,.08)')).join(''):'<div style="font-size:12px;color:var(--tx2)">Sem previsto do RJ no período.</div>');
+  // Alertas (glosa = diferença a menor do previsto)
+  const al=GLI.slice().sort((a,b)=>b.g-a.g);
+  const it=(n,val)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 9px;background:rgba(190,47,59,.06);border-radius:6px;font-size:12px;margin-bottom:5px"><span>${n}</span><span style="color:#BE2F3B;font-weight:700">${val}</span></div>`;
+  document.getElementById('gl-alertas').innerHTML=`<div style="font-size:11px;color:var(--tx2);margin-bottom:6px">Maior glosa (diferença a menor do previsto) · ${per}</div>`+
+    (al.length?al.slice(0,5).map(a=>it(a.n,fR(a.g))).join(''):'<div style="font-size:12px;color:var(--tx2)">Nenhuma glosa no período.</div>')+
+    `<div style="font-size:11px;color:var(--tx2);margin-top:8px">MA/PI: previsto − pago (meses com boletim lançado). RJ: previsto − executado.</div>`;
   // Ticket (mês selecionado)
   document.getElementById('gl-tk-tit').textContent=`Ticket por equipe — ${MN[mes]}/${ano} (executado ÷ equipes)`;
   let tb=`<tr style="background:var(--bg)">${th('Estado · Processo')}${th('Equipes',1)}${th('Executado',1)}${th('Ticket',1)}</tr>`;let nT=0;

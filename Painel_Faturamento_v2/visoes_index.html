@@ -796,6 +796,14 @@ async function carregarCache(){
   C.bols=await fetchAll(()=>sb.from('boletins').select('*').eq('ativo',true).order('id'));
   if(C.bols.length){C.itens=await fetchAll(()=>sb.from('boletim_itens').select('*').in('boletim_id',C.bols.map(b=>b.id)).order('id'));}
   else C.itens=[];
+  // Atendimento (MA/PI): Executado = Pago. Gera a produção a partir dos boletins ativos de Atendimento
+  // (mesma qtd/regional/serviço/mês; valor pela tarifa do boletim) e ignora lançamentos de produção do Atendimento.
+  const _bol={};C.bols.forEach(b=>_bol[b.id]=b);
+  const _codsAtd=new Set(C.tars.filter(t=>(t.estado==='MA'||t.estado==='PI')&&String(t.processo||'').toLowerCase()==='atendimento').map(t=>String(t.cod_servico)));
+  C.prod=C.prod.filter(p=>!((p.estado==='MA'||p.estado==='PI')&&(String(p.processo||'').toLowerCase()==='atendimento'||_codsAtd.has(String(p.cod_servico)))));
+  C.itens.forEach(i=>{const b=_bol[i.boletim_id];if(!b||!(b.estado==='MA'||b.estado==='PI')) return;
+    if(String(i.processo||b.processo||'').toLowerCase()!=='atendimento'&&!_codsAtd.has(String(i.cod_servico))) return;
+    C.prod.push({id:'v'+i.id,mes:b.mes,ano:b.ano,estado:b.estado,regional:i.regional,cod_servico:i.cod_servico,descricao_servico:i.descricao_servico,qde_executada:parseFloat(i.qde_paga)||0,ativo:true,processo:'atendimento',_tar:parseFloat(i.preco_unitario)||0,_virtual:true});});
 }
 
 // ═══ HELPERS ═══
@@ -852,7 +860,7 @@ function calcExec(est,m,a,r='',proc){
   const tarMap={};tars.forEach(t=>tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
   const cods=codsDoProcesso(est,proc);
   let val=0,evt=0;
-  getProd(est,m,a,r).forEach(p=>{if(!cods.has(String(p.cod_servico)))return;const tar=tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0;val+=(parseFloat(p.qde_executada)||0)*tar;evt+=(parseFloat(p.qde_executada)||0);});
+  getProd(est,m,a,r).forEach(p=>{if(!cods.has(String(p.cod_servico)))return;const tar=p._tar!=null?p._tar:(tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0);val+=(parseFloat(p.qde_executada)||0)*tar;evt+=(parseFloat(p.qde_executada)||0);});
   return {val,evt};
 }
 function calcPago(est,m,a,r='',proc){
@@ -1629,7 +1637,7 @@ function exportarExcel(){
       const regs = reg ? [reg] : (REGS[e]||['']);
       regs.forEach(r=>{
         const codsP=codsDoProcesso(e,proc);const svcMap={};getTarifas(e,mes,ano,r,proc).forEach(t=>{const c=t.cod_servico;if(!svcMap[c])svcMap[c]={desc:t.descricao_servico,prev:0,tar:0};svcMap[c].prev+=parseFloat(t.eventos_previstos)||0;svcMap[c].tar=parseFloat(t.preco_unitario)||0;});
-        const execMap={};getProd(e,mes,ano,r).filter(rp=>codsP.has(String(rp.cod_servico))).forEach(rp=>execMap[rp.cod_servico]=(execMap[rp.cod_servico]||0)+(parseFloat(rp.qde_executada)||0));
+        const execMap={},execV={};getProd(e,mes,ano,r).filter(rp=>codsP.has(String(rp.cod_servico))).forEach(rp=>{const q=parseFloat(rp.qde_executada)||0;execMap[rp.cod_servico]=(execMap[rp.cod_servico]||0)+q;if(rp._tar!=null) execV[rp.cod_servico]=(execV[rp.cod_servico]||0)+q*rp._tar;});
         const pQ={},pV={};getItens(e,mes,ano,r).filter(i=>codsP.has(String(i.cod_servico))).forEach(i=>{const c=i.cod_servico,q=parseFloat(i.qde_paga)||0,p=parseFloat(i.preco_unitario)||0;pQ[c]=(pQ[c]||0)+q;pV[c]=(pV[c]||0)+q*p;});
         const svcs=new Set([...Object.keys(svcMap),...Object.keys(execMap),...Object.keys(pQ)]);
         svcs.forEach(cod=>{
@@ -1638,7 +1646,7 @@ function exportarExcel(){
           const row=[mA(mes,ano),e,r||'—',svcMap[cod]?.desc||cod];
           if(wQtd) row.push(qPrev,qExec,qPago);
           if(wTar) row.push(+tarCad.toFixed(2),+tarBol.toFixed(2));
-          if(wFat) row.push(+(qPrev*tarCad).toFixed(2),+(qExec*tarCad).toFixed(2),+(pV[cod]||0).toFixed(2));
+          if(wFat) row.push(+(qPrev*tarCad).toFixed(2),+(execV[cod]!=null?execV[cod]:qExec*tarCad).toFixed(2),+(pV[cod]||0).toFixed(2));
           rows.push(row);
         });
       });
@@ -1687,8 +1695,8 @@ function preencherStatusDados(){
   document.getElementById('status-bol-em').textContent='Carregado em: '+fDt(bolMA?.importado_em||bolPI?.importado_em);
 
   // Serviços CNG (produção real)
-  const prodMA=C.prod.filter(p=>p.estado==='MA').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
-  const prodPI=C.prod.filter(p=>p.estado==='PI').sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
+  const prodMA=C.prod.filter(p=>p.estado==='MA'&&!p._virtual).sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
+  const prodPI=C.prod.filter(p=>p.estado==='PI'&&!p._virtual).sort((a,b)=>b.ano!==a.ano?b.ano-a.ano:b.mes-a.mes)[0];
   document.getElementById('status-prod-ma').textContent='MA — '+fMA(prodMA?.mes,prodMA?.ano);
   document.getElementById('status-prod-pi').textContent='PI — '+fMA(prodPI?.mes,prodPI?.ano);
   document.getElementById('status-prod-em').textContent='Carregado em: '+fDt(prodMA?.importado_em||prodPI?.importado_em);

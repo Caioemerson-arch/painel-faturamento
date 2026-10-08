@@ -356,27 +356,28 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
 
     <!-- ═══ EQUIPES MA / PI ═══ -->
     <div id="tab-equipes-mapi" style="display:none">
-      <p class="page-subtitle">Quantitativo de <strong>equipes por processo, função, mês e regional</strong> — Maranhão e Piauí.</p>
+      <p class="page-subtitle">Quadro de <strong>equipes por processo, função e regional</strong> com vigência — Maranhão e Piauí.</p>
       <div class="gbox">
-        <h3>Equipes por período</h3>
-        <div style="display:flex;gap:10px;align-items:center;margin-bottom:1rem;flex-wrap:wrap">
-          <label style="font-size:11px;color:var(--tx2);font-weight:700">Estado</label>
-          <select id="eqm-est" onchange="carregarEquipesMAPI()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff">
-            <option value="MA">Maranhão</option><option value="PI">Piauí</option>
-          </select>
-          <label style="font-size:11px;color:var(--tx2);font-weight:700">Ano</label>
-          <select id="eqm-ano" onchange="carregarEquipesMAPI()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff"></select>
-          <label style="font-size:11px;color:var(--tx2);font-weight:700">Mês</label>
-          <select id="eqm-mes" onchange="carregarEquipesMAPI()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff"></select>
-          <button class="btn btn-p btn-sm" onclick="salvarEquipesMAPI()"><i class="ti ti-device-floppy"></i> Salvar</button>
+        <h3 id="eqm-titulo">Novo quadro de equipes</h3>
+        <div style="display:flex;gap:14px;align-items:flex-end;margin-bottom:.75rem;flex-wrap:wrap">
+          <div><label style="font-size:11px;color:var(--tx2);font-weight:700;display:block;margin-bottom:3px">Estado</label><select id="eqm-est" onchange="novoQuadroEQM()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff"><option value="MA">Maranhão</option><option value="PI">Piauí</option></select></div>
+          <div><label style="font-size:11px;color:var(--tx2);font-weight:700;display:block;margin-bottom:3px">Vigência início</label><select id="eqm-ini-mes" onchange="eqmResumo()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff"></select> <select id="eqm-ini-ano" onchange="eqmResumo()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff"></select></div>
+          <div><label style="font-size:11px;color:var(--tx2);font-weight:700;display:block;margin-bottom:3px">Vigência fim (opcional)</label><select id="eqm-fim-mes" onchange="eqmResumo()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff"></select> <select id="eqm-fim-ano" onchange="eqmResumo()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:#fff"></select></div>
+          <button class="btn btn-p btn-sm" onclick="salvarQuadroEQM()"><i class="ti ti-device-floppy"></i> Salvar quadro</button>
+          <button class="btn btn-s btn-sm" id="eqm-cancelar" onclick="novoQuadroEQM()" style="display:none">Cancelar edição</button>
           <span id="eqm-msg" style="font-size:11px;color:var(--vd);display:none">✓ Salvo com sucesso!</span>
         </div>
+        <div id="eqm-resumo" style="font-size:12px;color:var(--tx2);margin-bottom:1rem;padding:10px 12px;background:rgba(190,47,59,.06);border:1px solid rgba(190,47,59,.25);border-radius:var(--r2);line-height:1.5"></div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:12px">
             <thead><tr style="background:var(--bg)" id="tr-eqm-head"></tr></thead>
             <tbody id="tb-eqm-body"></tbody>
           </table>
         </div>
+      </div>
+      <div class="gbox" style="margin-top:1rem">
+        <h3 id="eqm-hist-tit">Quadros de equipes</h3>
+        <div class="tbox"><table><thead><tr><th>Vigência</th><th>Total de equipes</th><th>Status</th><th>Ações</th></tr></thead><tbody id="tb-eqm-quadros"></tbody></table></div>
       </div>
     </div>
 
@@ -559,7 +560,7 @@ async function salvarEquipes(){
   }
 }
 
-// ═══ EQUIPES MA / PI ═══
+// ═══ EQUIPES MA / PI — quadros com vigência ═══
 const EQMAPI_FUNCOES={
   leitura:['Agente Comercial a Pé','Agente Comercial Motociclista'],
   cobranca:['Agente Comercial a Pé','Agente Comercial Motociclista'],
@@ -568,67 +569,127 @@ const EQMAPI_FUNCOES={
 const EQMAPI_ROTULO={leitura:'Leitura',cobranca:'Cobrança',atendimento:'Atendimento'};
 const EQMAPI_COR={leitura:'#378ADD',cobranca:'#BA7517',atendimento:'#1D9E75'};
 const EQMAPI_REGS={MA:['SUL','NORTE','CENTRO','LESTE','NOROESTE'],PI:['METROPOLITANA','NORTE','SUL']};
+const EQM_MN=['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+let EQM_EDIT_ID=null,EQM_QUADROS=[],EQM_QTD=[];
+const eqmYM=(m,a)=>a*100+m;
+const eqmFmt=ym=>ym==null?'em aberto':String(ym%100).padStart(2,'0')+'/'+Math.floor(ym/100);
+const eqmPrev=ym=>{let a=Math.floor(ym/100),m=ym%100-1;if(m<1){m=12;a--;}return a*100+m;};
+const eqmHoje=()=>{const x=new Date();return x.getFullYear()*100+x.getMonth()+1;};
+const eqmResolver=ym=>EQM_QUADROS.filter(q=>q.ini_ym<=ym&&(q.fim_ym==null||q.fim_ym>=ym)).sort((a,b)=>b.ini_ym-a.ini_ym||b.id-a.id)[0];
+const eqmValores=id=>{const v={};EQM_QTD.filter(x=>x.quadro_id===id).forEach(x=>v[`${x.processo}|${x.funcao}|${x.regional}`]=x.quantidade);return v;};
 
 function iniciarEquipesMAPI(){
-  const sAno=document.getElementById('eqm-ano');
-  if(!sAno.options.length){
-    const y=new Date().getFullYear();
-    sAno.innerHTML=[y-1,y,y+1].map(a=>`<option value="${a}"${a===y?' selected':''}>${a}</option>`).join('');
-  }
-  const sMes=document.getElementById('eqm-mes');
-  if(!sMes.options.length){
-    const mA=new Date().getMonth()+1;
-    sMes.innerHTML=Array.from({length:12},(_,i)=>`<option value="${i+1}"${i+1===mA?' selected':''}>${MN_EQ[i+1]}</option>`).join('');
-  }
-  carregarEquipesMAPI();
+  const y=new Date().getFullYear(),mA=new Date().getMonth()+1,anos=[y-2,y-1,y,y+1,y+2];
+  const fM=(id,sel,aberto)=>{const s=document.getElementById(id);if(s.options.length) return;s.innerHTML=(aberto?'<option value="">Em aberto</option>':'')+EQM_MN.slice(1).map((n,i)=>`<option value="${i+1}"${(!aberto&&i+1===sel)?' selected':''}>${n}</option>`).join('');};
+  const fA=id=>{const s=document.getElementById(id);if(s.options.length) return;s.innerHTML=anos.map(a=>`<option value="${a}"${a===y?' selected':''}>${a}</option>`).join('');};
+  fM('eqm-ini-mes',mA,false);fA('eqm-ini-ano');fM('eqm-fim-mes',0,true);fA('eqm-fim-ano');
+  novoQuadroEQM();
 }
-
-async function carregarEquipesMAPI(){
-  const estado=document.getElementById('eqm-est').value;
-  const ano=parseInt(document.getElementById('eqm-ano').value);
-  const mes=parseInt(document.getElementById('eqm-mes').value);
-  const regs=EQMAPI_REGS[estado]||[];
-  let data=[];
-  try{const r=await sb.from('equipes_ma_pi').select('*').eq('estado',estado).eq('ano',ano).eq('mes',mes);data=r.data||[];}catch(e){}
-  const val={};
-  data.forEach(d=>{val[`${d.processo}|${d.funcao}|${d.regional}`]=d.quantidade;});
-  // cabeçalho
-  const thRegs=regs.map(rg=>`<th style="padding:9px 10px;text-align:center;font-size:11px;font-weight:700;color:var(--tx2)">${rg}</th>`).join('');
-  document.getElementById('tr-eqm-head').innerHTML=`<th style="padding:9px 12px;font-size:11px;font-weight:700;color:var(--tx2);min-width:120px">Processo</th><th style="padding:9px 12px;font-size:11px;font-weight:700;color:var(--tx2);min-width:250px">Função</th>${thRegs}`;
-  // corpo
+async function eqmCarregarQuadros(){
+  const est=document.getElementById('eqm-est').value;
+  document.getElementById('eqm-hist-tit').textContent='Quadros de equipes — '+(est==='MA'?'Maranhão':'Piauí');
+  let qs=[],qt=[];
+  try{
+    const r=await sb.from('equipes_mapi_quadros').select('*').eq('estado',est).eq('ativo',true).order('ini_ym',{ascending:false});
+    if(r.error) throw r.error; qs=r.data||[];
+    const ids=qs.map(q=>q.id);
+    if(ids.length) qt=await fetchAll(()=>sb.from('equipes_mapi_qtd').select('*').in('quadro_id',ids).order('id'));
+  }catch(e){
+    EQM_QUADROS=[];EQM_QTD=[];
+    document.getElementById('tb-eqm-quadros').innerHTML=`<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:#BE2F3B">Não foi possível carregar os quadros (${e.message||e}). Verifique se o SQL de quadros foi executado.</td></tr>`;
+    return;
+  }
+  EQM_QUADROS=qs;EQM_QTD=qt;
+  const hoje=eqmHoje(),vig=eqmResolver(hoje);
+  document.getElementById('tb-eqm-quadros').innerHTML=qs.length?qs.map(q=>{
+    const tot=qt.filter(x=>x.quadro_id===q.id).reduce((s,x)=>s+(parseInt(x.quantidade)||0),0);
+    const st=vig&&q.id===vig.id?'<span class="pill p-ok">Vigente</span>':(q.ini_ym>hoje?'<span class="pill p-cinza">Futuro</span>':'<span class="pill p-cinza">Encerrado</span>');
+    return `<tr${EQM_EDIT_ID===q.id?' style="background:rgba(190,47,59,.05)"':''}><td>${eqmFmt(q.ini_ym)} → ${eqmFmt(q.fim_ym)}</td><td>${fN(tot)}</td><td>${st}</td>
+      <td style="display:flex;gap:6px;align-items:center"><button class="btn btn-s btn-sm" onclick="editarQuadroEQM(${q.id})"><i class="ti ti-edit"></i> Editar</button>
+      <button class="btn-excluir" onclick="excluirQuadroEQM(${q.id})"><i class="ti ti-trash" style="font-size:14px"></i> Excluir</button></td></tr>`;}).join('')
+    :'<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--tx2)">Nenhum quadro cadastrado para este estado.</td></tr>';
+}
+function eqmRenderTabela(val){
+  const est=document.getElementById('eqm-est').value,regs=EQMAPI_REGS[est]||[];
+  document.getElementById('tr-eqm-head').innerHTML=`<th style="padding:9px 12px;font-size:11px;font-weight:700;color:var(--tx2);min-width:120px">Processo</th><th style="padding:9px 12px;font-size:11px;font-weight:700;color:var(--tx2);min-width:250px">Função</th>`+regs.map(rg=>`<th style="padding:9px 10px;text-align:center;font-size:11px;font-weight:700;color:var(--tx2)">${rg}</th>`).join('');
   let html='';
-  Object.keys(EQMAPI_FUNCOES).forEach(proc=>{
-    const funcs=EQMAPI_FUNCOES[proc], cor=EQMAPI_COR[proc];
+  Object.keys(EQMAPI_FUNCOES).forEach(proc=>{const funcs=EQMAPI_FUNCOES[proc],cor=EQMAPI_COR[proc];
     funcs.forEach((fn,fi)=>{
-      const cells=regs.map((rg,ri)=>{
-        const v=val[`${proc}|${fn}|${rg}`];
-        return `<td style="padding:5px 6px;text-align:center"><input type="number" min="0" value="${v==null?'':v}" id="eqm-${proc}-${fi}-${ri}" style="width:64px;text-align:center;padding:5px;border:1px solid var(--bd);border-radius:4px;font-size:12px"></td>`;
-      }).join('');
-      const procCell=fi===0?`<td rowspan="${funcs.length}" style="padding:9px 12px;font-weight:700;font-size:12px;color:${cor};vertical-align:middle;border-left:3px solid ${cor}">${EQMAPI_ROTULO[proc]}</td>`:'';
-      html+=`<tr>${procCell}<td style="padding:8px 12px;font-size:12px">${fn}</td>${cells}</tr>`;
-    });
-  });
+      const cells=regs.map((rg,ri)=>{const v=val[`${proc}|${fn}|${rg}`];return `<td style="padding:5px 6px;text-align:center"><input type="number" min="0" value="${v==null?'':v}" id="eqm-${proc}-${fi}-${ri}" style="width:64px;text-align:center;padding:5px;border:1px solid var(--bd);border-radius:4px;font-size:12px"></td>`;}).join('');
+      const pc=fi===0?`<td rowspan="${funcs.length}" style="padding:9px 12px;font-weight:700;font-size:12px;color:${cor};vertical-align:middle;border-left:3px solid ${cor}">${EQMAPI_ROTULO[proc]}</td>`:'';
+      html+=`<tr>${pc}<td style="padding:8px 12px;font-size:12px">${fn}</td>${cells}</tr>`;});});
   document.getElementById('tb-eqm-body').innerHTML=html;
 }
-
-async function salvarEquipesMAPI(){
-  const estado=document.getElementById('eqm-est').value;
-  const ano=parseInt(document.getElementById('eqm-ano').value);
-  const mes=parseInt(document.getElementById('eqm-mes').value);
-  const regs=EQMAPI_REGS[estado]||[];
-  const ups=[];
-  Object.keys(EQMAPI_FUNCOES).forEach(proc=>{
-    EQMAPI_FUNCOES[proc].forEach((fn,fi)=>{
-      regs.forEach((rg,ri)=>{
-        const q=parseInt(document.getElementById(`eqm-${proc}-${fi}-${ri}`)?.value||0)||0;
-        ups.push({estado,regional:rg,ano,mes,processo:proc,funcao:fn,quantidade:q});
-      });
-    });
-  });
-  const msg=document.getElementById('eqm-msg');
-  const {error}=await sb.from('equipes_ma_pi').upsert(ups,{onConflict:'estado,regional,ano,mes,processo,funcao'});
-  if(error){alert('Erro ao salvar: '+error.message);return;}
-  msg.style.display='inline';setTimeout(()=>msg.style.display='none',3000);
+function eqmLerPeriodo(){
+  const ini=eqmYM(+document.getElementById('eqm-ini-mes').value,+document.getElementById('eqm-ini-ano').value);
+  const fm=document.getElementById('eqm-fim-mes').value;
+  document.getElementById('eqm-fim-ano').disabled=!fm;
+  return {ini,fim:fm?eqmYM(+fm,+document.getElementById('eqm-fim-ano').value):null};
+}
+function eqmResumo(){
+  const {ini,fim}=eqmLerPeriodo(),el=document.getElementById('eqm-resumo');
+  if(fim!=null&&fim<ini){el.innerHTML='<strong style="color:#BE2F3B">A vigência final está antes da inicial.</strong> Ajuste o período.';return;}
+  let t=`Este quadro vale de <strong>${eqmFmt(ini)}</strong> ${fim==null?'<strong>em diante</strong> (em aberto).':'até <strong>'+eqmFmt(fim)+'</strong>.'}`;
+  const ab=EQM_EDIT_ID?[]:EQM_QUADROS.filter(q=>q.fim_ym==null&&q.ini_ym<ini);
+  if(ab.length) t+=` ${ab.length>1?'Os quadros em aberto':'O quadro em aberto'} (${ab.map(q=>eqmFmt(q.ini_ym)+' → em aberto').join(', ')}) ${ab.length>1?'serão encerrados':'será encerrado'} em <strong>${eqmFmt(eqmPrev(ini))}</strong>.`;
+  const sob=EQM_QUADROS.filter(q=>q.id!==EQM_EDIT_ID&&!ab.includes(q)&&q.ini_ym<=(fim??999999)&&(q.fim_ym??999999)>=ini);
+  if(sob.length) t+=`<br>Atenção: sobrepõe ${sob.map(q=>eqmFmt(q.ini_ym)+' → '+eqmFmt(q.fim_ym)).join(', ')} — nos meses em comum prevalece o quadro de início mais recente.`;
+  if(EQM_EDIT_ID) t+='<br><em>Editando um quadro existente: as quantidades serão substituídas.</em>';
+  el.innerHTML=t;
+}
+async function novoQuadroEQM(){
+  EQM_EDIT_ID=null;
+  document.getElementById('eqm-titulo').textContent='Novo quadro de equipes';
+  document.getElementById('eqm-cancelar').style.display='none';
+  document.getElementById('eqm-fim-mes').value='';
+  await eqmCarregarQuadros();
+  const vig=eqmResolver(eqmHoje());
+  eqmRenderTabela(vig?eqmValores(vig.id):{}); // pré-preenche com o quadro vigente
+  eqmResumo();
+}
+function editarQuadroEQM(id){
+  const q=EQM_QUADROS.find(x=>x.id===id);if(!q) return;
+  EQM_EDIT_ID=id;
+  document.getElementById('eqm-ini-mes').value=q.ini_ym%100;document.getElementById('eqm-ini-ano').value=Math.floor(q.ini_ym/100);
+  if(q.fim_ym!=null){document.getElementById('eqm-fim-mes').value=q.fim_ym%100;document.getElementById('eqm-fim-ano').value=Math.floor(q.fim_ym/100);}
+  else document.getElementById('eqm-fim-mes').value='';
+  document.getElementById('eqm-titulo').textContent=`Editando quadro ${eqmFmt(q.ini_ym)} → ${eqmFmt(q.fim_ym)}`;
+  document.getElementById('eqm-cancelar').style.display='';
+  eqmRenderTabela(eqmValores(id));eqmResumo();eqmCarregarQuadros();
+  document.getElementById('tab-equipes-mapi').scrollIntoView({behavior:'smooth'});
+}
+async function excluirQuadroEQM(id){
+  const q=EQM_QUADROS.find(x=>x.id===id);if(!q) return;
+  if(!confirm(`Excluir o quadro ${eqmFmt(q.ini_ym)} → ${eqmFmt(q.fim_ym)}? Esta ação não pode ser desfeita.`)) return;
+  const {error}=await sb.from('equipes_mapi_quadros').delete().eq('id',id);
+  if(error){alert('Erro ao excluir: '+error.message);return;}
+  novoQuadroEQM();
+}
+async function salvarQuadroEQM(){
+  const est=document.getElementById('eqm-est').value,{ini,fim}=eqmLerPeriodo();
+  if(fim!=null&&fim<ini){alert('A vigência final está antes da inicial.');return;}
+  const regs=EQMAPI_REGS[est]||[],linhas=[];
+  Object.keys(EQMAPI_FUNCOES).forEach(proc=>EQMAPI_FUNCOES[proc].forEach((fn,fi)=>regs.forEach((rg,ri)=>{
+    linhas.push({regional:rg,processo:proc,funcao:fn,quantidade:parseInt(document.getElementById(`eqm-${proc}-${fi}-${ri}`)?.value||0)||0});})));
+  let id=EQM_EDIT_ID;
+  if(id){
+    const {error}=await sb.from('equipes_mapi_quadros').update({ini_ym:ini,fim_ym:fim,atualizado_em:new Date().toISOString()}).eq('id',id);
+    if(error){alert('Erro ao salvar o quadro: '+error.message);return;}
+    const {error:e2}=await sb.from('equipes_mapi_qtd').delete().eq('quadro_id',id);
+    if(e2){alert('Erro ao atualizar quantidades: '+e2.message);return;}
+  }else{
+    for(const q of EQM_QUADROS.filter(q=>q.fim_ym==null&&q.ini_ym<ini)){ // encerra o(s) quadro(s) em aberto no mês anterior
+      const {error}=await sb.from('equipes_mapi_quadros').update({fim_ym:eqmPrev(ini),atualizado_em:new Date().toISOString()}).eq('id',q.id);
+      if(error){alert('Erro ao encerrar o quadro anterior: '+error.message);return;}
+    }
+    const {data,error}=await sb.from('equipes_mapi_quadros').insert({estado:est,ini_ym:ini,fim_ym:fim,ativo:true}).select().single();
+    if(error){alert('Erro ao criar o quadro: '+error.message);return;}
+    id=data.id;
+  }
+  const {error:e3}=await sb.from('equipes_mapi_qtd').insert(linhas.map(l=>({quadro_id:id,...l})));
+  if(e3){alert('Erro ao salvar as quantidades: '+e3.message);return;}
+  const msg=document.getElementById('eqm-msg');msg.style.display='inline';setTimeout(()=>msg.style.display='none',3000);
+  novoQuadroEQM();
 }
 
 // ═══ STATUS DE DADOS ═══

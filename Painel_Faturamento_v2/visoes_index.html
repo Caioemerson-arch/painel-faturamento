@@ -925,7 +925,21 @@ let _eqtCache=null;
 async function getEquipesMAPI(est,ano){
   if(_eqtCache&&_eqtCache.est===est&&_eqtCache.ano===ano) return _eqtCache.data;
   let data=[];
-  try{const r=await sb.from('equipes_ma_pi').select('*').eq('estado',est).eq('ano',ano);data=r.data||[];}catch(e){}
+  try{ // quadro vigente de cada mês (início mais recente que cobre o mês); só até o mês atual
+    const qs=await fetchAll(()=>sb.from('equipes_mapi_quadros').select('*').eq('estado',est).eq('ativo',true).order('id'));
+    const ids=qs.map(q=>q.id);
+    const qt=ids.length?await fetchAll(()=>sb.from('equipes_mapi_qtd').select('*').in('quadro_id',ids).order('id')):[];
+    const hoje=new Date().getFullYear()*100+new Date().getMonth()+1;
+    for(let m=1;m<=12;m++){
+      const ym=ano*100+m;if(ym>hoje) break;
+      const q=qs.filter(x=>x.ini_ym<=ym&&(x.fim_ym==null||x.fim_ym>=ym)).sort((a,b)=>b.ini_ym-a.ini_ym||b.id-a.id)[0];
+      if(!q) continue;
+      qt.filter(x=>x.quadro_id===q.id).forEach(x=>data.push({estado:est,ano,mes:m,regional:x.regional,processo:x.processo,funcao:x.funcao,quantidade:x.quantidade}));
+    }
+    if(!qs.length) throw new Error('sem quadros');
+  }catch(e){ // transição: se ainda não houver quadros, usa a tabela mensal antiga
+    try{const r=await sb.from('equipes_ma_pi').select('*').eq('estado',est).eq('ano',ano);data=r.data||[];}catch(_){}
+  }
   _eqtCache={est,ano,data};
   return data;
 }
@@ -1469,7 +1483,7 @@ const GL_ROT={leitura:'Leitura',cobranca:'Cobrança',atendimento:'Atendimento',C
 const GL_COR={MA:'#378ADD',PI:'#BA7517',RJ:'#7F77DD'};
 const GL_PCOR={leitura:'#185FA5',cobranca:'#BA7517',atendimento:'#1D9E75',COMERCIAL:'#7F77DD',TECNICA:'#534AB7'};
 async function glEqRJ(){if(GL_EQRJ) return GL_EQRJ;try{const r=await sb.from('equipes_rj').select('*');GL_EQRJ=r.data||[];}catch(e){GL_EQRJ=[];}return GL_EQRJ;}
-async function glEqMP(ano){if(GL_EQMP[ano]) return GL_EQMP[ano];try{const r=await sb.from('equipes_ma_pi').select('*').eq('ano',ano);GL_EQMP[ano]=r.data||[];}catch(e){GL_EQMP[ano]=[];}return GL_EQMP[ano];}
+async function glEqMP(ano){if(GL_EQMP[ano]) return GL_EQMP[ano];const ma=await getEquipesMAPI('MA',ano);const pi=await getEquipesMAPI('PI',ano);GL_EQMP[ano]=[...ma,...pi];return GL_EQMP[ano];}
 function glIniciar(){
   const sA=document.getElementById('gl-ano');
   if(!sA.options.length){const y=new Date().getFullYear();sA.innerHTML=[y-1,y,y+1].map(a=>`<option value="${a}"${a===y?' selected':''}>${a}</option>`).join('');}

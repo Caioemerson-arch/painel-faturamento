@@ -860,13 +860,13 @@ function calcExec(est,m,a,r='',proc){
   const tarMap={};tars.forEach(t=>tarMap[t.estado+'|'+t.regional+'|'+t.cod_servico]=parseFloat(t.preco_unitario)||0);
   const cods=codsDoProcesso(est,proc);
   let val=0,evt=0;
-  getProd(est,m,a,r).forEach(p=>{if(!cods.has(String(p.cod_servico)))return;const tar=p._tar!=null?p._tar:(tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0);val+=(parseFloat(p.qde_executada)||0)*tar;evt+=(parseFloat(p.qde_executada)||0);});
+  getProd(est,m,a,r).forEach(p=>{if(!(p._virtual?p.processo===(proc||PROC_ATUAL):cods.has(String(p.cod_servico))))return;const tar=p._tar!=null?p._tar:(tarMap[p.estado+'|'+p.regional+'|'+p.cod_servico]||0);val+=(parseFloat(p.qde_executada)||0)*tar;evt+=(parseFloat(p.qde_executada)||0);});
   return {val,evt};
 }
 function calcPago(est,m,a,r='',proc){
   const cods=codsDoProcesso(est,proc);
   let val=0,evt=0;
-  getItens(est,m,a,r).forEach(i=>{if(!cods.has(String(i.cod_servico)))return;val+=(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0);evt+=parseFloat(i.qde_paga)||0;});
+  getItens(est,m,a,r).forEach(i=>{const ip=String(i.processo||'').toLowerCase();if(!((ip&&ip!=='leitura')?ip===(proc||PROC_ATUAL):cods.has(String(i.cod_servico))))return;val+=(parseFloat(i.qde_paga)||0)*(parseFloat(i.preco_unitario)||0);evt+=parseFloat(i.qde_paga)||0;});
   return {val,evt};
 }
 // Executado só de um conjunto de serviços (ticket por função na Leitura)
@@ -1651,8 +1651,8 @@ function exportarExcel(){
       const regs = reg ? [reg] : (REGS[e]||['']);
       regs.forEach(r=>{
         const codsP=codsDoProcesso(e,proc);const svcMap={};getTarifas(e,mes,ano,r,proc).forEach(t=>{const c=t.cod_servico;if(!svcMap[c])svcMap[c]={desc:t.descricao_servico,prev:0,tar:0};svcMap[c].prev+=parseFloat(t.eventos_previstos)||0;svcMap[c].tar=parseFloat(t.preco_unitario)||0;});
-        const execMap={},execV={};getProd(e,mes,ano,r).filter(rp=>codsP.has(String(rp.cod_servico))).forEach(rp=>{const q=parseFloat(rp.qde_executada)||0;execMap[rp.cod_servico]=(execMap[rp.cod_servico]||0)+q;if(rp._tar!=null) execV[rp.cod_servico]=(execV[rp.cod_servico]||0)+q*rp._tar;});
-        const pQ={},pV={};getItens(e,mes,ano,r).filter(i=>codsP.has(String(i.cod_servico))).forEach(i=>{const c=i.cod_servico,q=parseFloat(i.qde_paga)||0,p=parseFloat(i.preco_unitario)||0;pQ[c]=(pQ[c]||0)+q;pV[c]=(pV[c]||0)+q*p;});
+        const execMap={},execV={};getProd(e,mes,ano,r).filter(rp=>rp._virtual?rp.processo===proc:codsP.has(String(rp.cod_servico))).forEach(rp=>{const q=parseFloat(rp.qde_executada)||0;execMap[rp.cod_servico]=(execMap[rp.cod_servico]||0)+q;if(rp._tar!=null) execV[rp.cod_servico]=(execV[rp.cod_servico]||0)+q*rp._tar;});
+        const pQ={},pV={};getItens(e,mes,ano,r).filter(i=>{const ip=String(i.processo||'').toLowerCase();return (ip&&ip!=='leitura')?ip===proc:codsP.has(String(i.cod_servico));}).forEach(i=>{if(!svcMap[i.cod_servico]) svcMap[i.cod_servico]={desc:i.descricao_servico||i.cod_servico,prev:0,tar:0};const c=i.cod_servico,q=parseFloat(i.qde_paga)||0,p=parseFloat(i.preco_unitario)||0;pQ[c]=(pQ[c]||0)+q;pV[c]=(pV[c]||0)+q*p;});
         const svcs=new Set([...Object.keys(svcMap),...Object.keys(execMap),...Object.keys(pQ)]);
         svcs.forEach(cod=>{
           const qPrev=svcMap[cod]?.prev||0,qExec=execMap[cod]||0,qPago=pQ[cod]||0;

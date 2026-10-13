@@ -897,7 +897,13 @@ async function salvarBoletim(){
   if(estado==='MA'||estado==='PI') bolReg.processo=procBol;
   const {data:bol,error:e1}=await sb.from('boletins').insert(bolReg).select().single();
   if(e1||!bol){alert('Erro ao criar boletim.');btn.innerHTML='<i class="ti ti-check"></i> Confirmar e salvar';btn.disabled=false;svBol=false;return;}
-  const mapBol={};dadosBol.forEach(r=>{const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;const k=`${r.estado}|${regFinal}|${r.cod_servico}`;if(!mapBol[k]) mapBol[k]={...r,regional:regFinal,qde_paga:r.qde_paga};else mapBol[k].qde_paga+=r.qde_paga;});
+  // Consolidação (PI → PIAUÍ e códigos repetidos): soma quantidades, tarifa = média ponderada (ignora linhas vazias), junta descrições
+  const mapBol={};dadosBol.forEach(r=>{const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;const k=`${r.estado}|${regFinal}|${r.cod_servico}`;
+    const q=parseFloat(r.qde_paga)||0,pu=parseFloat(r.preco_unitario)||0;
+    if(!mapBol[k]) mapBol[k]={...r,regional:regFinal,qde_paga:0,_val:0,_pmax:0,_descs:[]};
+    const m=mapBol[k];m.qde_paga+=q;m._val+=q*pu;if(pu>m._pmax) m._pmax=pu;
+    const ds=String(r.descricao_servico||'').trim();if(ds&&!m._descs.includes(ds)) m._descs.push(ds);});
+  Object.values(mapBol).forEach(m=>{m.preco_unitario=m.qde_paga>0?m._val/m.qde_paga:m._pmax;if(m._descs.length) m.descricao_servico=m._descs.join(' / ');delete m._val;delete m._pmax;delete m._descs;});
   const {error:e2}=await sb.from('boletim_itens').insert(Object.values(mapBol).map(r=>{const o={boletim_id:bol.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,qde_paga:r.qde_paga};if(r.estado==='MA'||r.estado==='PI') o.processo=r.processo||procDoCodigo(r.cod_servico,'');return o;}));
   if(e2) alert('Erro: '+e2.message);
   else{alert(`✓ Boletim ${MN[mes]}/${ano} — ${estado} salvo!`);cancelarUpload('bol');await carregarCache();preencherStatusDados();carregarHistBol();}
@@ -939,7 +945,14 @@ async function salvarCaderno(){
 
   const {data:cad,error:e1}=await sb.from('cadernos').insert({estado,nome:nomeCad,vigencia_inicio,ativo:true,confirmado:true,importado_por:user.id}).select().single();
   if(e1||!cad){alert('Erro: '+(e1?.message||''));btn.innerHTML='<i class="ti ti-check"></i> Ativar caderno';btn.disabled=false;svCad=false;return;}
-  const mapCad={};dadosCad.forEach(r=>{const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;const k=`${r.estado}|${regFinal}|${r.cod_servico}`;if(!mapCad[k]) mapCad[k]={...r,regional:regFinal};else if(r.estado==='PI') mapCad[k].eventos_previstos+=r.eventos_previstos;});
+  // Consolidação PI → PIAUÍ: soma eventos, tarifa = média ponderada pelos eventos, junta descrições (demais estados: mantém a 1ª linha)
+  const mapCad={};dadosCad.forEach(r=>{const regFinal=r.estado==='PI'?'PIAUÍ':r.regional;const k=`${r.estado}|${regFinal}|${r.cod_servico}`;
+    if(!mapCad[k]) mapCad[k]={...r,regional:regFinal,_ev:0,_val:0,_pmax:0,_descs:[]};
+    else if(r.estado!=='PI') return;
+    const m=mapCad[k],ev=parseFloat(r.eventos_previstos)||0,pu=parseFloat(r.preco_unitario)||0;
+    m._ev+=ev;m._val+=ev*pu;if(pu>m._pmax) m._pmax=pu;
+    const ds=String(r.descricao_servico||'').trim();if(ds&&!m._descs.includes(ds)) m._descs.push(ds);});
+  Object.values(mapCad).forEach(m=>{if(m.estado==='PI'){m.eventos_previstos=m._ev;m.preco_unitario=m._ev>0?m._val/m._ev:m._pmax;if(m._descs.length) m.descricao_servico=m._descs.join(' / ');}delete m._ev;delete m._val;delete m._pmax;delete m._descs;});
   const {error:e2}=await sb.from('caderno_tarifas').insert(Object.values(mapCad).map(r=>({caderno_id:cad.id,estado:r.estado,regional:r.regional,cod_servico:r.cod_servico,descricao_servico:r.descricao_servico,preco_unitario:r.preco_unitario,eventos_previstos:r.eventos_previstos,processo:r.processo||null})));
   if(e2){alert('Erro nas tarifas: '+e2.message);await sb.from('cadernos').delete().eq('id',cad.id);}
   else{alert(`✓ Caderno ativado com ${dadosCad.length} tarifas!`);document.getElementById('cad-conf').checked=false;cancelarUpload('cad');document.getElementById('upload-cad-box').style.display='none';await carregarCache();preencherStatusDados();carregarCadernos();}

@@ -298,8 +298,8 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <option value="">Todos</option>
         </select>
       </div>
-      <div class="sec">Faturamento mensal — previsto vs executado vs pago
-        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos × Tarifa do caderno<br>Executado = Qtd executada × Tarifa do caderno<br>Pago = Qtd paga × Tarifa do boletim<br>% = (Valor − Previsto) / Previsto × 100</div></button>
+      <div class="sec">Faturamento mensal — previsto vs executado vs faturado
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos × Tarifa do caderno<br>Executado = Qtd executada × Tarifa do caderno<br>Valor Faturado = Qtd faturada × Tarifa do boletim<br>% = (Valor − Previsto) / Previsto × 100</div></button>
       </div>
       <div class="tbox" style="overflow-x:auto">
         <table id="tb-rs-fat" style="min-width:600px">
@@ -308,7 +308,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         </table>
       </div>
       <div class="sec">Quantidade de eventos por serviço — previsto e realizado por mês
-        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos no caderno por serviço<br>Executado = Qtd executada na produção real<br>Pago = Qtd paga no boletim EQTL</div></button>
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos no caderno por serviço<br>Executado = Qtd executada na produção real<br>Valor Faturado = Qtd faturada no boletim EQTL</div></button>
       </div>
       <div class="tbox" style="overflow-x:auto">
         <table id="tb-rs-evt" style="min-width:900px">
@@ -316,8 +316,8 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <tbody id="tb-rs-evt-body"></tbody>
         </table>
       </div>
-      <div class="sec">Diferença: Qtd pago vs Previsto caderno — por serviço e mês
-        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Diferença = Qtd paga (boletim) − Qtd prevista (caderno)<br>Verde = pago acima do previsto<br>Vermelho = pago abaixo do previsto</div></button>
+      <div class="sec">Diferença: Qtd faturada vs Previsto caderno — por serviço e mês
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Diferença = Qtd faturada (boletim) − Qtd prevista (caderno)<br>Verde = faturado acima do previsto<br>Vermelho = faturado abaixo do previsto</div></button>
       </div>
       <div class="tbox" style="overflow-x:auto">
         <table id="tb-rs-dif-cad" style="min-width:700px">
@@ -334,8 +334,8 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <tbody id="tb-rs-dif-exec-cad-body"></tbody>
         </table>
       </div>
-      <div class="sec">Diferença: Qtd executado vs Qtd pago — por serviço e mês
-        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Diferença = Qtd executada (campo) − Qtd paga (boletim)<br>Verde = mais executado que pago (divergência favorável ao campo)<br>Vermelho = mais pago que executado</div></button>
+      <div class="sec">Diferença: Qtd executado vs Qtd faturada — por serviço e mês
+        <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Diferença = Qtd executada (campo) − Qtd faturada (boletim)<br>Verde = mais executado que faturado (divergência favorável ao campo)<br>Vermelho = mais faturado que executado</div></button>
       </div>
       <div class="tbox" style="overflow-x:auto">
         <table id="tb-rs-dif-exec" style="min-width:700px">
@@ -372,38 +372,38 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <div class="cards">
         <div class="card"><div class="cl">Previsto (caderno)</div><div class="cv" id="g-prev">—</div><div class="cs cm">Meta mensal vigente</div></div>
         <div class="card"><div class="cl">Executado (campo)</div><div class="cv" id="g-exec">—</div><div class="cs" id="g-exec-s">—</div></div>
-        <div class="card"><div class="cl">Pago (Equatorial)</div><div class="cv" id="g-pago">—</div><div class="cs" id="g-pago-s">—</div></div>
-        <div class="card vd"><div class="cl">% Meta atingida <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Executado % = Faturamento executado / Previsto × 100<br>Pago % = Faturamento pago / Previsto × 100</div></button></div><div style="display:flex;flex-direction:column;gap:4px;margin-top:4px"><div style="font-size:12px;color:var(--tx2)">Executado: <strong id="g-pct-exec" style="color:var(--pt)">—</strong></div><div style="font-size:12px;color:var(--tx2)">Pago: <strong id="g-pct" style="color:var(--pt)">—</strong></div></div></div>
+        <div class="card"><div class="cl">Valor Faturado</div><div class="cv" id="g-pago">—</div><div class="cs" id="g-pago-s">—</div></div>
+        <div class="card vd"><div class="cl">% Meta atingida <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Executado % = Faturamento executado / Previsto × 100<br>Faturado % = Valor faturado / Previsto × 100</div></button></div><div style="display:flex;flex-direction:column;gap:4px;margin-top:4px"><div style="font-size:12px;color:var(--tx2)">Executado: <strong id="g-pct-exec" style="color:var(--pt)">—</strong></div><div style="font-size:12px;color:var(--tx2)">Faturado: <strong id="g-pct" style="color:var(--pt)">—</strong></div></div></div>
       </div>
       <div class="sec" style="margin-top:.25rem">Acumulado no ano (YTD)</div>
       <div class="cards">
         <div class="card"><div class="cl">Previsto acumulado</div><div class="cv" id="g-ytd-prev">—</div><div class="cs cm" id="g-ytd-label">Jan→?</div></div>
         <div class="card"><div class="cl">Executado acumulado</div><div class="cv" id="g-ytd-exec">—</div><div class="cs" id="g-ytd-exec-s">—</div></div>
-        <div class="card"><div class="cl">Pago acumulado</div><div class="cv" id="g-ytd-pago">—</div><div class="cs" id="g-ytd-pago-s">—</div></div>
-        <div class="card vd"><div class="cl">% Meta acumulada <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Executado % = Fat. executado acum. / Previsto acum. × 100<br>Pago % = Fat. pago acum. / Previsto acum. × 100</div></button></div><div style="display:flex;flex-direction:column;gap:4px;margin-top:4px"><div style="font-size:12px;color:var(--tx2)">Executado: <strong id="g-ytd-pct-exec" style="color:var(--pt)">—</strong></div><div style="font-size:12px;color:var(--tx2)">Pago: <strong id="g-ytd-pct" style="color:var(--pt)">—</strong></div></div></div>
+        <div class="card"><div class="cl">Valor Faturado acumulado</div><div class="cv" id="g-ytd-pago">—</div><div class="cs" id="g-ytd-pago-s">—</div></div>
+        <div class="card vd"><div class="cl">% Meta acumulada <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Executado % = Fat. executado acum. / Previsto acum. × 100<br>Faturado % = Valor faturado acum. / Previsto acum. × 100</div></button></div><div style="display:flex;flex-direction:column;gap:4px;margin-top:4px"><div style="font-size:12px;color:var(--tx2)">Executado: <strong id="g-ytd-pct-exec" style="color:var(--pt)">—</strong></div><div style="font-size:12px;color:var(--tx2)">Faturado: <strong id="g-ytd-pct" style="color:var(--pt)">—</strong></div></div></div>
       </div>
       <div class="row2">
         <div class="gbox">
-          <h3>Evolução mensal <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos × Tarifa do caderno<br>Executado = Qtd executada × Tarifa do caderno<br>Pago = Qtd paga × Tarifa do boletim<br>Projeção = (Σ realizado ÷ Σ previsto dos meses com lançamento) × previsto do mês futuro. Executado e Pago têm atingimento calculado separadamente.</div></button></h3>
-          <div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
+          <h3>Evolução mensal <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Previsto = Eventos previstos × Tarifa do caderno<br>Executado = Qtd executada × Tarifa do caderno<br>Valor Faturado = Qtd faturada × Tarifa do boletim<br>Projeção = (Σ realizado ÷ Σ previsto dos meses com lançamento) × previsto do mês futuro. Executado e Valor Faturado têm atingimento calculado separadamente.</div></button></h3>
+          <div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Valor Faturado</span></div>
           <div style="position:relative;height:200px"><canvas id="ch-mensal"></canvas></div>
         </div>
         <div class="gbox">
-          <h3>Divergência de faturamento mês a mês <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Divergência = Faturamento pago − Faturamento executado<br>Verde = pago acima do executado<br>Vermelho = pago abaixo do executado</div></button></h3>
+          <h3>Divergência de faturamento mês a mês <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Divergência = Valor faturado − Faturamento executado<br>Verde = faturado acima do executado<br>Vermelho = faturado abaixo do executado</div></button></h3>
           <div class="leg">
-            <span><i style="background:#BE2F3B"></i>Negativa (pago &lt; executado)</span>
-            <span><i style="background:#1D9E75"></i>Positiva (pago &gt; executado)</span>
+            <span><i style="background:#BE2F3B"></i>Negativa (faturado &lt; executado)</span>
+            <span><i style="background:#1D9E75"></i>Positiva (faturado &gt; executado)</span>
           </div>
           <div style="position:relative;height:160px"><canvas id="ch-div-mes"></canvas></div>
           <div id="div-resumo" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"></div>
         </div>
       </div>
-      <div class="sec">Eventos por regional <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Divergência % = (Exec. − Pago) / Exec. × 100<br>Normal ≤ 1% · Atenção &gt; 1%</div></button></div>
-      <div class="tbox"><table><thead><tr><th>Regional</th><th>Eventos previstos</th><th>Eventos executados</th><th>Eventos pagos</th><th>Diferença</th><th>Divergência %</th><th>Status</th></tr></thead><tbody id="tb-evt-reg"></tbody></table></div>
-      <div class="sec">Faturamento por regional <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Divergência = Pago − Executado<br>% Meta = Pago / Previsto × 100</div></button></div>
-      <div class="tbox"><table><thead><tr><th>Regional</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-fat-reg"></tbody></table></div>
-      <div class="sec">Acumulado YTD por regional <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Acumula de Janeiro até o mês selecionado<br>% Meta acum. = Pago acum. / Previsto acum. × 100</div></button></div>
-      <div class="tbox"><table><thead><tr><th>Regional</th><th>Previsto acum.</th><th>Executado acum.</th><th>Pago acum.</th><th>Diverg. acum.</th><th>Meses c/ diverg.</th><th>% meta acum.</th></tr></thead><tbody id="tb-ytd-reg"></tbody></table></div>
+      <div class="sec">Eventos por regional <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Divergência % = (Exec. − Faturado) / Exec. × 100<br>Normal ≤ 1% · Atenção &gt; 1%</div></button></div>
+      <div class="tbox"><table><thead><tr><th>Regional</th><th>Eventos previstos</th><th>Eventos executados</th><th>Eventos faturados</th><th>Diferença</th><th>Divergência %</th><th>Status</th></tr></thead><tbody id="tb-evt-reg"></tbody></table></div>
+      <div class="sec">Faturamento por regional <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Divergência = Valor Faturado − Executado<br>% Meta = Valor Faturado / Previsto × 100</div></button></div>
+      <div class="tbox"><table><thead><tr><th>Regional</th><th>Fat. previsto</th><th>Fat. executado</th><th>Valor faturado</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-fat-reg"></tbody></table></div>
+      <div class="sec">Acumulado YTD por regional <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Acumula de Janeiro até o mês selecionado<br>% Meta acum. = Faturado acum. / Previsto acum. × 100</div></button></div>
+      <div class="tbox"><table><thead><tr><th>Regional</th><th>Previsto acum.</th><th>Executado acum.</th><th>Faturado acum.</th><th>Diverg. acum.</th><th>Meses c/ diverg.</th><th>% meta acum.</th></tr></thead><tbody id="tb-ytd-reg"></tbody></table></div>
       <div class="sec-row">
         <div class="sec" style="margin:0">Relatório de divergência acumulada</div>
         <button class="btn btn-p btn-sm" onclick="exportarRelPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
@@ -411,10 +411,10 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <div id="relatorio-divergencia" style="background:var(--br);border-radius:var(--r);border:1px solid var(--bd);padding:1.25rem;margin-bottom:1.25rem;font-size:13px;line-height:1.7">
         <p style="color:var(--tx2);font-style:italic">Carregando relatório...</p>
       </div>
-      <div class="sec">Tarifa prevista vs paga</div>
-      <div class="tbox"><table><thead><tr><th>Serviço</th><th>Regional</th><th>Tarifa prevista</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-tar"></tbody></table></div>
+      <div class="sec">Tarifa prevista vs faturada</div>
+      <div class="tbox"><table><thead><tr><th>Serviço</th><th>Regional</th><th>Tarifa prevista</th><th>Tarifa faturada</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-tar"></tbody></table></div>
       <div class="sec">Proporção por serviço</div>
-      <div class="tbox"><table><thead><tr><th>Serviço</th><th>% previsto</th><th>% executado</th><th>% pago</th><th>Desvio</th><th>Status</th></tr></thead><tbody id="tb-prop"></tbody></table></div>
+      <div class="tbox"><table><thead><tr><th>Serviço</th><th>% previsto</th><th>% executado</th><th>% faturado</th><th>Desvio</th><th>Status</th></tr></thead><tbody id="tb-prop"></tbody></table></div>
     </div>
 
     <!-- ═══ ANÁLISE POR REGIONAL ═══ -->
@@ -440,15 +440,15 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
       <div class="cards" id="r-cards"></div>
       <div class="cards" id="r-var-cards" style="margin-top:-8px"></div>
       <div class="row2">
-        <div class="gbox"><h3 id="r-ch-tit">Evolução mensal</h3><div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div><div style="position:relative;height:190px"><canvas id="ch-reg-m"></canvas></div></div>
-        <div class="gbox"><h3>Distribuição por serviço — pago</h3><div class="leg" id="leg-reg-pz"></div><div style="position:relative;height:190px"><canvas id="ch-reg-pz"></canvas></div></div>
+        <div class="gbox"><h3 id="r-ch-tit">Evolução mensal</h3><div class="leg"><span><i style="background:var(--vm)"></i>Previsto</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Valor Faturado</span></div><div style="position:relative;height:190px"><canvas id="ch-reg-m"></canvas></div></div>
+        <div class="gbox"><h3>Distribuição por serviço — valor faturado</h3><div class="leg" id="leg-reg-pz"></div><div style="position:relative;height:190px"><canvas id="ch-reg-pz"></canvas></div></div>
       </div>
       <div class="sec">Eventos por serviço</div>
       <div class="tbox"><table><thead><tr><th>Serviço</th><th>Prev.(evt)</th><th>Exec.(evt)</th><th>Pago(evt)</th><th>Diferença</th><th>Divergência %</th><th>Status</th></tr></thead><tbody id="tb-reg-evt"></tbody></table></div>
       <div class="sec">Faturamento por serviço</div>
-      <div class="tbox"><table><thead><tr><th>Serviço</th><th>Fat. previsto</th><th>Fat. executado</th><th>Fat. pago</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-reg-fat"></tbody></table></div>
-      <div class="sec">Acumulado YTD por regional <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Acumula de Janeiro até o mês selecionado<br>% Meta acum. = Pago acum. / Previsto acum. × 100</div></button></div>
-      <div class="tbox"><table><thead><tr><th>Regional</th><th>Previsto acum.</th><th>Executado acum.</th><th>Pago acum.</th><th>Diverg. acum.</th><th>Meses c/ diverg.</th><th>% meta acum.</th></tr></thead><tbody id="tb-reg-ytd"></tbody></table></div>
+      <div class="tbox"><table><thead><tr><th>Serviço</th><th>Fat. previsto</th><th>Fat. executado</th><th>Valor faturado</th><th>Divergência</th><th>% meta</th></tr></thead><tbody id="tb-reg-fat"></tbody></table></div>
+      <div class="sec">Acumulado YTD por regional <button class="btn-fx">fx<div class="fx-tooltip"><strong>Fórmula</strong>Acumula de Janeiro até o mês selecionado<br>% Meta acum. = Faturado acum. / Previsto acum. × 100</div></button></div>
+      <div class="tbox"><table><thead><tr><th>Regional</th><th>Previsto acum.</th><th>Executado acum.</th><th>Faturado acum.</th><th>Diverg. acum.</th><th>Meses c/ diverg.</th><th>% meta acum.</th></tr></thead><tbody id="tb-reg-ytd"></tbody></table></div>
       <div class="sec-row">
         <div class="sec" style="margin:0">Relatório de divergência acumulada</div>
         <button class="btn btn-p btn-sm" onclick="exportarRelRegPDF()"><i class="ti ti-file-type-pdf"></i> Exportar PDF</button>
@@ -457,11 +457,11 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <p style="color:var(--tx2);font-style:italic">Carregando relatório...</p>
       </div>
       <div class="sec">Separação da divergência — quantidade vs tarifa</div>
-      <div class="tbox"><table><thead><tr><th>Serviço</th><th>Exec.(evt)</th><th>Pago(evt)</th><th>Diverg.qtd</th><th>Impacto qtd (R$)</th><th>Tarifa prev.</th><th>Tarifa paga</th><th>Diverg.tarifa</th><th>Impacto tarifa (R$)</th><th>Total não pago</th></tr></thead><tbody id="tb-reg-diverg-sep"></tbody></table></div>
-      <div class="sec">Tarifa prevista vs paga</div>
-      <div class="tbox"><table><thead><tr><th>Serviço</th><th>Tarifa prevista</th><th>Tarifa paga</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-reg-tar"></tbody></table></div>
+      <div class="tbox"><table><thead><tr><th>Serviço</th><th>Exec.(evt)</th><th>Pago(evt)</th><th>Diverg.qtd</th><th>Impacto qtd (R$)</th><th>Tarifa prev.</th><th>Tarifa faturada</th><th>Diverg.tarifa</th><th>Impacto tarifa (R$)</th><th>Total não faturado</th></tr></thead><tbody id="tb-reg-diverg-sep"></tbody></table></div>
+      <div class="sec">Tarifa prevista vs faturada</div>
+      <div class="tbox"><table><thead><tr><th>Serviço</th><th>Tarifa prevista</th><th>Tarifa faturada</th><th>Diferença</th><th>Status</th></tr></thead><tbody id="tb-reg-tar"></tbody></table></div>
       <div class="sec">Proporção por serviço</div>
-      <div class="tbox"><table><thead><tr><th>Serviço</th><th>% previsto</th><th>% exec.</th><th>% pago</th><th>Desvio</th><th>Status</th></tr></thead><tbody id="tb-reg-prop"></tbody></table></div>
+      <div class="tbox"><table><thead><tr><th>Serviço</th><th>% previsto</th><th>% exec.</th><th>% faturado</th><th>Desvio</th><th>Status</th></tr></thead><tbody id="tb-reg-prop"></tbody></table></div>
     </div>
 
     <!-- ═══ ANÁLISE POR SERVIÇO ═══ -->
@@ -484,14 +484,14 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <label>Mês</label><select id="s-mes" onchange="carregarServico()"></select>
         <label>Ano</label><select id="s-ano" onchange="carregarServico()"></select>
       </div>
-      <div class="alerta al-info"><span>ℹ</span><span>Compare <strong>% Caderno</strong> vs <strong>% Pago</strong> para detectar substituição de serviços de tarifa alta por baixa.</span></div>
+      <div class="alerta al-info"><span>ℹ</span><span>Compare <strong>% Caderno</strong> vs <strong>% Faturado</strong> para detectar substituição de serviços de tarifa alta por baixa.</span></div>
       <div class="gbox" style="margin-bottom:1.25rem">
-        <h3>Distribuição proporcional — caderno vs executado vs pago</h3>
-        <div class="leg"><span><i style="background:var(--vm)"></i>Caderno</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Pago</span></div>
+        <h3>Distribuição proporcional — caderno vs executado vs faturado</h3>
+        <div class="leg"><span><i style="background:var(--vm)"></i>Caderno</span><span><i style="background:var(--vd)"></i>Executado</span><span><i style="background:var(--az)"></i>Valor Faturado</span></div>
         <div id="dist-bars" style="margin-top:10px"></div>
       </div>
       <div class="sec">Detalhe por serviço</div>
-      <div class="tbox"><table><thead><tr><th>Serviço</th><th>Tarifa</th><th>Prev.(evt)</th><th>%cad</th><th>Exec.(evt)</th><th>%exec</th><th>Pago(evt)</th><th>%pago</th><th>Valor pago</th><th>Alerta</th></tr></thead><tbody id="tb-svc"></tbody></table></div>
+      <div class="tbox"><table><thead><tr><th>Serviço</th><th>Tarifa</th><th>Prev.(evt)</th><th>%cad</th><th>Exec.(evt)</th><th>%exec</th><th>Faturado (evt)</th><th>% faturado</th><th>Valor faturado</th><th>Alerta</th></tr></thead><tbody id="tb-svc"></tbody></table></div>
     </div>
 
     <!-- ═══ COMPARATIVO DE CADERNOS ═══ -->
@@ -573,8 +573,8 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         </div>
       </div>
       <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem;margin-top:1.25rem">
-        <div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.25rem">Variação Ticket Executado × Pago (EQTL), por função e regional</div>
-        <div style="font-size:11px;color:var(--tx2);margin-bottom:.75rem">Variação = (Pago − Executado) ÷ Executado × 100. Negativo (vermelho) = EQTL pagou menos que o executado.</div>
+        <div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.25rem">Variação Ticket Executado × Valor Faturado, por função e regional</div>
+        <div style="font-size:11px;color:var(--tx2);margin-bottom:.75rem">Variação = (Valor Faturado − Executado) ÷ Executado × 100. Negativo (vermelho) = valor faturado menor que o executado.</div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:12px">
             <thead id="eqtv-thead"></thead>
@@ -593,7 +593,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
         <select id="gl-proc" onchange="carregarGlobal()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--br)"><option value="">Todos</option><option value="leitura">Leitura</option><option value="cobranca">Cobrança e Negociação</option><option value="atendimento">Atendimento</option></select>
         <div id="gl-modo" style="display:flex;gap:6px"><button type="button" class="chip on" data-m="mensal" onclick="glModo('mensal')">Mensal</button><button type="button" class="chip" data-m="ytd" onclick="glModo('ytd')">Acumulado (YTD)</button></div>
       </div>
-      <div style="font-size:11px;color:var(--tx2);margin-bottom:1rem">O filtro de processo vale para MA e PI. O RJ aparece sempre completo (Comercial e Técnica), calculado com a mesma regra do painel RJ; sem boletins lançados, o RJ não tem Pago.</div>
+      <div style="font-size:11px;color:var(--tx2);margin-bottom:1rem">O filtro de processo vale para MA e PI. O RJ aparece sempre completo (Comercial e Técnica), calculado com a mesma regra do painel RJ; sem boletins lançados, o RJ não tem Valor Faturado.</div>
       <div id="gl-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:1.25rem"></div>
       <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem;margin-bottom:1.25rem">
         <div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem">Faturamento por estado e processo</div>
@@ -652,9 +652,9 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
     </div>
     <label style="font-size:11px;color:var(--tx2);font-weight:700;text-transform:uppercase;letter-spacing:.04em">Dados a extrair</label>
     <div style="display:flex;flex-direction:column;gap:0;margin:8px 0 14px;border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden">
-      <label style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13px"><input type="checkbox" id="xl-d-qtd" checked onchange="atualizarResumoExcel()" style="width:15px;height:15px;accent-color:#BE2F3B"> <span><strong>Quantidade de serviços</strong> <span style="color:var(--tx2)">— Previsto · Executado · Pago</span></span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13px"><input type="checkbox" id="xl-d-qtd" checked onchange="atualizarResumoExcel()" style="width:15px;height:15px;accent-color:#BE2F3B"> <span><strong>Quantidade de serviços</strong> <span style="color:var(--tx2)">— Previsto · Executado · Faturado</span></span></label>
       <label style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13px;border-top:1px solid var(--bd)"><input type="checkbox" id="xl-d-tar" onchange="atualizarResumoExcel()" style="width:15px;height:15px;accent-color:#BE2F3B"> <span><strong>Tarifa unitária (R$)</strong> <span style="color:var(--tx2)">— caderno · boletim</span></span></label>
-      <label style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13px;border-top:1px solid var(--bd)"><input type="checkbox" id="xl-d-fat" onchange="atualizarResumoExcel()" style="width:15px;height:15px;accent-color:#BE2F3B"> <span><strong>Faturamento (R$)</strong> <span style="color:var(--tx2)">— Previsto · Executado · Pago</span></span></label>
+      <label style="display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13px;border-top:1px solid var(--bd)"><input type="checkbox" id="xl-d-fat" onchange="atualizarResumoExcel()" style="width:15px;height:15px;accent-color:#BE2F3B"> <span><strong>Faturamento (R$)</strong> <span style="color:var(--tx2)">— Previsto · Executado · Faturado</span></span></label>
     </div>
     <div id="xl-resumo" style="font-size:12px;color:var(--tx2);margin-bottom:1rem;padding:12px 14px;background:rgba(190,47,59,.06);border:1px solid rgba(190,47,59,.25);border-radius:var(--r2);line-height:1.5"></div>
     <div class="btn-row">
@@ -1007,7 +1007,7 @@ async function carregarEquipesTicket(){
   chEqt=new Chart(document.getElementById('ch-eqt'),{data:{labels:meses.map(m=>MN[m].slice(0,3)),datasets:[
     {type:'line',label:'Meta/eq (Previsto)',data:mtArr,borderColor:'#888',borderDash:[5,5],borderWidth:2,pointRadius:0,tension:.2,spanGaps:true,order:0},
     {type:'bar',label:'Ticket/eq (Realizado)',data:tkArr,backgroundColor:cor,borderRadius:3,order:1},
-    {type:'bar',label:'Ticket/eq (Pago EQTL)',data:pgArr,backgroundColor:'#2E9E6B',borderRadius:3,order:1}
+    {type:'bar',label:'Ticket/eq (Valor Faturado)',data:pgArr,backgroundColor:'#2E9E6B',borderRadius:3,order:1}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},usePointStyle:true,boxWidth:8}}},scales:{y:{beginAtZero:true,ticks:{font:{size:10},callback:v=>fR(v).replace('R$\u00a0','')}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
 
   // Tabela: equipes por função × regional (processo selecionado)
@@ -1177,8 +1177,8 @@ function renderGraficoMensal(est,ano,reg=''){
     {label:'Previsto',data:prev,type:'line',borderColor:'#BE2F3B',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2,borderDash:[5,3],order:1},
     {label:'Executado real',data:execReal,type:'line',borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:3,order:2},
     {label:'Executado proj.',data:execProj,type:'line',borderColor:'#1D9E7588',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:3,borderDash:[4,3],order:3},
-    {label:'Pago real',data:pagoReal,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0,order:4},
-    {label:'Pago proj.',data:pagoProj,backgroundColor:'#378ADD44',borderRadius:3,borderWidth:1,borderColor:'#378ADD',order:5}
+    {label:'Faturado real',data:pagoReal,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0,order:4},
+    {label:'Faturado proj.',data:pagoProj,backgroundColor:'#378ADD44',borderRadius:3,borderWidth:1,borderColor:'#378ADD',order:5}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+(v/1e6).toFixed(1)+'M',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}});
 }
 
@@ -1273,7 +1273,7 @@ function carregarServico(){
     const pP=tP>0?(s.prev/tP*100):0,pE=tE>0?(ex/tE*100):0,pG=tG>0?(pg/tG*100):0;const dv=Math.abs(pP-pG);
     const al=dv>2?'<span class="pill p-danger">Desvio</span>':dv>.5?'<span class="pill p-warn">Atenção</span>':'<span class="pill p-ok">Ok</span>';
     tb.innerHTML+=`<tr><td style="font-size:11px">${s.desc}</td><td>${fR(s.tarifa)}</td><td>${fN(s.prev)}</td><td>${pP.toFixed(1)}%</td><td>${fN(ex)}</td><td>${pE.toFixed(1)}%</td><td>${fN(pg)}</td><td>${pG.toFixed(1)}%</td><td>${fR(vP)}</td><td>${al}</td></tr>`;
-    db.innerHTML+=`<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;margin-bottom:5px">${s.desc} <span style="font-size:10px;color:var(--tx2);font-weight:400">· R$ ${s.tarifa.toFixed(2)}/evento</span>${dv>2?`<span style="font-size:10px;color:var(--vm);margin-left:6px">⚠ Desvio ${dv.toFixed(1)}pp</span>`:''}</div>${[['Caderno','#BE2F3B',pP],['Executado','#1D9E75',pE],['Pago','#378ADD',pG]].map(([l,c,p])=>`<div style="display:grid;grid-template-columns:70px 1fr 45px;gap:6px;align-items:center;margin-bottom:3px"><span style="font-size:10px;color:var(--tx2)">${l}</span><div style="background:#f0f0ee;border-radius:3px;height:8px;overflow:hidden"><div style="width:${p*2}%;height:100%;background:${c};border-radius:3px"></div></div><span style="font-size:10px;color:var(--tx2);text-align:right">${p.toFixed(1)}%</span></div>`).join('')}</div>`;
+    db.innerHTML+=`<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;margin-bottom:5px">${s.desc} <span style="font-size:10px;color:var(--tx2);font-weight:400">· R$ ${s.tarifa.toFixed(2)}/evento</span>${dv>2?`<span style="font-size:10px;color:var(--vm);margin-left:6px">⚠ Desvio ${dv.toFixed(1)}pp</span>`:''}</div>${[['Caderno','#BE2F3B',pP],['Executado','#1D9E75',pE],['Valor Faturado','#378ADD',pG]].map(([l,c,p])=>`<div style="display:grid;grid-template-columns:70px 1fr 45px;gap:6px;align-items:center;margin-bottom:3px"><span style="font-size:10px;color:var(--tx2)">${l}</span><div style="background:#f0f0ee;border-radius:3px;height:8px;overflow:hidden"><div style="width:${p*2}%;height:100%;background:${c};border-radius:3px"></div></div><span style="font-size:10px;color:var(--tx2);text-align:right">${p.toFixed(1)}%</span></div>`).join('')}</div>`;
   });
 }
 
@@ -1289,16 +1289,16 @@ function carregarRegional(){
   const mesAnt=mes===1?12:mes-1,anoAnt=mes===1?ano-1:ano;
   const prevAnt=calcPrevisto(est,mesAnt,anoAnt,reg),execAnt=calcExec(est,mesAnt,anoAnt,reg),pagoAnt=calcPago(est,mesAnt,anoAnt,reg);
   const varPrev=prevAnt>0?((prev-prevAnt)/prevAnt*100):0,varExec=execAnt.val>0?((exec.val-execAnt.val)/execAnt.val*100):0,varPago=pagoAnt.val>0?((pago.val-pagoAnt.val)/pagoAnt.val*100):0;
-  document.getElementById('r-cards').innerHTML=`<div class="card"><div class="cl">Previsto (caderno)</div><div class="cv">${fR(prev)}</div><div class="cs cm">Meta da regional</div></div><div class="card"><div class="cl">Executado (campo)</div><div class="cv">${fR(exec.val)}</div><div class="cs ${exec.val>=prev?'cp':'cw'}">${exec.val>=prev?'▲ Acima':'▼ Abaixo'} da meta</div></div><div class="card vd"><div class="cl">Pago (Equatorial)</div><div class="cv">${fR(pago.val)}</div><div class="cs ${dv>=0?'cp':'cn'}">${fR(Math.abs(dv))} ${dv>=0?'acima':'abaixo'} do exec. · ${pct.toFixed(1)}%</div></div>`;
+  document.getElementById('r-cards').innerHTML=`<div class="card"><div class="cl">Previsto (caderno)</div><div class="cv">${fR(prev)}</div><div class="cs cm">Meta da regional</div></div><div class="card"><div class="cl">Executado (campo)</div><div class="cv">${fR(exec.val)}</div><div class="cs ${exec.val>=prev?'cp':'cw'}">${exec.val>=prev?'▲ Acima':'▼ Abaixo'} da meta</div></div><div class="card vd"><div class="cl">Valor Faturado</div><div class="cv">${fR(pago.val)}</div><div class="cs ${dv>=0?'cp':'cn'}">${fR(Math.abs(dv))} ${dv>=0?'acima':'abaixo'} do exec. · ${pct.toFixed(1)}%</div></div>`;
   const vcEl=document.getElementById('r-var-cards');
-  if(vcEl) vcEl.innerHTML=`<div class="card" style="border-top-color:var(--am)"><div class="cl">Variação previsto vs mês ant.</div><div class="cv" style="font-size:16px;color:${varPrev>=0?'#1D9E75':'#BE2F3B'}">${varPrev>=0?'▲':'▼'} ${Math.abs(varPrev).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(prevAnt)}</div></div><div class="card" style="border-top-color:var(--am)"><div class="cl">Variação executado vs mês ant.</div><div class="cv" style="font-size:16px;color:${varExec>=0?'#1D9E75':'#BE2F3B'}">${varExec>=0?'▲':'▼'} ${Math.abs(varExec).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(execAnt.val)}</div></div><div class="card" style="border-top-color:var(--am)"><div class="cl">Variação pago vs mês ant.</div><div class="cv" style="font-size:16px;color:${varPago>=0?'#1D9E75':'#BE2F3B'}">${varPago>=0?'▲':'▼'} ${Math.abs(varPago).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(pagoAnt.val)}</div></div>`;
+  if(vcEl) vcEl.innerHTML=`<div class="card" style="border-top-color:var(--am)"><div class="cl">Variação previsto vs mês ant.</div><div class="cv" style="font-size:16px;color:${varPrev>=0?'#1D9E75':'#BE2F3B'}">${varPrev>=0?'▲':'▼'} ${Math.abs(varPrev).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(prevAnt)}</div></div><div class="card" style="border-top-color:var(--am)"><div class="cl">Variação executado vs mês ant.</div><div class="cv" style="font-size:16px;color:${varExec>=0?'#1D9E75':'#BE2F3B'}">${varExec>=0?'▲':'▼'} ${Math.abs(varExec).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(execAnt.val)}</div></div><div class="card" style="border-top-color:var(--am)"><div class="cl">Variação valor faturado vs mês ant.</div><div class="cv" style="font-size:16px;color:${varPago>=0?'#1D9E75':'#BE2F3B'}">${varPago>=0?'▲':'▼'} ${Math.abs(varPago).toFixed(1)}%</div><div class="cs cm">${MN[mesAnt]}/${anoAnt}: ${fR(pagoAnt.val)}</div></div>`;
   const pDiv=exec.evt>0?((exec.evt-pago.evt)/exec.evt*100):0;
   const rAl=document.getElementById('r-alerta');
   if(Math.abs(pDiv)>2){document.getElementById('r-alerta-txt').innerHTML=`Regional ${reg}: Equatorial pagou <strong>${(100-pDiv).toFixed(1)}%</strong> da produção. Diferença de <strong>${fR(Math.abs(dv))}</strong>.`;rAl.style.display='flex';}
   else rAl.style.display='none';
   const sP=[],sE=[],sG=[];for(let m=1;m<=12;m++){sP.push(calcPrevisto(est,m,ano,reg));sE.push(calcExec(est,m,ano,reg).val);sG.push(calcPago(est,m,ano,reg).val);}
   if(chRegM) chRegM.destroy();
-  chRegM=new Chart(document.getElementById('ch-reg-m'),{type:'bar',data:{labels:MN.slice(1),datasets:[{label:'Previsto',data:sP,type:'line',borderColor:'#BE2F3B',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2,borderDash:[5,3]},{label:'Executado',data:sE,type:'line',borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2},{label:'Pago',data:sG,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+(v/1e3).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}});
+  chRegM=new Chart(document.getElementById('ch-reg-m'),{type:'bar',data:{labels:MN.slice(1),datasets:[{label:'Previsto',data:sP,type:'line',borderColor:'#BE2F3B',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2,borderDash:[5,3]},{label:'Executado',data:sE,type:'line',borderColor:'#1D9E75',backgroundColor:'transparent',borderWidth:2,tension:.3,pointRadius:2},{label:'Valor Faturado',data:sG,backgroundColor:'#378ADD',borderRadius:3,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+(v/1e3).toFixed(0)+'k',font:{size:10}},grid:{color:'rgba(0,0,0,.05)'}},x:{ticks:{font:{size:10}}}}}});
   const pm={};getItens(est,mes,ano,reg).forEach(i=>{if(!pm[i.cod_servico]) pm[i.cod_servico]={desc:i.descricao_servico,val:0};pm[i.cod_servico].val+=parseFloat(i.valor_pago)||0;});
   const sv=Object.entries(pm).sort((a,b)=>b[1].val-a[1].val);
   document.getElementById('leg-reg-pz').innerHTML=sv.map((s,i)=>`<span><i style="background:${CS[i%CS.length]};width:9px;height:9px;border-radius:2px;display:inline-block"></i>${s[1].desc.substring(0,16)}</span>`).join('');
@@ -1379,9 +1379,9 @@ function carregarResumida(){
     bodyFat.innerHTML=
       `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vm)">Faturamento Previsto (Caderno)</td>`+valsPrev.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPrev)}</td></tr>`+
       `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--vd)">Faturamento Executado (Campo)</td>`+valsExec.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totExec)}</td></tr>`+
-      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--az)">Faturamento Pago (Equatorial)</td>`+valsPago.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPago)}</td></tr>`+
+      `<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-weight:700;color:var(--az)">Valor Faturado</td>`+valsPago.map(v=>`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fR(v)}</td>`).join('')+`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;font-weight:700">${fR(totPago)}</td></tr>`+
       `<tr style="border-top:2px solid var(--vd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#3B6D11">% Exec. vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsExec[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totExec,totPrev))}</td></tr>`+
-      `<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#185FA5">% Pago vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totPago,totPrev))}</td></tr>`;
+      `<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 12px;font-size:11px;font-weight:700;color:#185FA5">% Faturado vs Previsto</td>`+valsPrev.map((p,i)=>`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(valsPago[i],p))}</td>`).join('')+`<td style="padding:8px 12px;text-align:right;font-size:12px">${fPct(mkPct(totPago,totPrev))}</td></tr>`;
   }
   // Tabelas 2, 3 e 4
   // Lista de serviços: caderno vigente em algum mês com dados; se nenhum, qualquer mês do ano
@@ -1393,7 +1393,7 @@ function carregarResumida(){
   const headEvt=document.getElementById('tr-rs-evt-head'),bodyEvt=document.getElementById('tb-rs-evt-body');
   if(headEvt&&bodyEvt){
     let headHtml='<th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2)">Serviço</th><th style="font-size:11px;padding:9px 12px;background:var(--bg);color:var(--tx2);text-align:right">Prev. Caderno</th>';
-    mesesComDados.forEach(m=>{const lbl=`${String(m).padStart(2,'0')}/${String(ano).slice(2)}`;headHtml+=`<th style="font-size:11px;padding:9px 12px;background:#eaf3de;color:#3B6D11;text-align:right">Exec.${lbl}</th><th style="font-size:11px;padding:9px 12px;background:#e6f1fb;color:#185FA5;text-align:right">Pago ${lbl}</th>`;});
+    mesesComDados.forEach(m=>{const lbl=`${String(m).padStart(2,'0')}/${String(ano).slice(2)}`;headHtml+=`<th style="font-size:11px;padding:9px 12px;background:#eaf3de;color:#3B6D11;text-align:right">Exec.${lbl}</th><th style="font-size:11px;padding:9px 12px;background:#e6f1fb;color:#185FA5;text-align:right">Faturado ${lbl}</th>`;});
     headEvt.innerHTML=headHtml;
     let bodyHtml='',totPrev=0,totExecArr=mesesComDados.map(()=>0),totPagoArr=mesesComDados.map(()=>0);
     svcs.forEach(key=>{const [cod,desc]=key.split('||');const prevEvt=tars.filter(t=>t.cod_servico===cod).reduce((s,t)=>s+(parseFloat(t.eventos_previstos)||0),0);totPrev+=prevEvt;let row=`<tr><td style="padding:9px 12px;border-top:1px solid var(--bd);font-size:11px">${desc}</td><td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right">${fN(prevEvt)}</td>`;mesesComDados.forEach((m,i)=>{const execEvt=getProd(est,m,ano,reg).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+r.qde_executada,0),pagoEvt=getItens(est,m,ano,reg).filter(r=>r.cod_servico===cod).reduce((s,r)=>s+(r.qde_paga||0),0);totExecArr[i]+=execEvt;totPagoArr[i]+=pagoEvt;row+=`<td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#eaf3de33">${fN(execEvt)}</td><td style="padding:9px 12px;border-top:1px solid var(--bd);text-align:right;background:#e6f1fb33">${fN(pagoEvt)}</td>`;});bodyHtml+=row+'</tr>';});
@@ -1531,17 +1531,17 @@ async function carregarGlobal(){
   const card=(est,nome)=>{const t=T[est],tp=t.pago!==null,at=tp?pct(t.pago,t.prev):pct(t.exec,t.prev);
     return `<div style="background:var(--br);border:1px solid var(--bd);border-top:3px solid ${GL_COR[est]};border-radius:var(--r);padding:1rem">
       <div style="font-size:12px;font-weight:700;color:var(--pt);margin-bottom:6px">${nome}</div>
-      <div style="font-size:11px;color:var(--tx2)">${tp?'Pago':'Executado'}</div><div style="font-size:20px;font-weight:700;color:var(--pt)">${fR(tp?t.pago:t.exec)}</div>
-      <div style="font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.6">Previsto ${fR(t.prev)} · ${tp?'Executado '+fR(t.exec):'Pago —'}<br>${fP(at,tp?'':' exec.')} · <span style="color:#BE2F3B">glosa ${fR(GLS[est]||0)}</span></div></div>`;};
+      <div style="font-size:11px;color:var(--tx2)">${tp?'Valor Faturado':'Executado'}</div><div style="font-size:20px;font-weight:700;color:var(--pt)">${fR(tp?t.pago:t.exec)}</div>
+      <div style="font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.6">Previsto ${fR(t.prev)} · ${tp?'Executado '+fR(t.exec):'Valor Faturado —'}<br>${fP(at,tp?'':' exec.')} · <span style="color:#BE2F3B">glosa ${fR(GLS[est]||0)}</span></div></div>`;};
   const gPrev=T.MA.prev+T.PI.prev+T.RJ.prev,gExec=T.MA.exec+T.PI.exec+T.RJ.exec,gPago=T.MA.pago+T.PI.pago+(T.RJ.pago||0);
   document.getElementById('gl-cards').innerHTML=card('MA','Maranhão')+card('PI','Piauí')+card('RJ','Rio de Janeiro')+
     `<div style="background:var(--bg);border:1px solid var(--bd);border-top:3px solid var(--tx2);border-radius:var(--r);padding:1rem">
       <div style="font-size:12px;font-weight:700;color:var(--pt);margin-bottom:6px">Total geral</div>
       <div style="font-size:11px;color:var(--tx2)">Executado</div><div style="font-size:20px;font-weight:700;color:var(--pt)">${fR(gExec)}</div>
-      <div style="font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.6">Previsto ${fR(gPrev)} · ${fP(pct(gExec,gPrev),' exec.')}<br>Pago ${rjTemPago?'MA+PI+RJ':'MA+PI'} ${fR(gPago)} · <span style="color:#BE2F3B">glosa ${fR(GLS.MA+GLS.PI+GLS.RJ)}</span></div></div>`;
+      <div style="font-size:11px;color:var(--tx2);margin-top:4px;line-height:1.6">Previsto ${fR(gPrev)} · ${fP(pct(gExec,gPrev),' exec.')}<br>Valor Faturado ${rjTemPago?'MA+PI+RJ':'MA+PI'} ${fR(gPago)} · <span style="color:#BE2F3B">glosa ${fR(GLS.MA+GLS.PI+GLS.RJ)}</span></div></div>`;
   // Matriz
   const th=(t,r)=>`<th style="padding:8px 12px;font-size:11px;color:var(--tx2);text-align:${r?'right':'left'}">${t}</th>`;
-  document.getElementById('gl-mat-head').innerHTML=`<tr style="background:var(--bg)">${th('Estado')}${th('Processo')}${th('Previsto',1)}${th('Executado',1)}${th('Pago',1)}${th('% atingido',1)}</tr>`;
+  document.getElementById('gl-mat-head').innerHTML=`<tr style="background:var(--bg)">${th('Estado')}${th('Processo')}${th('Previsto',1)}${th('Executado',1)}${th('Valor Faturado',1)}${th('% atingido',1)}</tr>`;
   const td=(t,r,x='')=>`<td style="padding:8px 12px;${r?'text-align:right;':''}${x}">${t}</td>`;
   let mb='';
   ['MA','PI','RJ'].forEach(est=>{const ls=L.filter(l=>l.est===est);ls.forEach((l,i)=>{const sp=l.pago===null;
@@ -1557,7 +1557,7 @@ async function carregarGlobal(){
   // YTD
   document.getElementById('gl-ytd-tit').textContent=`Acumulado do ano (Jan → ${MN[mes].slice(0,3)}/${ano})`;
   const y=est=>{if(est==='RJ') return rj(mesesYTD);const a={prev:0,exec:0,pago:0};procs.forEach(p=>{const r=mapi(est,p,mesesYTD);a.prev+=r.prev;a.exec+=r.exec;a.pago+=r.pago;});return a;};
-  let yb=`<tr style="background:var(--bg)">${th('Estado')}${th('Previsto',1)}${th('Executado',1)}${th('Pago',1)}${th('% atingido',1)}</tr>`;
+  let yb=`<tr style="background:var(--bg)">${th('Estado')}${th('Previsto',1)}${th('Executado',1)}${th('Valor Faturado',1)}${th('% atingido',1)}</tr>`;
   ['MA','PI','RJ'].forEach(est=>{const r=y(est),sp=r.pago===null;yb+=`<tr style="border-top:1px solid var(--bd)">${td(est,0,'font-weight:700;border-left:3px solid '+GL_COR[est])}${td(fR(r.prev),1)}${td(fR(r.exec),1)}${td(sp?'—':fR(r.pago),1)}${td(fP(sp?pct(r.exec,r.prev):pct(r.pago,r.prev),sp?' exec.':''),1)}</tr>`;});
   document.getElementById('gl-ytd').innerHTML=yb;
   // Evolução mensal (executado por estado + previsto total)
@@ -1574,7 +1574,7 @@ async function carregarGlobal(){
   const it=(n,val)=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 9px;background:rgba(190,47,59,.06);border-radius:6px;font-size:12px;margin-bottom:5px"><span>${n}</span><span style="color:#BE2F3B;font-weight:700">${val}</span></div>`;
   document.getElementById('gl-alertas').innerHTML=`<div style="font-size:11px;color:var(--tx2);margin-bottom:6px">Maior glosa (diferença a menor do previsto) · ${per}</div>`+
     (al.length?al.slice(0,5).map(a=>it(a.n,fR(a.g))).join(''):'<div style="font-size:12px;color:var(--tx2)">Nenhuma glosa no período.</div>')+
-    `<div style="font-size:11px;color:var(--tx2);margin-top:8px">MA/PI: previsto − pago (meses com boletim lançado). RJ: previsto − executado.</div>`;
+    `<div style="font-size:11px;color:var(--tx2);margin-top:8px">MA/PI: previsto − valor faturado (meses com boletim lançado). RJ: previsto − executado.</div>`;
   // Ticket (mês selecionado)
   document.getElementById('gl-tk-tit').textContent=`Ticket por equipe — ${MN[mes]}/${ano} (executado ÷ equipes)`;
   let tb=`<tr style="background:var(--bg)">${th('Estado · Processo')}${th('Equipes',1)}${th('Executado',1)}${th('Ticket',1)}</tr>`;let nT=0;
@@ -1623,9 +1623,9 @@ function atualizarResumoExcel(){
   const procNome={leitura:'Leitura',cobranca:'Cobrança e Negociação',atendimento:'Atendimento'}[document.getElementById('xl-proc')?.value||'leitura'];
   if(n<1){el.innerHTML='<strong style="color:#BE2F3B">O mês/ano final está antes do inicial.</strong> Ajuste o período.';return;}
   const partes=[];
-  if(document.getElementById('xl-d-qtd')?.checked) partes.push('Quantidade (Prev/Exec/Pago)');
+  if(document.getElementById('xl-d-qtd')?.checked) partes.push('Quantidade (Prev/Exec/Faturado)');
   if(document.getElementById('xl-d-tar')?.checked) partes.push('Tarifa (caderno/boletim)');
-  if(document.getElementById('xl-d-fat')?.checked) partes.push('Faturamento (Prev/Exec/Pago)');
+  if(document.getElementById('xl-d-fat')?.checked) partes.push('Faturamento (Prev/Exec/Faturado)');
   const cols=partes.length?partes.join(' · '):'<strong style="color:#BE2F3B">selecione ao menos um tipo de dado</strong>';
   el.innerHTML=`Você vai extrair <strong>${MN[mi].slice(0,3)}/${yi} → ${MN[mf].slice(0,3)}/${yf}</strong> · <strong>${n} ${n===1?'mês':'meses'}</strong> · ${estNome} · ${reg} · <strong>${procNome}</strong>.<br>Colunas: ${cols} — por serviço e regional.`;
 }
@@ -1640,9 +1640,9 @@ function exportarExcel(){
   const wQtd=document.getElementById('xl-d-qtd').checked,wTar=document.getElementById('xl-d-tar').checked,wFat=document.getElementById('xl-d-fat').checked;
   if(!wQtd&&!wTar&&!wFat){alert('Selecione ao menos um tipo de dado para extrair.');return;}
   const header=['Mês/Ano','Estado','Regional','Serviço'];
-  if(wQtd) header.push('Qtd Previsto','Qtd Executado','Qtd Pago');
+  if(wQtd) header.push('Qtd Previsto','Qtd Executado','Qtd Faturada');
   if(wTar) header.push('Tarifa Caderno (R$)','Tarifa Boletim (R$)');
-  if(wFat) header.push('Fat. Previsto (R$)','Fat. Executado (R$)','Fat. Pago (R$)');
+  if(wFat) header.push('Fat. Previsto (R$)','Fat. Executado (R$)','Valor Faturado (R$)');
   const rows=[header];
   const estados = est==='TODOS' ? ESTADOS_CONSOL : [est];
   let ano=anoIni,mes=mesIni;

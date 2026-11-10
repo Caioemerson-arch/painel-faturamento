@@ -1837,6 +1837,33 @@ async function alterarMinhaSenha(){
   if(error){alert('Erro ao alterar senha: '+error.message);return;}
   toggleModalSenha();alert('✓ Senha alterada com sucesso!');
 }
+// ═══ COLUNA FIXA NAS TABELAS DAS VISÕES ═══
+// Fixa a 1ª coluna de todas as tabelas ao rolar para o lado. Se a 1ª coluna agrupa linhas (rowspan),
+// fixa também a 2ª, para o nome da linha não sumir. Só estilo: não altera dados nem cálculos.
+function fixarColunasTabela(tb){
+  const rows=[...tb.rows];if(!rows.length) return;
+  const ocup=[];const cells=[];let agrupa=false;
+  rows.forEach((tr,ri)=>{let c=0;ocup[ri]=ocup[ri]||[];
+    [...tr.cells].forEach(td=>{while(ocup[ri][c]) c++;
+      const cs=td.colSpan||1,rs=td.rowSpan||1;
+      if(c===0&&rs>1) agrupa=true;
+      for(let r=0;r<rs;r++){ocup[ri+r]=ocup[ri+r]||[];for(let k=0;k<cs;k++) ocup[ri+r][c+k]=1;}
+      cells.push({td,c,cs});c+=cs;});});
+  const nFix=agrupa?2:1;
+  const c0=cells.find(x=>x.c===0&&x.cs===1);const w0=c0?c0.td.getBoundingClientRect().width:0;
+  cells.forEach(({td,c,cs})=>{
+    if(c>=nFix){td.style.position='';return;}
+    const fundo=(()=>{let el=td;while(el&&el!==tb){const b=getComputedStyle(el).backgroundColor;if(b&&b!=='transparent'&&b!=='rgba(0, 0, 0, 0)') return b;el=el.parentElement;}return 'var(--br)';})();
+    td.style.position='sticky';td.style.left=(c===0?0:w0)+'px';
+    td.style.zIndex=td.tagName==='TH'?3:2;td.style.background=fundo;
+    td.style.boxShadow=(c+cs-1===nFix-1)?'6px 0 6px -4px rgba(0,0,0,.15)':'';
+  });
+}
+function fixarColunasTodas(){const raiz=document.getElementById('main');if(!raiz) return;raiz.querySelectorAll('table').forEach(t=>{try{fixarColunasTabela(t);}catch(e){}});}
+(function(){let tm=null;const agenda=()=>{clearTimeout(tm);tm=setTimeout(fixarColunasTodas,60);};
+  const iniciar=()=>{const raiz=document.getElementById('main');if(!raiz) return;new MutationObserver(agenda).observe(raiz,{childList:true,subtree:true});window.addEventListener('resize',agenda);agenda();};
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',iniciar);else iniciar();})();
+
 </script>
 </body>
 </html>

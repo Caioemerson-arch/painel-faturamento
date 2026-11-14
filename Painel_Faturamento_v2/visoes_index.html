@@ -557,6 +557,7 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <option value="cobranca">Cobrança e Negociação</option>
           <option value="atendimento">Atendimento</option>
         </select>
+        <span id="eqt-reg-wrap" style="display:none;align-items:center;gap:6px"><label style="font-size:11px;color:var(--tx2);font-weight:700">Regional</label><select id="eqt-reg" onchange="carregarEquipesTicket()" style="font-size:12px;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--br)"><option value="">Todas</option></select></span>
       </div>
       <div id="eqt-modo" style="display:flex;gap:6px;margin:-.25rem 0 1rem">
         <button type="button" class="chip on" data-m="ticket" onclick="eqtModo('ticket')">Ticket (R$)</button>
@@ -1501,7 +1502,8 @@ async function exportarRelRegPDF(){
 let EQT_MODO='ticket',chEqp=[];
 function eqtModo(m){EQT_MODO=m;document.querySelectorAll('#eqt-modo .chip').forEach(c=>c.classList.toggle('on',c.dataset.m===m));
   document.getElementById('eqt-v-ticket').style.display=m==='ticket'?'':'none';
-  document.getElementById('eqt-v-prod').style.display=m==='prod'?'':'none';carregarEquipesTicket();}
+  document.getElementById('eqt-v-prod').style.display=m==='prod'?'':'none';
+  const rw=document.getElementById('eqt-reg-wrap');if(rw) rw.style.display=m==='prod'?'inline-flex':'none';carregarEquipesTicket();}
 async function carregarProdutividade(est,ano,mes,proc,data){
   const av=document.getElementById('eqp-aviso'),ct=document.getElementById('eqp-conteudo');
   if(proc==='atendimento'){av.style.display='';ct.style.display='none';
@@ -1522,30 +1524,34 @@ async function carregarProdutividade(est,ano,mes,proc,data){
   const cel=(u,m,a,dd,r)=>fin({eq:eqD(dd,u,m,r),ev:evE(u,m,a,r),pv:evP(u,m,a,r)});
   const agg=cs=>fin({eq:cs.reduce((s,c)=>s+c.eq,0),ev:cs.reduce((s,c)=>s+c.ev,0),pv:cs.reduce((s,c)=>s+c.pv,0)});
   const regs=est==='MA'?(EQT_REGS.MA||[]):[];   // PI: produção consolidada em PIAUÍ → só nível estado
-  const uM=U.map(u=>({u,...cel(u,mes,ano,data,'')})),G=agg(uM);
+  const sR=document.getElementById('eqt-reg');let reg='';
+  if(sR){const cur=sR.value;sR.innerHTML='<option value="">Todas</option>'+regs.map(r=>`<option value="${r}">${r}</option>`).join('');
+    sR.disabled=!regs.length;sR.title=regs.length?'':'No Piauí a produção é consolidada em PIAUÍ: não é possível separar por regional.';
+    if(regs.includes(cur)){sR.value=cur;reg=cur;}else sR.value='';}
+  const uM=U.map(u=>({u,...cel(u,mes,ano,data,reg)})),G=agg(uM);
   const pm=mes===1?12:mes-1,pa=mes===1?ano-1:ano,dprev=mes===1?await getEquipesMAPI(est,ano-1):data;
-  const Gp=agg(U.map(u=>cel(u,pm,pa,dprev,'')));
+  const Gp=agg(U.map(u=>cel(u,pm,pa,dprev,reg)));
   const vari=(G.me!=null&&Gp.me)?(G.me/Gp.me-1)*100:null;
   const M={};U.forEach(u=>{M[u.n]={};regs.forEach(r=>M[u.n][r]=cel(u,mes,ano,data,r));});
   let top=null;
-  if(regs.length){U.forEach(u=>regs.forEach(r=>{const c=M[u.n][r];if(c.me!=null&&(!top||c.me>top.v)) top={n:`${r} · ${u.n}`,v:c.me};}));}
-  else uM.forEach(x=>{if(x.me!=null&&(!top||x.me>top.v)) top={n:x.u.n+' (estado)',v:x.me};});
+  if(regs.length&&!reg){U.forEach(u=>regs.forEach(r=>{const c=M[u.n][r];if(c.me!=null&&(!top||c.me>top.v)) top={n:`${r} · ${u.n}`,v:c.me};}));}
+  else uM.forEach(x=>{if(x.me!=null&&(!top||x.me>top.v)) top={n:x.u.n+(reg?'':' (estado)'),v:x.me};});
   // KPIs (base executado)
   const kp=(t,val,sub,cor,borda)=>`<div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px${borda?';border-top:3px solid '+borda:''}"><div style="font-size:11px;color:var(--tx2);font-weight:700">${t}</div><div style="font-size:${String(val).length>12?'16':'22'}px;font-weight:700;color:${cor||'var(--pt)'};margin-top:2px">${val}</div><div style="font-size:11px;color:var(--tx2);margin-top:2px">${sub}</div></div>`;
-  let k=kp('Média executada',fm(G.me),G.eq?'eventos executados por equipe no mês':'sem quadro de equipes no mês','','#BE2F3B')+
-        kp('Eventos executados',fm(G.ev),'total do mês (Serviços CNG)')+
+  let k=kp('Média executada'+(reg?' · '+reg:''),fm(G.me),!G.eq?'sem quadro de equipes no mês':(G.mt!=null&&G.me!=null?`meta ${fm(G.mt)} · ${fp((G.me/G.mt-1)*100)}`:'eventos executados por equipe no mês'),'','#BE2F3B')+
+        kp('Eventos executados',fm(G.ev),reg?`${reg} · ${MN[mes]}`:'total do mês (Serviços CNG)')+
         kp('Variação vs mês anterior',vari==null?'—':fp(vari),'média executada',vari==null?'':(vari>=0?'#1D9E75':'#BE2F3B'))+
-        kp('Maior média',top?top.n:'—',top?fm(top.v)+' eventos/eq':'sem dados');
+        kp(reg?'Maior média na regional':'Maior média',top?top.n:'—',top?fm(top.v)+' eventos/eq':'sem dados');
   k+=uM.map(x=>kp(x.u.n,fm(x.me),`${fm(x.eq)} equipes · ${fm(x.ev)} eventos executados`,'',x.u.cor)).join('');
   document.getElementById('eqp-kpis').innerHTML=k;
   // Evolução: um gráfico por função — colunas = média executada/eq; linha = meta (previstos ÷ equipes)
   const hoje=new Date().getFullYear()*100+new Date().getMonth()+1,mm=[];
-  for(let m=1;m<=12;m++){if(ano*100+m>hoje) break;if(U.some(u=>eqD(data,u,m,'')>0)&&U.some(u=>evE(u,m,ano,'')>0)) mm.push(m);} // só meses com produção lançada
+  for(let m=1;m<=12;m++){if(ano*100+m>hoje) break;if(U.some(u=>eqD(data,u,m,reg)>0)&&U.some(u=>evE(u,m,ano,reg)>0)) mm.push(m);} // só meses com produção lançada
   chEqp.forEach(c=>{try{c.destroy();}catch(e){}});chEqp=[];
   const box=document.getElementById('eqp-graficos');
-  box.innerHTML=U.map((u,i)=>`<div style="border:1px solid var(--bd);border-radius:var(--r);padding:10px 12px"><div style="font-size:12px;font-weight:700;color:${u.cor};margin-bottom:6px">${u.full}</div><div style="position:relative;height:220px"><canvas id="ch-eqp-${i}"></canvas></div></div>`).join('');
+  box.innerHTML=U.map((u,i)=>`<div style="border:1px solid var(--bd);border-radius:var(--r);padding:10px 12px"><div style="font-size:12px;font-weight:700;color:${u.cor};margin-bottom:6px">${u.full}${reg?' · '+reg:''}</div><div style="position:relative;height:220px"><canvas id="ch-eqp-${i}"></canvas></div></div>`).join('');
   U.forEach((u,i)=>{
-    const cs=mm.map(m=>cel(u,m,ano,data,''));
+    const cs=mm.map(m=>cel(u,m,ano,data,reg));
     const ex=cs.map(c=>(c.me==null||!c.ev)?null:Math.round(c.me)),mt=cs.map(c=>c.mt==null?null:Math.round(c.mt));
     chEqp.push(new Chart(document.getElementById('ch-eqp-'+i),{data:{labels:mm.map(m=>MN[m].slice(0,3)),datasets:[
       {type:'line',label:'Meta/eq',data:mt,borderColor:'#BE2F3B',borderDash:[6,4],borderWidth:2,pointRadius:0,tension:.2,spanGaps:true,order:0},
@@ -1561,8 +1567,8 @@ async function carregarProdutividade(est,ano,mes,proc,data){
     const mn=Math.min(...vals),mx=Math.max(...vals);
     const cor=x=>{if(x==null||!vals.length) return '';const t=mx>mn?(x-mn)/(mx-mn):.5;return `background:rgba(190,47,59,${(0.08+t*0.55).toFixed(2)});${t>0.6?'color:#fff;':''}`;};
     document.getElementById('eqp-hm-tit').textContent='Mapa de calor — função × regional';
-    document.getElementById('eqp-hm').innerHTML=`<thead><tr>${th('Função')}${regs.map(th).join('')}${th('Total')}</tr></thead><tbody>`+
-      U.map((u,i)=>`<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 10px;font-weight:700;border-left:3px solid ${u.cor}">${u.n}</td>${regs.map(r=>{const c=M[u.n][r];return `<td title="${tip(c)}" style="padding:8px 10px;text-align:right;${cor(c.me)}">${fm(c.me)}</td>`;}).join('')}<td title="${tip(uM[i])}" style="padding:8px 10px;text-align:right;font-weight:700">${fm(uM[i].me)}</td></tr>`).join('')+'</tbody>';
+    document.getElementById('eqp-hm').innerHTML=`<thead><tr>${th('Função')}${regs.map(r=>r===reg?`<th style="padding:8px 10px;font-size:11px;color:#BE2F3B;background:var(--bg);text-align:right;font-weight:700">${r}</th>`:th(r)).join('')}${th('Total')}</tr></thead><tbody>`+
+      U.map((u,i)=>`<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 10px;font-weight:700;border-left:3px solid ${u.cor}">${u.n}</td>${regs.map(r=>{const c=M[u.n][r];return `<td title="${tip(c)}" style="padding:8px 10px;text-align:right;${cor(c.me)}${r===reg?'box-shadow:inset 0 0 0 2px #BE2F3B;font-weight:700;':''}">${fm(c.me)}</td>`;}).join('')}<td title="${tip(uM[i])}" style="padding:8px 10px;text-align:right;font-weight:700">${fm(uM[i].me)}</td></tr>`).join('')+'</tbody>';
   }else{
     document.getElementById('eqp-hm-tit').textContent='Média por função — Piauí (estado)';
     document.getElementById('eqp-hm').innerHTML=`<thead><tr>${th('Função')}${th('PIAUÍ (estado)')}${th('Eventos executados')}${th('Equipes')}</tr></thead><tbody>`+
@@ -1575,7 +1581,7 @@ async function carregarProdutividade(est,ano,mes,proc,data){
     const escala=Math.max(...rk.flatMap(x=>[x.me||0,x.mt||0]))*1.06||1;
     rkEl.innerHTML=`<div style="display:flex;gap:12px;font-size:11px;color:var(--tx2);margin-bottom:10px;flex-wrap:wrap"><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1D9E75;margin-right:4px"></span>Acima da meta da regional</span><span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#BE2F3B;margin-right:4px"></span>Abaixo da meta da regional</span><span><span style="display:inline-block;height:11px;border-left:2px dashed var(--pt);margin-right:4px;vertical-align:middle"></span>Meta da regional</span></div>`+
       rk.map((x,i)=>{const temMeta=x.mt!=null,ok=temMeta&&x.me!=null&&x.me>=x.mt,c=!temMeta?'#888':(ok?'#1D9E75':'#BE2F3B'),pct=(temMeta&&x.me!=null)?(x.me/x.mt-1)*100:null;
-        return `<div title="${tip(x)}" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px"><span style="width:22px;color:var(--tx2)">${i+1}º</span><span style="width:80px">${x.r}</span>
+        return `<div title="${tip(x)}" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px${x.r===reg?';background:rgba(190,47,59,.07);border-left:3px solid #BE2F3B;padding:3px 0 3px 5px;border-radius:4px;font-weight:700':''}"><span style="width:22px;color:var(--tx2)">${i+1}º</span><span style="width:80px">${x.r}</span>
           <div style="flex:1;position:relative;background:var(--bg);border-radius:4px;height:16px"><div style="width:${((x.me||0)/escala*100).toFixed(1)}%;height:100%;background:${c};border-radius:4px"></div>${temMeta?`<div style="position:absolute;top:-4px;bottom:-4px;left:${(x.mt/escala*100).toFixed(1)}%;border-left:2px dashed var(--pt)"></div>`:''}</div>
           <span style="min-width:150px;text-align:right">${fm(x.me)} <span style="color:var(--tx2);font-size:11px">/ meta ${fm(x.mt)}</span> <span style="color:${c};font-size:11px;font-weight:700">${fp(pct)}</span></span></div>`;}).join('')+
       '<div style="font-size:11px;color:var(--tx2);margin-top:6px">Meta da regional = eventos previstos da regional (todas as funções) ÷ equipes da regional</div>';
@@ -1583,7 +1589,7 @@ async function carregarProdutividade(est,ano,mes,proc,data){
   // Nota do cálculo
   document.getElementById('eqp-nota').innerHTML='<strong>Base:</strong> eventos executados (Serviços CNG) ÷ equipes do quadro vigente do mês. <strong>Meta:</strong> eventos previstos do caderno vigente ÷ equipes. '+
     (proc==='leitura'?'Cada função conta só os eventos dos seus serviços.':'Cobrança é calculada no processo inteiro (os serviços não são separados por função).')+
-    ' Totais, média geral e ranking são ponderados (soma dos eventos ÷ soma das equipes).'+(est==='PI'?' No PI o cálculo é por função no estado.':'');
+    ' Totais, média geral e ranking são ponderados (soma dos eventos ÷ soma das equipes).'+(est==='PI'?' No PI o cálculo é por função no estado.':'')+(reg?' Filtrado pela regional '+reg+'.':'');
 }
 
 // ═══ VISÃO GLOBAL (MA · PI · RJ) — RJ somente leitura, mesma regra do painel RJ ═══

@@ -558,6 +558,11 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
           <option value="atendimento">Atendimento</option>
         </select>
       </div>
+      <div id="eqt-modo" style="display:flex;gap:6px;margin:-.25rem 0 1rem">
+        <button type="button" class="chip on" data-m="ticket" onclick="eqtModo('ticket')">Ticket (R$)</button>
+        <button type="button" class="chip" data-m="prod" onclick="eqtModo('prod')">Produtividade (eventos/eq)</button>
+      </div>
+      <div id="eqt-v-ticket">
       <div class="cards" id="eqt-cards"></div>
       <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem;margin-bottom:1.25rem">
         <div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem">Ticket/equipe × Meta/equipe (R$/equipe·mês)</div>
@@ -580,6 +585,19 @@ body{font-family:Arial,sans-serif;background:var(--bg);color:var(--pt);font-size
             <thead id="eqtv-thead"></thead>
             <tbody id="eqtv-tbody"></tbody>
           </table>
+        </div>
+      </div>
+      </div><!-- /eqt-v-ticket -->
+      <div id="eqt-v-prod" style="display:none">
+        <div id="eqp-aviso" style="display:none;font-size:12px;color:var(--tx2);padding:1rem;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:1rem"></div>
+        <div id="eqp-conteudo">
+          <div id="eqp-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:1.25rem"></div>
+          <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem;margin-bottom:1.25rem"><div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem">Evolução da média de eventos por equipe</div><div style="position:relative;height:240px"><canvas id="ch-eqp"></canvas></div></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.25rem">
+            <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem"><div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem;margin-bottom:.25rem" id="eqp-hm-tit">Mapa de calor — função × regional</div><div style="font-size:11px;color:var(--tx2);margin-bottom:.75rem">Média executada · passe o mouse para ver liberado, eventos e equipes</div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px" id="eqp-hm"></table></div></div>
+            <div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:1rem"><div style="font-size:13px;font-weight:700;color:var(--pt);margin-bottom:.75rem">Ranking das regionais (média geral)</div><div id="eqp-rk"></div></div>
+          </div>
+          <div id="eqp-nota" style="font-size:11px;color:var(--tx2);margin-top:.75rem;line-height:1.5"></div>
         </div>
       </div>
     </div>
@@ -962,6 +980,7 @@ async function carregarEquipesTicket(){
   const procInfo=EQT_PROC.find(p=>p.k===proc)||EQT_PROC[0];
   const cor=procInfo.cor;
   const data=await getEquipesMAPI(est,ano);
+  if(EQT_MODO==='prod'){await carregarProdutividade(est,ano,mes,proc,data);return;}
   const funcs=EQT_FUNCOES[proc]||[];
   const eqFunc=(fn,m)=>data.filter(d=>d.processo===proc&&d.funcao===fn&&d.mes===m).reduce((s,d)=>s+(parseInt(d.quantidade)||0),0);
   const eqTot=m=>data.filter(d=>d.processo===proc&&d.mes===m).reduce((s,d)=>s+(parseInt(d.quantidade)||0),0);
@@ -1475,6 +1494,84 @@ async function exportarRelRegPDF(){
   pdf.save(`CENEGED_Divergencia_${reg}_${MN[mes]}_${ano}.pdf`);
 }
 
+
+
+// ═══ PRODUTIVIDADE (média de eventos por equipe) ═══
+let EQT_MODO='ticket',chEqp=null;
+function eqtModo(m){EQT_MODO=m;document.querySelectorAll('#eqt-modo .chip').forEach(c=>c.classList.toggle('on',c.dataset.m===m));
+  document.getElementById('eqt-v-ticket').style.display=m==='ticket'?'':'none';
+  document.getElementById('eqt-v-prod').style.display=m==='prod'?'':'none';carregarEquipesTicket();}
+async function carregarProdutividade(est,ano,mes,proc,data){
+  const av=document.getElementById('eqp-aviso'),ct=document.getElementById('eqp-conteudo');
+  if(proc==='atendimento'){av.style.display='';ct.style.display='none';
+    av.innerHTML='<strong>Produtividade do Atendimento: a definir.</strong> A quantidade do Atendimento é de PAs (postos), não de eventos de campo.';return;}
+  av.style.display='none';ct.style.display='';
+  const fm=x=>x==null?'—':Math.round(x).toLocaleString('pt-BR');
+  // Unidades: Leitura = por função (serviços mapeados); Cobrança = processo inteiro
+  const CORES=['#378ADD','#BA7517'];
+  const U=proc==='leitura'
+    ?Object.keys(FUNCAO_SERVICOS).map((fn,i)=>({n:fn.replace('Agente Comercial ',''),funcs:[fn],cods:new Set(FUNCAO_SERVICOS[fn].map(String)),cor:CORES[i%2]}))
+    :[{n:'Cobrança (processo)',funcs:EQT_FUNCOES.cobranca,cods:null,cor:'#BA7517'}];
+  const evE=(u,m,a,r)=>u.cods?getProd(est,m,a,r).filter(p=>u.cods.has(String(p.cod_servico))).reduce((s,p)=>s+(parseFloat(p.qde_executada)||0),0):calcExec(est,m,a,r,'cobranca').evt;
+  const evL=(u,m,a,r)=>u.cods?getItens(est,m,a,r).filter(i=>u.cods.has(String(i.cod_servico))).reduce((s,i)=>s+(parseFloat(i.qde_paga)||0),0):calcPago(est,m,a,r,'cobranca').evt;
+  const eqD=(dd,u,m,r)=>dd.filter(d=>d.processo===proc&&u.funcs.includes(d.funcao)&&d.mes===m&&(!r||d.regional===r)).reduce((s,d)=>s+(parseInt(d.quantidade)||0),0);
+  const cel=(u,m,a,dd,r)=>{const eq=eqD(dd,u,m,r),ev=evE(u,m,a,r),lb=evL(u,m,a,r);return {eq,ev,lb,me:eq>0?ev/eq:null,ml:(eq>0&&lb>0)?lb/eq:null};};
+  const agg=cs=>{const eq=cs.reduce((s,c)=>s+c.eq,0),ev=cs.reduce((s,c)=>s+c.ev,0),lb=cs.reduce((s,c)=>s+c.lb,0);return {eq,ev,lb,me:eq>0?ev/eq:null,ml:(eq>0&&lb>0)?lb/eq:null};};
+  const regs=est==='MA'?(EQT_REGS.MA||[]):[];   // PI: produção consolidada em PIAUÍ → só nível estado
+  // Mês selecionado e mês anterior
+  const uM=U.map(u=>({u,...cel(u,mes,ano,data,'')})),G=agg(uM);
+  const pm=mes===1?12:mes-1,pa=mes===1?ano-1:ano,dprev=mes===1?await getEquipesMAPI(est,ano-1):data;
+  const Gp=agg(U.map(u=>cel(u,pm,pa,dprev,'')));
+  const vari=(G.me!=null&&Gp.me)?(G.me/Gp.me-1)*100:null;
+  const M={};U.forEach(u=>{M[u.n]={};regs.forEach(r=>M[u.n][r]=cel(u,mes,ano,data,r));});
+  let top=null;
+  if(regs.length){U.forEach(u=>regs.forEach(r=>{const c=M[u.n][r];if(c.me!=null&&(!top||c.me>top.v)) top={n:`${r} · ${u.n}`,v:c.me};}));}
+  else uM.forEach(x=>{if(x.me!=null&&(!top||x.me>top.v)) top={n:x.u.n+' (estado)',v:x.me};});
+  // KPIs
+  const kp=(t,val,sub,cor,borda)=>`<div style="background:var(--br);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px${borda?';border-top:3px solid '+borda:''}"><div style="font-size:11px;color:var(--tx2);font-weight:700">${t}</div><div style="font-size:${String(val).length>12?'16':'22'}px;font-weight:700;color:${cor||'var(--pt)'};margin-top:2px">${val}</div><div style="font-size:11px;color:var(--tx2);margin-top:2px">${sub}</div></div>`;
+  let k=kp('Média executada',fm(G.me),G.eq?'eventos por equipe no mês':'sem quadro de equipes no mês','',
+           '#BE2F3B')+
+        kp('Média liberada',fm(G.ml),G.lb?'eventos liberados por equipe':'boletim ainda não lançado')+
+        kp('Variação vs mês anterior',vari==null?'—':(vari>=0?'+':'')+vari.toFixed(1).replace('.',',')+'%','média executada',vari==null?'':(vari>=0?'#1D9E75':'#BE2F3B'))+
+        kp('Maior média',top?top.n:'—',top?fm(top.v)+' eventos/eq':'sem dados');
+  k+=uM.map(x=>kp(x.u.n,fm(x.me),`${fm(x.eq)} equipes · liberado ${fm(x.ml)}/eq`,'',x.u.cor)).join('');
+  document.getElementById('eqp-kpis').innerHTML=k;
+  // Evolução mensal (nível estado)
+  const hoje=new Date().getFullYear()*100+new Date().getMonth()+1,mm=[];
+  for(let m=1;m<=12;m++){if(ano*100+m>hoje) break;if(U.some(u=>eqD(data,u,m,'')>0)) mm.push(m);}
+  const serie=u=>mm.map(m=>{const c=cel(u,m,ano,data,'');return c.me==null?null:Math.round(c.me);});
+  const geral=mm.map(m=>{const g=agg(U.map(u=>cel(u,m,ano,data,'')));return g.me==null?null:Math.round(g.me);});
+  if(chEqp) chEqp.destroy();
+  chEqp=new Chart(document.getElementById('ch-eqp'),{type:'line',data:{labels:mm.map(m=>MN[m].slice(0,3)),datasets:[
+    ...(U.length>1?U.map(u=>({label:u.n,data:serie(u),borderColor:u.cor,tension:.3,pointRadius:3,spanGaps:true})):[]),
+    {label:'Média geral',data:geral,borderColor:U.length>1?'#888':'#BA7517',borderDash:U.length>1?[5,4]:[],pointRadius:U.length>1?0:3,tension:.3,spanGaps:true}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:10},usePointStyle:true,boxWidth:8}}},scales:{y:{beginAtZero:false,ticks:{font:{size:10},callback:v=>Number(v).toLocaleString('pt-BR')}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+  // Mapa de calor
+  const th=t=>`<th style="padding:8px 10px;font-size:11px;color:var(--tx2);background:var(--bg);text-align:${t==='Função'?'left':'right'}">${t}</th>`;
+  const tip=c=>`Executado: ${fm(c.ev)} eventos · Liberado: ${fm(c.lb)} eventos · Equipes: ${fm(c.eq)} · Média liberada: ${fm(c.ml)}/eq`;
+  if(regs.length){
+    const vals=[];U.forEach(u=>regs.forEach(r=>{const x=M[u.n][r].me;if(x!=null) vals.push(x);}));
+    const mn=Math.min(...vals),mx=Math.max(...vals);
+    const cor=x=>{if(x==null||!vals.length) return '';const t=mx>mn?(x-mn)/(mx-mn):.5;return `background:rgba(190,47,59,${(0.08+t*0.55).toFixed(2)});${t>0.6?'color:#fff;':''}`;};
+    document.getElementById('eqp-hm-tit').textContent='Mapa de calor — função × regional';
+    document.getElementById('eqp-hm').innerHTML=`<thead><tr>${th('Função')}${regs.map(th).join('')}${th('Total')}</tr></thead><tbody>`+
+      U.map((u,i)=>`<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 10px;font-weight:700;border-left:3px solid ${u.cor}">${u.n}</td>${regs.map(r=>{const c=M[u.n][r];return `<td title="${tip(c)}" style="padding:8px 10px;text-align:right;${cor(c.me)}">${fm(c.me)}</td>`;}).join('')}<td title="${tip(uM[i])}" style="padding:8px 10px;text-align:right;font-weight:700">${fm(uM[i].me)}</td></tr>`).join('')+'</tbody>';
+  }else{
+    document.getElementById('eqp-hm-tit').textContent='Média por função — Piauí (estado)';
+    document.getElementById('eqp-hm').innerHTML=`<thead><tr>${th('Função')}${th('PIAUÍ (estado)')}${th('Liberado')}${th('Equipes')}</tr></thead><tbody>`+
+      uM.map(x=>`<tr style="border-top:1px solid var(--bd)"><td style="padding:8px 10px;font-weight:700;border-left:3px solid ${x.u.cor}">${x.u.n}</td><td title="${tip(x)}" style="padding:8px 10px;text-align:right;font-weight:700">${fm(x.me)}</td><td style="padding:8px 10px;text-align:right">${fm(x.ml)}</td><td style="padding:8px 10px;text-align:right">${fm(x.eq)}</td></tr>`).join('')+'</tbody>';
+  }
+  // Ranking das regionais
+  const rkEl=document.getElementById('eqp-rk');
+  if(regs.length){
+    const rk=regs.map(r=>({r,...agg(U.map(u=>M[u.n][r]))})).sort((a,b)=>(b.me??-1)-(a.me??-1));
+    const mxr=Math.max(...rk.map(x=>x.me||0))||1;
+    rkEl.innerHTML=rk.map((x,i)=>`<div title="${tip(x)}" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px"><span style="width:22px;color:var(--tx2)">${i+1}º</span><span style="width:84px">${x.r}</span><div style="flex:1;background:var(--bg);border-radius:4px;height:14px"><div style="width:${((x.me||0)/mxr*100).toFixed(0)}%;height:100%;background:#BE2F3B;border-radius:4px"></div></div><span style="width:54px;text-align:right">${fm(x.me)}</span></div>`).join('');
+  }else rkEl.innerHTML='<div style="font-size:12px;color:var(--tx2)">Indisponível no Piauí: a produção e o boletim são consolidados em "PIAUÍ", enquanto as equipes estão por regional.</div>';
+  // Nota do cálculo
+  document.getElementById('eqp-nota').innerHTML=(proc==='leitura'?'<strong>Cálculo:</strong> eventos dos serviços de cada função ÷ equipes da função (quadro vigente do mês).':'<strong>Cálculo:</strong> eventos de Cobrança ÷ total de equipes de Cobrança (os serviços não são separados por função).')+
+    ' Totais e média geral são ponderados (soma dos eventos ÷ soma das equipes). Média liberada usa a quantidade do boletim.'+(est==='PI'?' No PI o cálculo é por função no estado.':'');
+}
 
 // ═══ VISÃO GLOBAL (MA · PI · RJ) — RJ somente leitura, mesma regra do painel RJ ═══
 let chGlob=null,GL_MODO='mensal',GL_EQRJ=null;const GL_EQMP={};
